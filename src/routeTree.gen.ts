@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
+import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
@@ -36,6 +37,12 @@ const AuthenticatedMyListsRoute = AuthenticatedMyListsRouteImport.update({
   path: '/my-lists',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGiftsIOfferRoute =
+  AuthenticatedGiftsIOfferRouteImport.update({
+    id: '/gifts-i-offer',
+    path: '/gifts-i-offer',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCirclesIndexRoute =
   AuthenticatedCirclesIndexRouteImport.update({
     id: '/circles/',
@@ -58,6 +65,7 @@ const AuthenticatedCirclesCircleIdMembersUserIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles/': typeof AuthenticatedCirclesIndexRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles': typeof AuthenticatedCirclesIndexRoute
@@ -76,6 +85,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/gifts-i-offer'
     | '/my-lists'
     | '/circles/$circleId'
     | '/circles/'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/gifts-i-offer'
     | '/my-lists'
     | '/circles/$circleId'
     | '/circles'
@@ -103,6 +115,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/gifts-i-offer'
     | '/_authenticated/my-lists'
     | '/_authenticated/circles/$circleId'
     | '/_authenticated/circles/'
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMyListsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gifts-i-offer': {
+      id: '/_authenticated/gifts-i-offer'
+      path: '/gifts-i-offer'
+      fullPath: '/gifts-i-offer'
+      preLoaderRoute: typeof AuthenticatedGiftsIOfferRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/circles/': {
       id: '/_authenticated/circles/'
       path: '/circles'
@@ -185,12 +205,14 @@ const AuthenticatedCirclesCircleIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedGiftsIOfferRoute: typeof AuthenticatedGiftsIOfferRoute
   AuthenticatedMyListsRoute: typeof AuthenticatedMyListsRoute
   AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRouteWithChildren
   AuthenticatedCirclesIndexRoute: typeof AuthenticatedCirclesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedGiftsIOfferRoute: AuthenticatedGiftsIOfferRoute,
   AuthenticatedMyListsRoute: AuthenticatedMyListsRoute,
   AuthenticatedCirclesCircleIdRoute:
     AuthenticatedCirclesCircleIdRouteWithChildren,
