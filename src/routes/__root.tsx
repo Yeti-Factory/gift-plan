@@ -89,6 +89,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Gift-Plan — Listes de cadeaux partagées" },
+      { name: "twitter:description", content: "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png" },
     ],
     links: [
       {
