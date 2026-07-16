@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const schema = z.object({ url: z.string().url() });
 
@@ -22,6 +23,7 @@ function decodeEntities(s: string): string {
 }
 
 export const scrapeGiftUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => schema.parse(input))
   .handler(async ({ data }) => {
     try {
