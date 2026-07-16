@@ -1,6 +1,6 @@
 {
-  "name": "Gift-Box",
-  "short_name": "Gift-Box",
+  "name": "Gift-Plan",
+  "short_name": "Gift-Plan",
   "description": "Listes de cadeaux collaboratives pour familles et amis.",
   "start_url": "/",
   "display": "standalone",
