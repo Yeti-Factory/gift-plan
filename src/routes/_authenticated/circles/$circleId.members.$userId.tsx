@@ -123,8 +123,14 @@ function MemberLists() {
     const { error } = await supabase
       .from("reservations")
       .insert({ gift_id: giftId, buyer_id: me, status: "reserved" });
-    if (error) toast.error(error.message);
-    else toast.success("Cadeau réservé — c'est votre secret !");
+    if (error) {
+      if ((error as { code?: string }).code === "23505") {
+        toast.error("Trop tard ! Quelqu'un vient de réserver ce cadeau.");
+        load();
+      } else {
+        toast.error(error.message);
+      }
+    } else toast.success("Cadeau réservé — c'est votre secret !");
   }
 
   async function unreserve(giftId: string) {
