@@ -9,38 +9,141 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
+import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
+import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
+import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
+import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedMyListsRoute = AuthenticatedMyListsRouteImport.update({
+  id: '/my-lists',
+  path: '/my-lists',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGiftsIOfferRoute =
+  AuthenticatedGiftsIOfferRouteImport.update({
+    id: '/gifts-i-offer',
+    path: '/gifts-i-offer',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCirclesIndexRoute =
+  AuthenticatedCirclesIndexRouteImport.update({
+    id: '/circles/',
+    path: '/circles/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCirclesCircleIdRoute =
+  AuthenticatedCirclesCircleIdRouteImport.update({
+    id: '/circles/$circleId',
+    path: '/circles/$circleId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCirclesCircleIdMembersUserIdRoute =
+  AuthenticatedCirclesCircleIdMembersUserIdRouteImport.update({
+    id: '/members/$userId',
+    path: '/members/$userId',
+    getParentRoute: () => AuthenticatedCirclesCircleIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
+  '/my-lists': typeof AuthenticatedMyListsRoute
+  '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/circles/': typeof AuthenticatedCirclesIndexRoute
+  '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
+  '/my-lists': typeof AuthenticatedMyListsRoute
+  '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/circles': typeof AuthenticatedCirclesIndexRoute
+  '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
+  '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
+  '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
+  '/_authenticated/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/gifts-i-offer'
+    | '/my-lists'
+    | '/circles/$circleId'
+    | '/circles/'
+    | '/circles/$circleId/members/$userId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/gifts-i-offer'
+    | '/my-lists'
+    | '/circles/$circleId'
+    | '/circles'
+    | '/circles/$circleId/members/$userId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/gifts-i-offer'
+    | '/_authenticated/my-lists'
+    | '/_authenticated/circles/$circleId'
+    | '/_authenticated/circles/'
+    | '/_authenticated/circles/$circleId/members/$userId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +151,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/my-lists': {
+      id: '/_authenticated/my-lists'
+      path: '/my-lists'
+      fullPath: '/my-lists'
+      preLoaderRoute: typeof AuthenticatedMyListsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gifts-i-offer': {
+      id: '/_authenticated/gifts-i-offer'
+      path: '/gifts-i-offer'
+      fullPath: '/gifts-i-offer'
+      preLoaderRoute: typeof AuthenticatedGiftsIOfferRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/circles/': {
+      id: '/_authenticated/circles/'
+      path: '/circles'
+      fullPath: '/circles/'
+      preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/circles/$circleId': {
+      id: '/_authenticated/circles/$circleId'
+      path: '/circles/$circleId'
+      fullPath: '/circles/$circleId'
+      preLoaderRoute: typeof AuthenticatedCirclesCircleIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/circles/$circleId/members/$userId': {
+      id: '/_authenticated/circles/$circleId/members/$userId'
+      path: '/members/$userId'
+      fullPath: '/circles/$circleId/members/$userId'
+      preLoaderRoute: typeof AuthenticatedCirclesCircleIdMembersUserIdRouteImport
+      parentRoute: typeof AuthenticatedCirclesCircleIdRoute
+    }
   }
 }
 
+interface AuthenticatedCirclesCircleIdRouteChildren {
+  AuthenticatedCirclesCircleIdMembersUserIdRoute: typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
+}
+
+const AuthenticatedCirclesCircleIdRouteChildren: AuthenticatedCirclesCircleIdRouteChildren =
+  {
+    AuthenticatedCirclesCircleIdMembersUserIdRoute:
+      AuthenticatedCirclesCircleIdMembersUserIdRoute,
+  }
+
+const AuthenticatedCirclesCircleIdRouteWithChildren =
+  AuthenticatedCirclesCircleIdRoute._addFileChildren(
+    AuthenticatedCirclesCircleIdRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedGiftsIOfferRoute: typeof AuthenticatedGiftsIOfferRoute
+  AuthenticatedMyListsRoute: typeof AuthenticatedMyListsRoute
+  AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  AuthenticatedCirclesIndexRoute: typeof AuthenticatedCirclesIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedGiftsIOfferRoute: AuthenticatedGiftsIOfferRoute,
+  AuthenticatedMyListsRoute: AuthenticatedMyListsRoute,
+  AuthenticatedCirclesCircleIdRoute:
+    AuthenticatedCirclesCircleIdRouteWithChildren,
+  AuthenticatedCirclesIndexRoute: AuthenticatedCirclesIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
