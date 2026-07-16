@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedMyListsRoute = AuthenticatedMyListsRouteImport.update({
+  id: '/my-lists',
+  path: '/my-lists',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCirclesIndexRoute =
   AuthenticatedCirclesIndexRouteImport.update({
@@ -52,6 +58,7 @@ const AuthenticatedCirclesCircleIdMembersUserIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/_authenticated/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/my-lists'
     | '/circles/$circleId'
     | '/circles/'
     | '/circles/$circleId/members/$userId'
@@ -84,6 +94,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/my-lists'
     | '/circles/$circleId'
     | '/circles'
     | '/circles/$circleId/members/$userId'
@@ -92,6 +103,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/my-lists'
     | '/_authenticated/circles/$circleId'
     | '/_authenticated/circles/'
     | '/_authenticated/circles/$circleId/members/$userId'
@@ -125,6 +137,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/my-lists': {
+      id: '/_authenticated/my-lists'
+      path: '/my-lists'
+      fullPath: '/my-lists'
+      preLoaderRoute: typeof AuthenticatedMyListsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/circles/': {
       id: '/_authenticated/circles/'
@@ -166,11 +185,13 @@ const AuthenticatedCirclesCircleIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedMyListsRoute: typeof AuthenticatedMyListsRoute
   AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRouteWithChildren
   AuthenticatedCirclesIndexRoute: typeof AuthenticatedCirclesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedMyListsRoute: AuthenticatedMyListsRoute,
   AuthenticatedCirclesCircleIdRoute:
     AuthenticatedCirclesCircleIdRouteWithChildren,
   AuthenticatedCirclesIndexRoute: AuthenticatedCirclesIndexRoute,
