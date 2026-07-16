@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Gift as GiftIcon, ExternalLink, Check, X } from "lucide-react";
+import { Gift as GiftIcon, ExternalLink, Check, X, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -138,6 +138,17 @@ function MemberLists() {
     else toast.success("Réservation annulée");
   }
 
+  async function markPurchased(giftId: string) {
+    if (!me) return;
+    const { error } = await supabase
+      .from("reservations")
+      .update({ status: "purchased" })
+      .eq("gift_id", giftId)
+      .eq("buyer_id", me);
+    if (error) toast.error(error.message);
+    else toast.success("Marqué comme acheté 🎁");
+  }
+
   const name = profile?.display_name ?? "Membre";
 
   return (
@@ -179,6 +190,7 @@ function MemberLists() {
             {listGifts.map((g) => {
               const res = reservations.find((r) => r.gift_id === g.id);
               const reservedByMe = res?.buyer_id === me;
+              const purchased = res?.status === "purchased";
               const dimmed = !isOwn && !!res;
               const buyerName = res ? buyers[res.buyer_id]?.display_name ?? "Quelqu'un" : null;
               return (
@@ -226,17 +238,38 @@ function MemberLists() {
                             </Button>
                           )}
                           {res && reservedByMe && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => unreserve(g.id)}
-                              className="rounded-xl"
-                            >
-                              <X className="h-4 w-4 mr-1" /> Annuler
-                            </Button>
+                            <div className="flex gap-1">
+                              {!purchased && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => markPurchased(g.id)}
+                                  className="rounded-xl"
+                                >
+                                  <ShoppingBag className="h-4 w-4 mr-1" /> Acheté
+                                </Button>
+                              )}
+                              {purchased && (
+                                <Badge className="bg-green-600 hover:bg-green-600 text-white">
+                                  ✓ Acheté
+                                </Badge>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => unreserve(g.id)}
+                                className="rounded-xl"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                           {res && !reservedByMe && (
-                            <Badge variant="secondary">Réservé par {buyerName}</Badge>
+                            <Badge
+                              variant="secondary"
+                              className={purchased ? "bg-green-600 hover:bg-green-600 text-white" : ""}
+                            >
+                              {purchased ? "✓ Acheté" : "Réservé"} par {buyerName}
+                            </Badge>
                           )}
                         </>
                       )}
