@@ -1,0 +1,15 @@
+# Local test before pushing to Coolify:
+#   docker compose up --build
+services:
+  app:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
