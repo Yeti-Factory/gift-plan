@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, ImagePlus, Gift as GiftIcon } from "lucide-react";
+import { Plus, Trash2, ImagePlus, Gift as GiftIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { scrapeGiftUrl } from "@/lib/gift-scrape.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -272,6 +274,39 @@ function NewGiftDialog({
   const [priority, setPriority] = useState<Priority>("j_adorerais");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const scrape = useServerFn(scrapeGiftUrl);
+
+  async function fetchFromUrl() {
+    if (!url.trim()) return;
+    setFetching(true);
+    try {
+      const res = await scrape({ data: { url: url.trim() } });
+      if (!res.ok) {
+        toast.error("Impossible de récupérer les infos, saisis-les à la main.");
+        return;
+      }
+      let filled = false;
+      if (res.title && !title) {
+        setTitle(res.title);
+        filled = true;
+      }
+      if (res.imageUrl && !imageUrl) {
+        setImageUrl(res.imageUrl);
+        filled = true;
+      }
+      if (res.price != null && !price) {
+        setPrice(String(res.price));
+        filled = true;
+      }
+      if (filled) toast.success("Infos récupérées !");
+      else toast.message("Rien trouvé à préremplir.");
+    } catch {
+      toast.error("Impossible de récupérer les infos, saisis-les à la main.");
+    } finally {
+      setFetching(false);
+    }
+  }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -344,7 +379,27 @@ function NewGiftDialog({
           </div>
           <div>
             <Label>Lien</Label>
-            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" inputMode="url" />
+            <div className="flex gap-2">
+              <Input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://…"
+                inputMode="url"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={fetchFromUrl}
+                disabled={fetching || !url.trim()}
+                className="rounded-xl shrink-0"
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                {fetching ? "…" : "Récupérer"}
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Colle un lien produit puis « Récupérer » pour préremplir.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
