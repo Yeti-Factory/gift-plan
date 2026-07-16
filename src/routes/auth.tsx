@@ -13,8 +13,8 @@ import { Card } from "@/components/ui/card";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Se connecter — Gift-Box" },
-      { name: "description", content: "Connectez-vous à Gift-Box pour partager vos listes de cadeaux." },
+      { title: "Se connecter — Gift-Plan" },
+      { name: "description", content: "Connectez-vous à Gift-Plan pour partager vos listes de cadeaux." },
     ],
   }),
   component: AuthPage,
@@ -73,7 +73,7 @@ function AuthPage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg">
           <Gift className="h-8 w-8" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Gift-Box</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Gift-Plan</h1>
         <p className="text-center text-sm text-muted-foreground max-w-xs">
           Vos listes de cadeaux, partagées avec ceux qui comptent.
         </p>

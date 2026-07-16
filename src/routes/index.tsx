@@ -29,7 +29,7 @@ function Index() {
       <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg">
         <Gift className="h-10 w-10" />
       </div>
-      <h1 className="text-2xl font-bold">Gift-Box</h1>
+      <h1 className="text-2xl font-bold">Gift-Plan</h1>
       {checking && <p className="text-sm text-muted-foreground">Chargement…</p>}
     </div>
   );

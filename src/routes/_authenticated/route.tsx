@@ -40,7 +40,7 @@ function AuthLayout() {
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Gift className="h-4 w-4" />
           </div>
-          Gift-Box
+          Gift-Plan
         </Link>
         <Button variant="ghost" size="icon" onClick={signOut} disabled={signingOut} aria-label="Se déconnecter">
           <LogOut className="h-5 w-5" />
