@@ -29,6 +29,7 @@ type Gift = {
 
 type List = { id: string; title: string; occasion: string | null; event_date: string | null };
 type Reservation = { gift_id: string; buyer_id: string; status: string };
+type BuyerProfile = { id: string; display_name: string | null };
 
 function MemberLists() {
   const { circleId, userId } = Route.useParams();
@@ -37,6 +38,7 @@ function MemberLists() {
   const [lists, setLists] = useState<List[]>([]);
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [buyers, setBuyers] = useState<Record<string, BuyerProfile>>({});
 
   const isOwn = me === userId;
 
@@ -84,6 +86,21 @@ function MemberLists() {
       .select("gift_id, buyer_id, status")
       .in("gift_id", giftIds);
     setReservations(rs ?? []);
+
+    const buyerIds = Array.from(new Set((rs ?? []).map((r) => r.buyer_id)));
+    if (buyerIds.length === 0) {
+      setBuyers({});
+      return;
+    }
+    const { data: bs } = await supabase
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", buyerIds);
+    const map: Record<string, BuyerProfile> = {};
+    (bs ?? []).forEach((b) => {
+      map[b.id] = b;
+    });
+    setBuyers(map);
   }, [circleId, userId]);
 
   useEffect(() => {
@@ -162,8 +179,13 @@ function MemberLists() {
             {listGifts.map((g) => {
               const res = reservations.find((r) => r.gift_id === g.id);
               const reservedByMe = res?.buyer_id === me;
+              const dimmed = !isOwn && !!res;
+              const buyerName = res ? buyers[res.buyer_id]?.display_name ?? "Quelqu'un" : null;
               return (
-                <Card key={g.id} className="p-3 flex gap-3">
+                <Card
+                  key={g.id}
+                  className={`p-3 flex gap-3 transition-opacity ${dimmed ? "opacity-60" : ""}`}
+                >
                   {g.image_url ? (
                     <img src={g.image_url} alt="" className="h-20 w-20 rounded-xl object-cover bg-muted" />
                   ) : (
@@ -214,7 +236,7 @@ function MemberLists() {
                             </Button>
                           )}
                           {res && !reservedByMe && (
-                            <Badge variant="secondary">Déjà réservé</Badge>
+                            <Badge variant="secondary">Réservé par {buyerName}</Badge>
                           )}
                         </>
                       )}
