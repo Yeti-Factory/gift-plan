@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Gift, Home, Package, ListChecks, LogOut } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { ensureProfile } from "@/lib/gift-box";
@@ -25,6 +26,33 @@ function AuthLayout() {
   useEffect(() => {
     ensureProfile(user).catch(() => {});
   }, [user]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("gifts-notifications")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "gifts" },
+        async (payload) => {
+          const row = payload.new as { owner_id: string; title: string; list_id: string };
+          if (!row || row.owner_id === user.id) return;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", row.owner_id)
+            .maybeSingle();
+          const name = profile?.display_name ?? "Un membre";
+          toast(`🎁 ${name} a ajouté un cadeau`, {
+            description: row.title,
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user.id]);
 
   async function signOut() {
     setSigningOut(true);
