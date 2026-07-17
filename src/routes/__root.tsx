@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 function NotFoundComponent() {
   return (
@@ -100,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "apple-touch-icon", href: "/icon-512.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
@@ -137,9 +138,41 @@ function RootComponent() {
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+    if (!import.meta.env.PROD) return;
+    if (window.top !== window.self) return; // iframe preview
+    const host = window.location.hostname;
+    const isLovablePreview =
+      host.startsWith("id-preview--") ||
+      host.startsWith("preview--") ||
+      host === "lovableproject.com" ||
+      host.endsWith(".lovableproject.com") ||
+      host === "lovableproject-dev.com" ||
+      host.endsWith(".lovableproject-dev.com") ||
+      host === "beta.lovable.dev" ||
+      host.endsWith(".beta.lovable.dev");
+    if (isLovablePreview || new URL(window.location.href).searchParams.get("sw") === "off") {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => {
+          if (r.active?.scriptURL.endsWith("/sw.js")) r.unregister();
+        });
+      }).catch(() => undefined);
+      return;
+    }
+    const onLoad = () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    };
+    if (document.readyState === "complete") onLoad();
+    else window.addEventListener("load", onLoad, { once: true });
+    return () => window.removeEventListener("load", onLoad);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <InstallPrompt />
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
