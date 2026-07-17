@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, ListChecks, RefreshCw, ChevronRight } from "lucide-react";
+import { Copy, RefreshCw, ChevronRight, Gift } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -142,23 +142,33 @@ function CircleDetail() {
               key={m.user_id}
               to="/circles/$circleId/members/$userId"
               params={{ circleId, userId: m.user_id }}
-              className="block"
+              className="block group"
             >
-              <Card className="p-3 flex items-center gap-3 hover:bg-accent transition-colors">
-                <Avatar>
-                  {m.profile?.avatar_url && <AvatarImage src={m.profile.avatar_url} />}
-                  <AvatarFallback>{initials(name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {name} {isMe && <span className="text-xs text-muted-foreground">(vous)</span>}
-                  </p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <ListChecks className="h-3 w-3" />
-                    {m.listCount} liste{m.listCount > 1 ? "s" : ""} — {isMe ? "gérer" : "voir les cadeaux"}
-                  </p>
+              <Card className="p-3 flex flex-col gap-3 hover:bg-accent transition-colors">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    {m.profile?.avatar_url && <AvatarImage src={m.profile.avatar_url} />}
+                    <AvatarFallback>{initials(name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">
+                      {name} {isMe && <span className="text-xs text-muted-foreground">(vous)</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {m.listCount} liste{m.listCount > 1 ? "s" : ""}
+                    </p>
+                  </div>
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="flex items-center justify-between border-t pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    {isMe ? "Gérer ma liste" : "Voir les cadeaux de ce membre"}
+                  </span>
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground group-hover:opacity-90 transition-opacity">
+                    <Gift className="h-4 w-4" />
+                    {isMe ? "Gérer" : "Voir les cadeaux"}
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </div>
               </Card>
             </Link>
           );
