@@ -90,6 +90,24 @@ function isSafeHttpsUrl(value: string) {
   }
 }
 
+function isExpectedRecoveryUrl(value: string) {
+  try {
+    const url = new URL(value)
+    const backendUrl = process.env.SUPABASE_URL
+    if (backendUrl && url.origin !== new URL(backendUrl).origin) return false
+
+    const type = url.searchParams.get('type')
+    if (type && type !== 'recovery') return false
+
+    const redirectTo = url.searchParams.get('redirect_to') ?? url.searchParams.get('redirect_uri')
+    if (!redirectTo) return true
+
+    return new URL(redirectTo).origin === SITE_URL
+  } catch {
+    return false
+  }
+}
+
 function parseAuthPayload(body: unknown): { run_id?: string; data: AuthEmailHookData; version?: string } | null {
   if (!body || typeof body !== 'object') return null
   const payload = body as { run_id?: unknown; version?: unknown; type?: unknown; data?: unknown }
@@ -148,6 +166,9 @@ async function sendAuthEmailWithResend(request: Request) {
   }
   if (event.version && event.version !== '1') {
     return Response.json({ error: `Unsupported payload version: ${event.version}` }, { status: 400 })
+  }
+  if (event.data.action_type !== 'recovery' || !isExpectedRecoveryUrl(event.data.url)) {
+    return Response.json({ error: 'Unsupported auth email action' }, { status: 400 })
   }
 
   const definition = authEmails[event.data.action_type]

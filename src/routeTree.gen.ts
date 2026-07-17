@@ -16,7 +16,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
-import { Route as ApiPublicForgotPasswordRouteImport } from './routes/api/public/forgot-password'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -58,11 +57,6 @@ const AuthenticatedCirclesIndexRoute =
     path: '/circles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicForgotPasswordRoute = ApiPublicForgotPasswordRouteImport.update({
-  id: '/api/public/forgot-password',
-  path: '/api/public/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedCirclesCircleIdRoute =
   AuthenticatedCirclesCircleIdRouteImport.update({
     id: '/circles/$circleId',
@@ -93,7 +87,6 @@ export interface FileRoutesByFullPath {
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
-  '/api/public/forgot-password': typeof ApiPublicForgotPasswordRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -106,7 +99,6 @@ export interface FileRoutesByTo {
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
-  '/api/public/forgot-password': typeof ApiPublicForgotPasswordRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -121,7 +113,6 @@ export interface FileRoutesById {
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
-  '/api/public/forgot-password': typeof ApiPublicForgotPasswordRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -136,7 +127,6 @@ export interface FileRouteTypes {
     | '/gifts-i-offer'
     | '/my-lists'
     | '/circles/$circleId'
-    | '/api/public/forgot-password'
     | '/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -149,7 +139,6 @@ export interface FileRouteTypes {
     | '/gifts-i-offer'
     | '/my-lists'
     | '/circles/$circleId'
-    | '/api/public/forgot-password'
     | '/circles'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -163,7 +152,6 @@ export interface FileRouteTypes {
     | '/_authenticated/gifts-i-offer'
     | '/_authenticated/my-lists'
     | '/_authenticated/circles/$circleId'
-    | '/api/public/forgot-password'
     | '/_authenticated/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -175,7 +163,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  ApiPublicForgotPasswordRoute: typeof ApiPublicForgotPasswordRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
@@ -230,13 +217,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/circles/'
       preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/forgot-password': {
-      id: '/api/public/forgot-password'
-      path: '/api/public/forgot-password'
-      fullPath: '/api/public/forgot-password'
-      preLoaderRoute: typeof ApiPublicForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/circles/$circleId': {
       id: '/_authenticated/circles/$circleId'
@@ -307,7 +287,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  ApiPublicForgotPasswordRoute: ApiPublicForgotPasswordRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
