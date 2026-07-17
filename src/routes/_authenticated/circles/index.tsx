@@ -54,27 +54,16 @@ function CirclesPage() {
   }
 
   async function joinCircle() {
-    const invite = code.trim().toUpperCase();
+    const invite = code.trim();
     if (!invite) return;
     setBusy(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
-    const { data: c, error } = await supabase
-      .from("circles")
-      .select("id, name")
-      .eq("invite_code", invite)
-      .maybeSingle();
-    if (error || !c) {
-      setBusy(false);
-      toast.error("Code invalide");
-      return;
-    }
-    const { error: mErr } = await supabase
-      .from("circle_members")
-      .insert({ circle_id: c.id, user_id: user.user.id, role: "member" });
+    const { data: c, error } = await supabase.rpc("join_circle", { _code: invite });
     setBusy(false);
-    if (mErr && !mErr.message.includes("duplicate")) {
-      toast.error(mErr.message);
+    if (error || !c) {
+      const msg = error?.message ?? "";
+      if (msg.includes("CODE_INVALID")) toast.error("Code invalide");
+      else if (msg.includes("NOT_AUTHENTICATED")) toast.error("Session expirée, reconnectez-vous.");
+      else toast.error(msg || "Erreur");
       return;
     }
     setCode("");
