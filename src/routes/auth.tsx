@@ -104,15 +104,20 @@ function AuthPage() {
     e.preventDefault();
     if (!forgotEmail) return;
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) toast.error(translateError(error.message));
-    else {
-      toast.success("Email de réinitialisation envoyé.");
+    try {
+      const res = await fetch("/api/public/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      if (!res.ok) throw new Error("send_failed");
+      toast.success("Si un compte existe pour cet email, un lien vient d'être envoyé.");
       setForgotOpen(false);
       setForgotEmail("");
+    } catch {
+      toast.error("Impossible d'envoyer l'email. Réessaie dans un instant.");
+    } finally {
+      setLoading(false);
     }
   }
 
