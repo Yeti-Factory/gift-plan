@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, ListChecks, RefreshCw, ChevronRight } from "lucide-react";
+import { Copy, RefreshCw, ChevronRight, Gift } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
