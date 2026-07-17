@@ -17,6 +17,7 @@ import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
+import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
@@ -63,6 +64,12 @@ const AuthenticatedCirclesCircleIdRoute =
     path: '/circles/$circleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCirclesCircleIdIndexRoute =
+  AuthenticatedCirclesCircleIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCirclesCircleIdRoute,
+  } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   id: '/lovable/email/auth/webhook',
   path: '/lovable/email/auth/webhook',
@@ -90,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRoutesByTo {
@@ -98,10 +106,10 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
-  '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/circles/$circleId': typeof AuthenticatedCirclesCircleIdIndexRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRoutesById {
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/_authenticated/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
   '/_authenticated/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/circles/$circleId/'
     | '/circles/$circleId/members/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,10 +148,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/gifts-i-offer'
     | '/my-lists'
-    | '/circles/$circleId'
     | '/circles'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/circles/$circleId'
     | '/circles/$circleId/members/$userId'
   id:
     | '__root__'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/_authenticated/circles/$circleId/'
     | '/_authenticated/circles/$circleId/members/$userId'
   fileRoutesById: FileRoutesById
 }
@@ -225,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesCircleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/circles/$circleId/': {
+      id: '/_authenticated/circles/$circleId/'
+      path: '/'
+      fullPath: '/circles/$circleId/'
+      preLoaderRoute: typeof AuthenticatedCirclesCircleIdIndexRouteImport
+      parentRoute: typeof AuthenticatedCirclesCircleIdRoute
+    }
     '/lovable/email/auth/webhook': {
       id: '/lovable/email/auth/webhook'
       path: '/lovable/email/auth/webhook'
@@ -250,11 +268,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedCirclesCircleIdRouteChildren {
+  AuthenticatedCirclesCircleIdIndexRoute: typeof AuthenticatedCirclesCircleIdIndexRoute
   AuthenticatedCirclesCircleIdMembersUserIdRoute: typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 
 const AuthenticatedCirclesCircleIdRouteChildren: AuthenticatedCirclesCircleIdRouteChildren =
   {
+    AuthenticatedCirclesCircleIdIndexRoute:
+      AuthenticatedCirclesCircleIdIndexRoute,
     AuthenticatedCirclesCircleIdMembersUserIdRoute:
       AuthenticatedCirclesCircleIdMembersUserIdRoute,
   }
