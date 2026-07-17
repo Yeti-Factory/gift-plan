@@ -138,13 +138,7 @@ function CircleDetail() {
           const isMe = m.user_id === me;
           const name = m.profile?.display_name ?? "Membre";
           return (
-            <Link
-              key={m.user_id}
-              to="/circles/$circleId/members/$userId"
-              params={{ circleId, userId: m.user_id }}
-              className="block group"
-            >
-              <Card className="p-3 flex flex-col gap-3 hover:bg-accent transition-colors">
+            <Card key={m.user_id} className="p-3 flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   <Avatar>
                     {m.profile?.avatar_url && <AvatarImage src={m.profile.avatar_url} />}
@@ -159,18 +153,23 @@ function CircleDetail() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between border-t pt-3">
+                <div className="flex items-center justify-between gap-3 border-t pt-3">
                   <span className="text-xs text-muted-foreground">
                     {isMe ? "Gérer ma liste" : "Voir les cadeaux de ce membre"}
                   </span>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground group-hover:opacity-90 transition-opacity">
-                    <Gift className="h-4 w-4" />
-                    {isMe ? "Gérer" : "Voir les cadeaux"}
-                    <ChevronRight className="h-4 w-4" />
-                  </div>
+                  <Button asChild size="sm" className="shrink-0 rounded-full">
+                    <Link
+                      to="/circles/$circleId/members/$userId"
+                      params={{ circleId, userId: m.user_id }}
+                      aria-label={`${isMe ? "Gérer mes cadeaux" : `Voir les cadeaux de ${name}`}`}
+                    >
+                      <Gift className="h-4 w-4" />
+                      {isMe ? "Gérer" : "Voir les cadeaux"}
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
                 </div>
               </Card>
-            </Link>
           );
         })}
       </div>
