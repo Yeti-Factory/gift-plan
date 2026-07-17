@@ -25,22 +25,55 @@ function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(true);
   const [ready, setReady] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
+    let alive = true;
     markPasswordRecovery();
-    // Supabase parses the recovery token from the URL hash automatically.
+
+    async function prepareRecoverySession() {
+      const params = new URLSearchParams(window.location.search);
+      const tokenHash = params.get("token_hash");
+
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          type: "recovery",
+          token_hash: tokenHash,
+        });
+
+        if (!alive) return;
+        if (error) {
+          setLinkError("Ce lien de réinitialisation est invalide ou expiré. Demande un nouveau lien.");
+          setCheckingLink(false);
+          return;
+        }
+
+        setReady(true);
+        setCheckingLink(false);
+        window.history.replaceState(null, "", "/reset-password");
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (!alive) return;
+      if (data.session) setReady(true);
+      setCheckingLink(false);
+    }
+
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
         setReady(true);
       }
     });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
+    prepareRecoverySession();
+    return () => {
+      alive = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,10 +109,26 @@ function ResetPasswordPage() {
       </div>
 
       <Card className="w-full max-w-sm p-6 space-y-4">
-        {!ready ? (
+        {checkingLink ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Vérification du lien de réinitialisation...
           </p>
+        ) : linkError ? (
+          <div className="space-y-4 text-center">
+            <p className="text-sm text-muted-foreground">{linkError}</p>
+            <Button type="button" className="w-full" onClick={() => navigate({ to: "/auth", replace: true })}>
+              Demander un nouveau lien
+            </Button>
+          </div>
+        ) : !ready ? (
+          <div className="space-y-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Ouvre cette page depuis le lien reçu par email pour choisir un nouveau mot de passe.
+            </p>
+            <Button type="button" className="w-full" onClick={() => navigate({ to: "/auth", replace: true })}>
+              Retour à la connexion
+            </Button>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-2">

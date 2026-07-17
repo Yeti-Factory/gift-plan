@@ -2,10 +2,12 @@ export const PASSWORD_RECOVERY_FLAG = "gift-plan-password-recovery";
 
 export function hasPasswordRecoveryMarker(url: URL = new URL(window.location.href)) {
   const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
+  const isResetPasswordRoute = url.pathname === "/reset-password";
   return (
     url.searchParams.get("type") === "recovery" ||
     hashParams.get("type") === "recovery" ||
-    url.searchParams.has("code") ||
+    url.searchParams.has("token_hash") ||
+    (isResetPasswordRoute && url.searchParams.has("code")) ||
     hashParams.has("access_token")
   );
 }

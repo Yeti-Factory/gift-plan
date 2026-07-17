@@ -81,6 +81,15 @@ const authEmails = {
 function forceRecoveryRedirectUrl(value: string) {
   try {
     const url = new URL(value)
+
+    const tokenHash = url.searchParams.get('token') ?? url.searchParams.get('token_hash')
+    if (tokenHash) {
+      const resetUrl = new URL(RESET_PASSWORD_URL)
+      resetUrl.searchParams.set('type', 'recovery')
+      resetUrl.searchParams.set('token_hash', tokenHash)
+      return resetUrl.toString()
+    }
+
     url.searchParams.delete('redirect_uri')
     url.searchParams.set('redirect_to', RESET_PASSWORD_URL)
     return url.toString()
