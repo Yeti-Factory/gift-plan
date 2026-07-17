@@ -33,7 +33,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     invite: {
-      subject: "Vous avez été invité à rejoindre Gift-Plan",
+      subject: "Vous avez été invité(e) à rejoindre Gift-Plan",
       render: (data) =>
         React.createElement(InviteEmail, {
           siteName: SITE_NAME,
@@ -50,7 +50,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     recovery: {
-      subject: 'Réinitialisez votre mot de passe',
+      subject: 'Réinitialisez votre mot de passe Gift-Plan',
       render: (data) =>
         React.createElement(RecoveryEmail, {
           siteName: SITE_NAME,

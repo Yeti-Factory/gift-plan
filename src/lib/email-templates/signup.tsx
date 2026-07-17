@@ -1,13 +1,7 @@
+import * as React from 'react'
+
 import { Button, Heading, Link, Text } from '@react-email/components'
-import {
-  BRAND,
-  GiftPlanHtml,
-  h1,
-  text,
-  link,
-  button,
-  FooterNote,
-} from './brand'
+import { GiftPlanHtml, BRAND, text, button, link, footer, h1 } from './brand'
 
 interface SignupEmailProps {
   siteName: string
@@ -22,29 +16,28 @@ export const SignupEmail = ({
   recipient,
   confirmationUrl,
 }: SignupEmailProps) => (
-  <GiftPlanHtml preview={`Confirmez votre email pour ${siteName}`}>
-    <Heading style={h1}>Confirmez votre adresse email</Heading>
+  <GiftPlanHtml preview={`Confirmez votre adresse email pour ${siteName}`}>
+    <Heading style={h1}>Confirmez votre email</Heading>
     <Text style={text}>
-      Merci de vous être inscrit sur{' '}
+      Merci de votre inscription sur{' '}
       <Link href={siteUrl} style={link}>
         <strong>{siteName}</strong>
       </Link>{' '}
-      ! 🎁
+      !
     </Text>
     <Text style={text}>
-      Confirmez votre adresse email ({' '}
+      Veuillez confirmer votre adresse email (
       <Link href={`mailto:${recipient}`} style={link}>
         {recipient}
-      </Link>{' '}
+      </Link>
       ) en cliquant sur le bouton ci-dessous :
     </Text>
     <Button style={button} href={confirmationUrl}>
       Vérifier mon email
     </Button>
-    <Text style={text}>
+    <Text style={{ ...footer, marginTop: '32px' }}>
       Si vous n'avez pas créé de compte, vous pouvez ignorer cet email en toute sécurité.
     </Text>
-    <FooterNote siteName={siteName} />
   </GiftPlanHtml>
 )
 
