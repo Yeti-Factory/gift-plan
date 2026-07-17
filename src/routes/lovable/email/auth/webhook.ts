@@ -9,11 +9,10 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "gift-plan"
-const SENDER_DOMAIN = "alpha-mate.yeti-lab.fr"
-const ROOT_DOMAIN = "yeti-lab.fr"
-const FROM_DOMAIN = "alpha-mate.yeti-lab.fr"
-const SITE_URL = `https://${ROOT_DOMAIN}`
+const SITE_NAME = "Gift-Plan"
+const SENDER_DOMAIN = "yeti-lab.fr"
+const FROM_DOMAIN = "yeti-lab.fr"
+const SITE_URL = "https://gift-plan.yeti-lab.fr"
 
 // The SDK handler owns verification, dispatch, and retry semantics; this file
 // owns only the email decisions: subjects, templates, and per-type props.
@@ -24,7 +23,7 @@ const handler = createAuthEmailHandler({
   sendUrl: process.env.LOVABLE_SEND_URL,
   emails: {
     signup: {
-      subject: 'Confirm your email',
+      subject: 'Confirmez votre adresse email',
       render: (data) =>
         React.createElement(SignupEmail, {
           siteName: SITE_NAME,
@@ -34,7 +33,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     invite: {
-      subject: "You've been invited",
+      subject: "Vous avez été invité(e) à rejoindre Gift-Plan",
       render: (data) =>
         React.createElement(InviteEmail, {
           siteName: SITE_NAME,
@@ -43,7 +42,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     magiclink: {
-      subject: 'Your login link',
+      subject: 'Votre lien de connexion Gift-Plan',
       render: (data) =>
         React.createElement(MagicLinkEmail, {
           siteName: SITE_NAME,
@@ -51,7 +50,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     recovery: {
-      subject: 'Reset your password',
+      subject: 'Réinitialisez votre mot de passe Gift-Plan',
       render: (data) =>
         React.createElement(RecoveryEmail, {
           siteName: SITE_NAME,
@@ -59,18 +58,17 @@ const handler = createAuthEmailHandler({
         }),
     },
     email_change: {
-      subject: 'Confirm your new email',
+      subject: 'Confirmez votre nouvelle adresse email',
       render: (data) =>
         React.createElement(EmailChangeEmail, {
           siteName: SITE_NAME,
           oldEmail: data.old_email ?? '',
-          email: data.email,
           newEmail: data.new_email ?? '',
           confirmationUrl: data.url,
         }),
     },
     reauthentication: {
-      subject: 'Your verification code',
+      subject: 'Votre code de vérification Gift-Plan',
       render: (data) =>
         React.createElement(ReauthenticationEmail, { token: data.token ?? '' }),
     },
