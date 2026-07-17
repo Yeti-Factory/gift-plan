@@ -29,6 +29,16 @@ function isIOS(): boolean {
   return iOSClassic || iPadOS;
 }
 
+function detectDesktopBrowser(): "chrome" | "edge" | "firefox" | "safari" | "other" {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent;
+  if (/Edg\//.test(ua)) return "edge";
+  if (/Firefox\//.test(ua)) return "firefox";
+  if (/Chrome\//.test(ua)) return "chrome";
+  if (/Safari\//.test(ua)) return "safari";
+  return "other";
+}
+
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   const mm = window.matchMedia?.("(display-mode: standalone)").matches;
@@ -55,6 +65,8 @@ export function InstallPrompt() {
   const [ios, setIos] = useState(false);
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [showIosSheet, setShowIosSheet] = useState(false);
+  const [desktopFallback, setDesktopFallback] = useState<null | "chrome" | "edge" | "firefox" | "safari" | "other">(null);
+  const [showDesktopSheet, setShowDesktopSheet] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -74,6 +86,7 @@ export function InstallPrompt() {
       e.preventDefault();
       setDeferred(e as BIPEvent);
       setVisible(true);
+      setDesktopFallback(null);
     };
     const onInstalled = () => {
       setVisible(false);
@@ -81,9 +94,20 @@ export function InstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", onBIP);
     window.addEventListener("appinstalled", onInstalled);
+
+    // Fallback : si beforeinstallprompt ne se déclenche pas (déjà éligible mais
+    // événement déjà consommé, ou navigateur qui ne le supporte pas), afficher
+    // un bandeau avec les instructions manuelles selon le navigateur.
+    const timer = window.setTimeout(() => {
+      if (isStandalone() || recentlyDismissed()) return;
+      setDesktopFallback((prev) => prev ?? detectDesktopBrowser());
+      setVisible(true);
+    }, 1500);
+
     return () => {
       window.removeEventListener("beforeinstallprompt", onBIP);
       window.removeEventListener("appinstalled", onInstalled);
+      window.clearTimeout(timer);
     };
   }, []);
 
@@ -115,6 +139,8 @@ export function InstallPrompt() {
 
   if (!ready || !visible) return null;
 
+  const showDesktopManual = !ios && !deferred && desktopFallback !== null;
+
   return (
     <>
       <div className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
@@ -129,12 +155,18 @@ export function InstallPrompt() {
             <p className="text-xs text-muted-foreground">
               {ios
                 ? "Ajoutez l'appli à votre écran d'accueil."
-                : "Accès rapide depuis votre écran d'accueil."}
+                : showDesktopManual
+                  ? "Ajoutez l'appli à votre bureau."
+                  : "Accès rapide depuis votre écran d'accueil."}
             </p>
           </div>
           {ios ? (
             <Button size="sm" onClick={() => setShowIosSheet(true)}>
               Voir
+            </Button>
+          ) : showDesktopManual ? (
+            <Button size="sm" onClick={() => setShowDesktopSheet(true)}>
+              Comment ?
             </Button>
           ) : (
             <Button size="sm" onClick={install} disabled={!deferred}>
@@ -190,6 +222,55 @@ export function InstallPrompt() {
           </ol>
           <p className="mt-4 text-xs text-muted-foreground">
             L'appli s'ouvrira ensuite en plein écran depuis votre écran d'accueil.
+          </p>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={showDesktopSheet} onOpenChange={setShowDesktopSheet}>
+        <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetHeader className="text-left">
+            <SheetTitle>Installer sur ordinateur</SheetTitle>
+            <SheetDescription>
+              {desktopFallback === "firefox"
+                ? "Firefox ne prend pas en charge l'installation des applis web. Utilisez Chrome ou Edge pour installer Gift-Plan."
+                : desktopFallback === "safari"
+                  ? "Depuis Safari, ouvrez Fichier > Ajouter au Dock pour installer Gift-Plan."
+                  : "Suivez ces étapes dans votre navigateur :"}
+            </SheetDescription>
+          </SheetHeader>
+          {(desktopFallback === "chrome" || desktopFallback === "edge" || desktopFallback === "other") && (
+            <ol className="mt-4 space-y-3 text-sm">
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                  1
+                </span>
+                <span>
+                  Cherchez l'icône <Download className="inline h-4 w-4" />{" "}
+                  <strong>Installer</strong> à droite de la barre d'adresse.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                  2
+                </span>
+                <span>
+                  Ou ouvrez le menu <strong>⋮</strong> puis{" "}
+                  <strong>Installer Gift-Plan…</strong> (Chrome) /{" "}
+                  <strong>Applications → Installer ce site</strong> (Edge).
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                  3
+                </span>
+                <span>
+                  Confirmez avec <strong>Installer</strong>. L'appli s'ouvrira dans sa propre fenêtre.
+                </span>
+              </li>
+            </ol>
+          )}
+          <p className="mt-4 text-xs text-muted-foreground">
+            Si vous ne voyez pas l'option, rechargez la page ou vérifiez que vous êtes bien en HTTPS.
           </p>
         </SheetContent>
       </Sheet>
