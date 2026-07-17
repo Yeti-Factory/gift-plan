@@ -38,12 +38,29 @@ function ResetPasswordPage() {
     async function prepareRecoverySession() {
       const params = new URLSearchParams(window.location.search);
       const tokenHash = params.get("token_hash");
+      const code = params.get("code");
 
       if (tokenHash) {
         const { error } = await supabase.auth.verifyOtp({
           type: "recovery",
           token_hash: tokenHash,
         });
+
+        if (!alive) return;
+        if (error) {
+          setLinkError("Ce lien de réinitialisation est invalide ou expiré. Demande un nouveau lien.");
+          setCheckingLink(false);
+          return;
+        }
+
+        setReady(true);
+        setCheckingLink(false);
+        window.history.replaceState(null, "", "/reset-password");
+        return;
+      }
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!alive) return;
         if (error) {
