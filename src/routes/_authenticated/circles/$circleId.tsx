@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, ListChecks } from "lucide-react";
+import { Copy, ListChecks, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,8 @@ function CircleDetail() {
   const [circle, setCircle] = useState<{ name: string; invite_code: string } | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [me, setMe] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [regenBusy, setRegenBusy] = useState(false);
 
   async function load() {
     const { data: user } = await supabase.auth.getUser();
@@ -41,6 +43,9 @@ function CircleDetail() {
       .from("circle_members")
       .select("user_id, role")
       .eq("circle_id", circleId);
+
+    const meId = user.user?.id;
+    setIsAdmin(!!(mems ?? []).find((m) => m.user_id === meId && m.role === "admin"));
 
     const userIds = (mems ?? []).map((m) => m.user_id);
     if (userIds.length === 0) {
@@ -84,6 +89,21 @@ function CircleDetail() {
     toast.success("Code copié !");
   }
 
+  async function regenerateCode() {
+    if (!confirm("Générer un nouveau code ? L'ancien ne fonctionnera plus.")) return;
+    setRegenBusy(true);
+    const { data, error } = await supabase.rpc("regenerate_invite_code", { _circle_id: circleId });
+    setRegenBusy(false);
+    if (error || !data) {
+      const msg = error?.message ?? "";
+      if (msg.includes("NOT_ADMIN")) toast.error("Seul un administrateur peut régénérer le code.");
+      else toast.error(msg || "Erreur");
+      return;
+    }
+    setCircle((c) => (c ? { ...c, invite_code: data } : c));
+    toast.success("Nouveau code généré !");
+  }
+
   if (!circle) return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
 
   return (
@@ -97,9 +117,16 @@ function CircleDetail() {
         <p className="text-xs text-muted-foreground">Code d'invitation</p>
         <div className="flex items-center justify-between mt-1">
           <span className="text-2xl font-bold tracking-widest">{circle.invite_code}</span>
-          <Button size="sm" variant="ghost" onClick={copyCode}>
-            <Copy className="h-4 w-4 mr-1" /> Copier
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" onClick={copyCode}>
+              <Copy className="h-4 w-4 mr-1" /> Copier
+            </Button>
+            {isAdmin && (
+              <Button size="sm" variant="ghost" onClick={regenerateCode} disabled={regenBusy}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${regenBusy ? "animate-spin" : ""}`} /> Régénérer
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
 
