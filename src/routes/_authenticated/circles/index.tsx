@@ -40,16 +40,7 @@ function CirclesPage() {
   async function createCircle() {
     if (!name.trim()) return;
     setBusy(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
-    // Generate invite code via db function
-    const { data: codeRes } = await supabase.rpc("gen_invite_code");
-    const invite = (codeRes as string) || Math.random().toString(36).slice(2, 8).toUpperCase();
-    const { data: c, error } = await supabase
-      .from("circles")
-      .insert({ name: name.trim(), invite_code: invite } as never)
-      .select()
-      .single();
+    const { data: c, error } = await supabase.rpc("create_circle", { _name: name.trim() });
     if (error || !c) {
       setBusy(false);
       toast.error(error?.message ?? "Erreur");
