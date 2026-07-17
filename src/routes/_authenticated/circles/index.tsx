@@ -47,7 +47,7 @@ function CirclesPage() {
     const invite = (codeRes as string) || Math.random().toString(36).slice(2, 8).toUpperCase();
     const { data: c, error } = await supabase
       .from("circles")
-      .insert({ name: name.trim(), invite_code: invite, created_by: user.user.id })
+      .insert({ name: name.trim(), invite_code: invite } as never)
       .select()
       .single();
     if (error || !c) {
@@ -55,11 +55,6 @@ function CirclesPage() {
       toast.error(error?.message ?? "Erreur");
       return;
     }
-    await supabase.from("circle_members").insert({
-      circle_id: c.id,
-      user_id: user.user.id,
-      role: "admin",
-    });
     setBusy(false);
     setName("");
     setOpenCreate(false);
