@@ -14,71 +14,90 @@ const SENDER_DOMAIN = "yeti-lab.fr"
 const FROM_DOMAIN = "yeti-lab.fr"
 const SITE_URL = "https://gift-plan.yeti-lab.fr"
 
-// The SDK handler owns verification, dispatch, and retry semantics; this file
-// owns only the email decisions: subjects, templates, and per-type props.
-const handler = createAuthEmailHandler({
-  apiKey: process.env.LOVABLE_API_KEY!,
-  from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-  senderDomain: SENDER_DOMAIN,
-  sendUrl: process.env.LOVABLE_SEND_URL,
-  emails: {
-    signup: {
-      subject: 'Confirmez votre adresse email',
-      render: (data) =>
-        React.createElement(SignupEmail, {
-          siteName: SITE_NAME,
-          siteUrl: SITE_URL,
-          recipient: data.email,
-          confirmationUrl: data.url,
-        }),
+function createConfiguredHandler() {
+  const apiKey = process.env.LOVABLE_API_KEY
+
+  if (!apiKey) {
+    return null
+  }
+
+  // The SDK handler owns verification, dispatch, and retry semantics; this file
+  // owns only the email decisions: subjects, templates, and per-type props.
+  return createAuthEmailHandler({
+    apiKey,
+    from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+    senderDomain: SENDER_DOMAIN,
+    sendUrl: process.env.LOVABLE_SEND_URL,
+    emails: {
+      signup: {
+        subject: 'Confirmez votre adresse email',
+        render: (data) =>
+          React.createElement(SignupEmail, {
+            siteName: SITE_NAME,
+            siteUrl: SITE_URL,
+            recipient: data.email,
+            confirmationUrl: data.url,
+          }),
+      },
+      invite: {
+        subject: "Vous avez été invité(e) à rejoindre Gift-Plan",
+        render: (data) =>
+          React.createElement(InviteEmail, {
+            siteName: SITE_NAME,
+            siteUrl: SITE_URL,
+            confirmationUrl: data.url,
+          }),
+      },
+      magiclink: {
+        subject: 'Votre lien de connexion Gift-Plan',
+        render: (data) =>
+          React.createElement(MagicLinkEmail, {
+            siteName: SITE_NAME,
+            confirmationUrl: data.url,
+          }),
+      },
+      recovery: {
+        subject: 'Réinitialisez votre mot de passe Gift-Plan',
+        render: (data) =>
+          React.createElement(RecoveryEmail, {
+            siteName: SITE_NAME,
+            confirmationUrl: data.url,
+          }),
+      },
+      email_change: {
+        subject: 'Confirmez votre nouvelle adresse email',
+        render: (data) =>
+          React.createElement(EmailChangeEmail, {
+            siteName: SITE_NAME,
+            oldEmail: data.old_email ?? '',
+            newEmail: data.new_email ?? '',
+            confirmationUrl: data.url,
+          }),
+      },
+      reauthentication: {
+        subject: 'Votre code de vérification Gift-Plan',
+        render: (data) =>
+          React.createElement(ReauthenticationEmail, { token: data.token ?? '' }),
+      },
     },
-    invite: {
-      subject: "Vous avez été invité(e) à rejoindre Gift-Plan",
-      render: (data) =>
-        React.createElement(InviteEmail, {
-          siteName: SITE_NAME,
-          siteUrl: SITE_URL,
-          confirmationUrl: data.url,
-        }),
-    },
-    magiclink: {
-      subject: 'Votre lien de connexion Gift-Plan',
-      render: (data) =>
-        React.createElement(MagicLinkEmail, {
-          siteName: SITE_NAME,
-          confirmationUrl: data.url,
-        }),
-    },
-    recovery: {
-      subject: 'Réinitialisez votre mot de passe Gift-Plan',
-      render: (data) =>
-        React.createElement(RecoveryEmail, {
-          siteName: SITE_NAME,
-          confirmationUrl: data.url,
-        }),
-    },
-    email_change: {
-      subject: 'Confirmez votre nouvelle adresse email',
-      render: (data) =>
-        React.createElement(EmailChangeEmail, {
-          siteName: SITE_NAME,
-          oldEmail: data.old_email ?? '',
-          newEmail: data.new_email ?? '',
-          confirmationUrl: data.url,
-        }),
-    },
-    reauthentication: {
-      subject: 'Votre code de vérification Gift-Plan',
-      render: (data) =>
-        React.createElement(ReauthenticationEmail, { token: data.token ?? '' }),
-    },
-  },
-})
+  })
+}
 
 export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
-      POST: ({ request }) => handler(request),
+      POST: ({ request }) => {
+        const handler = createConfiguredHandler()
+
+        if (!handler) {
+          return Response.json(
+            { error: 'Email sender is not configured for this deployment' },
+            { status: 503 },
+          )
+        }
+
+        return handler(request)
+      },
     },
   },
 })
