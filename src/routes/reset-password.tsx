@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { clearPasswordRecoveryMark, markPasswordRecovery } from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -29,6 +30,7 @@ function ResetPasswordPage() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
+    markPasswordRecovery();
     // Supabase parses the recovery token from the URL hash automatically.
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
@@ -59,6 +61,7 @@ function ResetPasswordPage() {
       return;
     }
     toast.success("Mot de passe mis à jour ✅");
+    clearPasswordRecoveryMark();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }

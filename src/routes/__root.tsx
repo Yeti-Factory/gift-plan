@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 
 function NotFoundComponent() {
   return (
@@ -130,13 +131,15 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    if (redirectToResetPasswordIfNeeded()) return;
+
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
-        if (typeof window !== "undefined" && window.location.pathname !== "/reset-password") {
-          window.location.replace("/reset-password");
-        }
+        markPasswordRecovery();
+        redirectToResetPasswordIfNeeded();
         return;
       }
+      if (event === "SIGNED_IN" && redirectToResetPasswordIfNeeded()) return;
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();

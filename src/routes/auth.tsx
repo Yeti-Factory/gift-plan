@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 
 const RESET_PASSWORD_REDIRECT_URL = "https://gift-plan.yeti-lab.fr/reset-password";
 
@@ -37,13 +38,22 @@ function AuthPage() {
   const [showSignupPwd, setShowSignupPwd] = useState(false);
 
   useEffect(() => {
+    if (redirectToResetPasswordIfNeeded()) return;
+
     supabase.auth.getSession().then(({ data }) => {
+      if (redirectToResetPasswordIfNeeded()) return;
       if (data.session) {
         ensureProfile(data.session.user).catch(() => {});
         navigate({ to: "/circles", replace: true });
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        markPasswordRecovery();
+        redirectToResetPasswordIfNeeded();
+        return;
+      }
+      if (event === "SIGNED_IN" && redirectToResetPasswordIfNeeded()) return;
       if (event === "SIGNED_IN" && session) {
         ensureProfile(session.user).catch(() => {});
         navigate({ to: "/circles", replace: true });
