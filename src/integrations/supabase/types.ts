@@ -213,6 +213,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_circle: {
+        Args: { _name: string }
+        Returns: {
+          created_at: string
+          created_by: string
+          id: string
+          invite_code: string
+          name: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "circles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       gen_invite_code: { Args: never; Returns: string }
       gift_circle_id: { Args: { _gift_id: string }; Returns: string }
       gift_owner_id: { Args: { _gift_id: string }; Returns: string }
