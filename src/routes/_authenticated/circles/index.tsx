@@ -47,7 +47,7 @@ function CirclesPage() {
     const invite = (codeRes as string) || Math.random().toString(36).slice(2, 8).toUpperCase();
     const { data: c, error } = await supabase
       .from("circles")
-      .insert({ name: name.trim(), invite_code: invite })
+      .insert({ name: name.trim(), invite_code: invite } as never)
       .select()
       .single();
     if (error || !c) {
