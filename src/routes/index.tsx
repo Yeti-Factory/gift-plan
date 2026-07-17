@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -13,8 +14,11 @@ function Index() {
 
   useEffect(() => {
     let alive = true;
+    if (redirectToResetPasswordIfNeeded()) return;
+
     supabase.auth.getSession().then(({ data }) => {
       if (!alive) return;
+      if (redirectToResetPasswordIfNeeded()) return;
       if (data.session) navigate({ to: "/circles", replace: true });
       else navigate({ to: "/auth", replace: true });
       setChecking(false);
