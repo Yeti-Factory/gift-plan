@@ -16,6 +16,8 @@ import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -55,6 +57,16 @@ const AuthenticatedCirclesCircleIdRoute =
     path: '/circles/$circleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCirclesCircleIdMembersUserIdRoute =
   AuthenticatedCirclesCircleIdMembersUserIdRouteImport.update({
     id: '/members/$userId',
@@ -69,6 +81,8 @@ export interface FileRoutesByFullPath {
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles/': typeof AuthenticatedCirclesIndexRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRoutesByTo {
@@ -78,6 +92,8 @@ export interface FileRoutesByTo {
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles': typeof AuthenticatedCirclesIndexRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRoutesById {
@@ -89,6 +105,8 @@ export interface FileRoutesById {
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/_authenticated/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +118,8 @@ export interface FileRouteTypes {
     | '/my-lists'
     | '/circles/$circleId'
     | '/circles/'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/circles/$circleId/members/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -109,6 +129,8 @@ export interface FileRouteTypes {
     | '/my-lists'
     | '/circles/$circleId'
     | '/circles'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/circles/$circleId/members/$userId'
   id:
     | '__root__'
@@ -119,6 +141,8 @@ export interface FileRouteTypes {
     | '/_authenticated/my-lists'
     | '/_authenticated/circles/$circleId'
     | '/_authenticated/circles/'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/_authenticated/circles/$circleId/members/$userId'
   fileRoutesById: FileRoutesById
 }
@@ -126,6 +150,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -179,6 +205,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesCircleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/circles/$circleId/members/$userId': {
       id: '/_authenticated/circles/$circleId/members/$userId'
       path: '/members/$userId'
@@ -226,6 +266,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
