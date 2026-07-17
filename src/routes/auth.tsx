@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Gift, Mail } from "lucide-react";
+import { Gift } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,8 @@ import { ensureProfile } from "@/lib/gift-box";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -22,9 +24,13 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -42,19 +48,69 @@ function AuthPage() {
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
 
-  async function sendMagicLink(e: React.FormEvent) {
+  function translateError(msg: string): string {
+    const m = msg.toLowerCase();
+    if (m.includes("invalid login") || m.includes("invalid credentials")) {
+      return "Email ou mot de passe incorrect.";
+    }
+    if (m.includes("already registered") || m.includes("already exists") || m.includes("user already")) {
+      return "Cet email est déjà utilisé.";
+    }
+    if (m.includes("password") && (m.includes("6") || m.includes("short") || m.includes("weak"))) {
+      return "Mot de passe trop court (6 caractères minimum).";
+    }
+    if (m.includes("email not confirmed")) {
+      return "Confirme d'abord ton adresse email (vérifie ta boîte mail).";
+    }
+    return msg;
+  }
+
+  async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) toast.error(translateError(error.message));
+  }
+
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error("Mot de passe trop court (6 caractères minimum).");
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      password,
+      options: {
+        data: { display_name: displayName.trim() || email.split("@")[0] },
+        emailRedirectTo: window.location.origin,
+      },
     });
     setLoading(false);
-    if (error) toast.error(error.message);
+    if (error) {
+      toast.error(translateError(error.message));
+      return;
+    }
+    if (!data.session) {
+      toast.success("Vérifie ta boîte mail pour confirmer ton inscription ✉️");
+    }
+  }
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) toast.error(translateError(error.message));
     else {
-      setSent(true);
-      toast.success("Lien envoyé — vérifiez votre boîte mail.");
+      toast.success("Email de réinitialisation envoyé.");
+      setForgotOpen(false);
+      setForgotEmail("");
     }
   }
 
@@ -80,33 +136,119 @@ function AuthPage() {
       </div>
 
       <Card className="w-full max-w-sm p-6 space-y-4">
-        {sent ? (
-          <div className="text-center space-y-2 py-6">
-            <Mail className="h-10 w-10 mx-auto text-primary" />
-            <p className="font-medium">Vérifiez votre boîte mail</p>
-            <p className="text-sm text-muted-foreground">
-              Nous vous avons envoyé un lien de connexion à {email}.
-            </p>
-            <Button variant="ghost" className="mt-2" onClick={() => setSent(false)}>
-              Utiliser une autre adresse
-            </Button>
-          </div>
-        ) : (
-          <>
-            <form onSubmit={sendMagicLink} className="space-y-3">
+        {forgotOpen ? (
+          <form onSubmit={handleForgot} className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Mot de passe oublié</Label>
               <Input
+                id="forgot-email"
                 type="email"
                 required
-                inputMode="email"
                 autoComplete="email"
                 placeholder="vous@exemple.fr"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
               />
-              <Button type="submit" className="w-full" disabled={loading}>
-                Recevoir un lien magique
-              </Button>
-            </form>
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Envoi..." : "Envoyer le lien"}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => setForgotOpen(false)}>
+              Retour
+            </Button>
+          </form>
+        ) : (
+          <>
+            <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Se connecter</TabsTrigger>
+                <TabsTrigger value="signup">Créer un compte</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="signin" className="space-y-3 mt-4">
+                <form onSubmit={handleSignIn} className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="vous@exemple.fr"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Mot de passe</Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      required
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Connexion..." : "Se connecter"}
+                  </Button>
+                </form>
+                <button
+                  type="button"
+                  onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                  className="text-sm text-muted-foreground hover:text-primary underline w-full text-center"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </TabsContent>
+
+              <TabsContent value="signup" className="space-y-3 mt-4">
+                <form onSubmit={handleSignUp} className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Nom</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      required
+                      autoComplete="name"
+                      placeholder="Marie Dupont"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="vous@exemple.fr"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Mot de passe</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">6 caractères minimum.</p>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Création..." : "Créer mon compte"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
