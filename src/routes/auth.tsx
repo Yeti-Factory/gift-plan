@@ -12,6 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
+const RESET_PASSWORD_REDIRECT_URL = "https://gift-plan.yeti-lab.fr/reset-password";
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -106,7 +108,7 @@ function AuthPage() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: RESET_PASSWORD_REDIRECT_URL,
       });
       if (error) throw error;
       toast.success("Si un compte existe pour cet email, un lien vient d'être envoyé.");
