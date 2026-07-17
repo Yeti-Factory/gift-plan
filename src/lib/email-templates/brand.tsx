@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Container, Heading, Html, Link, Preview, Section, Text } from '@react-email/components'
+import { Body, Container, Head, Html, Link, Preview, Section, Text } from '@react-email/components'
 
 export const BRAND = {
   name: 'Gift-Plan',
@@ -120,13 +120,14 @@ export function GiftPlanHtml({
 }) {
   return (
     <Html lang="fr" dir="ltr">
+      <Head />
       <Preview>{preview}</Preview>
-      <body style={main}>
+      <Body style={main}>
         <Container style={container}>
           <LogoHeader />
           {children}
         </Container>
-      </body>
+      </Body>
     </Html>
   )
 }
