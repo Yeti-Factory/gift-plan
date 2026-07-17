@@ -152,8 +152,8 @@ async function sendAuthEmailWithResend(request: Request) {
 
   const definition = authEmails[event.data.action_type]
   const { render } = await import('@react-email/render')
-  const subject = typeof definition === 'function' ? (await definition(event.data)).subject : definition.subject
-  const element = typeof definition === 'function' ? (await definition(event.data)).element : await definition.render(event.data)
+  const subject = definition.subject
+  const element = await definition.render(event.data)
   const html = await render(element)
   const text = await render(element, { plainText: true })
 
