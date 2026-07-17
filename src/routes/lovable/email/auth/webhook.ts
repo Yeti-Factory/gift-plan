@@ -225,6 +225,10 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
       POST: ({ request }) => {
+        if (process.env.RESEND_API_KEY) {
+          return sendAuthEmailWithResend(request)
+        }
+
         const handler = createConfiguredHandler()
 
         if (!handler) {
