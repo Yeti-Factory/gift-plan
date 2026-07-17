@@ -18,6 +18,7 @@ const SITE_NAME = "Gift-Plan"
 const SENDER_DOMAIN = "yeti-lab.fr"
 const FROM_DOMAIN = "yeti-lab.fr"
 const SITE_URL = "https://gift-plan.yeti-lab.fr"
+const RESET_PASSWORD_URL = `${SITE_URL}/reset-password`
 const ALLOWED_RECOVERY_REDIRECT_ORIGINS = new Set([
   SITE_URL,
   'https://gift-plan.lovable.app',
@@ -58,7 +59,7 @@ const authEmails = {
     render: (data) =>
       React.createElement(RecoveryEmail, {
         siteName: SITE_NAME,
-        confirmationUrl: data.url,
+        confirmationUrl: forceRecoveryRedirectUrl(data.url),
       }),
   },
   email_change: {
@@ -76,6 +77,17 @@ const authEmails = {
     render: (data) => React.createElement(ReauthenticationEmail, { token: data.token ?? '' }),
   },
 } satisfies AuthEmailDefinitions
+
+function forceRecoveryRedirectUrl(value: string) {
+  try {
+    const url = new URL(value)
+    url.searchParams.delete('redirect_uri')
+    url.searchParams.set('redirect_to', RESET_PASSWORD_URL)
+    return url.toString()
+  } catch {
+    return value
+  }
+}
 
 function isAuthActionType(value: string): value is AuthEmailActionType {
   return value in authEmails
