@@ -16,7 +16,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
-import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
@@ -57,12 +56,6 @@ const AuthenticatedCirclesIndexRoute =
     path: '/circles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCirclesCircleIdRoute =
-  AuthenticatedCirclesCircleIdRouteImport.update({
-    id: '/circles/$circleId',
-    path: '/circles/$circleId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   id: '/lovable/email/auth/webhook',
   path: '/lovable/email/auth/webhook',
@@ -75,9 +68,9 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
 } as any)
 const AuthenticatedCirclesCircleIdMembersUserIdRoute =
   AuthenticatedCirclesCircleIdMembersUserIdRouteImport.update({
-    id: '/members/$userId',
-    path: '/members/$userId',
-    getParentRoute: () => AuthenticatedCirclesCircleIdRoute,
+    id: '/circles/$circleId/members/$userId',
+    path: '/circles/$circleId/members/$userId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -86,7 +79,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
-  '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -98,7 +90,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
-  '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -112,7 +103,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
-  '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -126,7 +116,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/gifts-i-offer'
     | '/my-lists'
-    | '/circles/$circleId'
     | '/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -138,7 +127,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/gifts-i-offer'
     | '/my-lists'
-    | '/circles/$circleId'
     | '/circles'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -151,7 +139,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/gifts-i-offer'
     | '/_authenticated/my-lists'
-    | '/_authenticated/circles/$circleId'
     | '/_authenticated/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -218,13 +205,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/circles/$circleId': {
-      id: '/_authenticated/circles/$circleId'
-      path: '/circles/$circleId'
-      fullPath: '/circles/$circleId'
-      preLoaderRoute: typeof AuthenticatedCirclesCircleIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/lovable/email/auth/webhook': {
       id: '/lovable/email/auth/webhook'
       path: '/lovable/email/auth/webhook'
@@ -241,42 +221,27 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/circles/$circleId/members/$userId': {
       id: '/_authenticated/circles/$circleId/members/$userId'
-      path: '/members/$userId'
+      path: '/circles/$circleId/members/$userId'
       fullPath: '/circles/$circleId/members/$userId'
       preLoaderRoute: typeof AuthenticatedCirclesCircleIdMembersUserIdRouteImport
-      parentRoute: typeof AuthenticatedCirclesCircleIdRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedCirclesCircleIdRouteChildren {
-  AuthenticatedCirclesCircleIdMembersUserIdRoute: typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
-}
-
-const AuthenticatedCirclesCircleIdRouteChildren: AuthenticatedCirclesCircleIdRouteChildren =
-  {
-    AuthenticatedCirclesCircleIdMembersUserIdRoute:
-      AuthenticatedCirclesCircleIdMembersUserIdRoute,
-  }
-
-const AuthenticatedCirclesCircleIdRouteWithChildren =
-  AuthenticatedCirclesCircleIdRoute._addFileChildren(
-    AuthenticatedCirclesCircleIdRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGiftsIOfferRoute: typeof AuthenticatedGiftsIOfferRoute
   AuthenticatedMyListsRoute: typeof AuthenticatedMyListsRoute
-  AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRouteWithChildren
   AuthenticatedCirclesIndexRoute: typeof AuthenticatedCirclesIndexRoute
+  AuthenticatedCirclesCircleIdMembersUserIdRoute: typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGiftsIOfferRoute: AuthenticatedGiftsIOfferRoute,
   AuthenticatedMyListsRoute: AuthenticatedMyListsRoute,
-  AuthenticatedCirclesCircleIdRoute:
-    AuthenticatedCirclesCircleIdRouteWithChildren,
   AuthenticatedCirclesIndexRoute: AuthenticatedCirclesIndexRoute,
+  AuthenticatedCirclesCircleIdMembersUserIdRoute:
+    AuthenticatedCirclesCircleIdMembersUserIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
