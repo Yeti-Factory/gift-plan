@@ -111,7 +111,10 @@ function AuthPage() {
         redirectTo: RESET_PASSWORD_REDIRECT_URL,
       });
       if (error) throw error;
-      toast.success("Si un compte existe pour cet email, un lien vient d'être envoyé.");
+      toast.success(
+        "Si un compte existe pour cet email, un lien vient d'être envoyé. Pense à vérifier tes spams / courriers indésirables.",
+        { duration: 8000 },
+      );
       setForgotOpen(false);
       setForgotEmail("");
     } catch {
