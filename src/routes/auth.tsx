@@ -105,12 +105,10 @@ function AuthPage() {
     if (!forgotEmail) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/public/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail }),
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (!res.ok) throw new Error("send_failed");
+      if (error) throw error;
       toast.success("Si un compte existe pour cet email, un lien vient d'être envoyé.");
       setForgotOpen(false);
       setForgotEmail("");
