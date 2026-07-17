@@ -63,7 +63,6 @@ const handler = createAuthEmailHandler({
         React.createElement(EmailChangeEmail, {
           siteName: SITE_NAME,
           oldEmail: data.old_email ?? '',
-          email: data.email,
           newEmail: data.new_email ?? '',
           confirmationUrl: data.url,
         }),
