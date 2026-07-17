@@ -147,9 +147,9 @@ async function sendAuthEmailWithResend(request: Request) {
     return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'POST' } })
   }
 
-  const resendKey = process.env.RESEND_API_KEY
+  const resendKey = (process.env.RESEND_API_KEY_GIFT_PLAN || process.env.RESEND_API_KEY)
   if (!resendKey) {
-    console.error('[auth-email] RESEND_API_KEY is not configured')
+    console.error('[auth-email] RESEND_API_KEY_GIFT_PLAN is not configured')
     return Response.json({ error: 'Email sender is not configured for this deployment' }, { status: 503 })
   }
 
@@ -225,7 +225,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
       POST: ({ request }) => {
-        if (process.env.RESEND_API_KEY) {
+        if ((process.env.RESEND_API_KEY_GIFT_PLAN || process.env.RESEND_API_KEY)) {
           return sendAuthEmailWithResend(request)
         }
 
