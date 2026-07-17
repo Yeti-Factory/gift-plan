@@ -63,12 +63,6 @@ const AuthenticatedCirclesCircleIdRoute =
     path: '/circles/$circleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCirclesCircleIdRoute =
-  AuthenticatedCirclesCircleIdRouteImport.update({
-    id: '/circles/$circleId',
-    path: '/circles/$circleId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   id: '/lovable/email/auth/webhook',
   path: '/lovable/email/auth/webhook',
@@ -231,13 +225,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesCircleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/circles/$circleId': {
-      id: '/_authenticated/circles/$circleId'
-      path: '/circles/$circleId'
-      fullPath: '/circles/$circleId'
-      preLoaderRoute: typeof AuthenticatedCirclesCircleIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/lovable/email/auth/webhook': {
       id: '/lovable/email/auth/webhook'
       path: '/lovable/email/auth/webhook'
@@ -280,7 +267,6 @@ const AuthenticatedCirclesCircleIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGiftsIOfferRoute: typeof AuthenticatedGiftsIOfferRoute
   AuthenticatedMyListsRoute: typeof AuthenticatedMyListsRoute
-  AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRoute
   AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRouteWithChildren
   AuthenticatedCirclesIndexRoute: typeof AuthenticatedCirclesIndexRoute
 }
@@ -288,7 +274,6 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGiftsIOfferRoute: AuthenticatedGiftsIOfferRoute,
   AuthenticatedMyListsRoute: AuthenticatedMyListsRoute,
-  AuthenticatedCirclesCircleIdRoute: AuthenticatedCirclesCircleIdRoute,
   AuthenticatedCirclesCircleIdRoute:
     AuthenticatedCirclesCircleIdRouteWithChildren,
   AuthenticatedCirclesIndexRoute: AuthenticatedCirclesIndexRoute,
@@ -308,3 +293,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
