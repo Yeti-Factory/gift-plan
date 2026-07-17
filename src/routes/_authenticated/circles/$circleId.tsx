@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, ListChecks, RefreshCw } from "lucide-react";
+import { Copy, ListChecks, RefreshCw, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -155,9 +155,10 @@ function CircleDetail() {
                   </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <ListChecks className="h-3 w-3" />
-                    {m.listCount} liste{m.listCount > 1 ? "s" : ""}
+                    {m.listCount} liste{m.listCount > 1 ? "s" : ""} — {isMe ? "gérer" : "voir les cadeaux"}
                   </p>
                 </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
               </Card>
             </Link>
           );
