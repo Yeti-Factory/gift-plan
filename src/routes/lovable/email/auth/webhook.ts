@@ -18,6 +18,12 @@ const SITE_NAME = "Gift-Plan"
 const SENDER_DOMAIN = "yeti-lab.fr"
 const FROM_DOMAIN = "yeti-lab.fr"
 const SITE_URL = "https://gift-plan.yeti-lab.fr"
+const ALLOWED_RECOVERY_REDIRECT_ORIGINS = new Set([
+  SITE_URL,
+  'https://gift-plan.lovable.app',
+  'https://id-preview--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app',
+  'https://96df8292-ee19-43bf-af6b-a257a4d04dfb.lovableproject.com',
+])
 
 const authEmails = {
   signup: {
@@ -102,10 +108,14 @@ function isExpectedRecoveryUrl(value: string) {
     const redirectTo = url.searchParams.get('redirect_to') ?? url.searchParams.get('redirect_uri')
     if (!redirectTo) return true
 
-    return new URL(redirectTo).origin === SITE_URL
+    return ALLOWED_RECOVERY_REDIRECT_ORIGINS.has(new URL(redirectTo).origin)
   } catch {
     return false
   }
+}
+
+function getResendApiKey() {
+  return process.env.RESEND_API_KEY_GIFT_PLAN || process.env.RESEND_API_KEY || null
 }
 
 function parseAuthPayload(body: unknown): { run_id?: string; data: AuthEmailHookData; version?: string } | null {
@@ -147,9 +157,9 @@ async function sendAuthEmailWithResend(request: Request) {
     return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'POST' } })
   }
 
-  const resendKey = (process.env.RESEND_API_KEY_GIFT_PLAN || process.env.RESEND_API_KEY)
+  const resendKey = getResendApiKey()
   if (!resendKey) {
-    console.error('[auth-email] RESEND_API_KEY_GIFT_PLAN is not configured')
+    console.error('[auth-email] Neither RESEND_API_KEY_GIFT_PLAN nor RESEND_API_KEY is configured')
     return Response.json({ error: 'Email sender is not configured for this deployment' }, { status: 503 })
   }
 
@@ -168,6 +178,10 @@ async function sendAuthEmailWithResend(request: Request) {
     return Response.json({ error: `Unsupported payload version: ${event.version}` }, { status: 400 })
   }
   if (event.data.action_type !== 'recovery' || !isExpectedRecoveryUrl(event.data.url)) {
+    console.error('[auth-email] Unsupported recovery URL', {
+      action_type: event.data.action_type,
+      has_url: Boolean(event.data.url),
+    })
     return Response.json({ error: 'Unsupported auth email action' }, { status: 400 })
   }
 
@@ -225,7 +239,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
       POST: ({ request }) => {
-        if ((process.env.RESEND_API_KEY_GIFT_PLAN || process.env.RESEND_API_KEY)) {
+        if (getResendApiKey()) {
           return sendAuthEmailWithResend(request)
         }
 
