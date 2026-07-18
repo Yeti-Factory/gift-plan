@@ -3,7 +3,13 @@ import { useRouter, useNavigate } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 
-export function BackButton({ fallback = "/circles" }: { fallback?: string }) {
+export function BackButton({
+  fallback = "/circles",
+  variant = "text",
+}: {
+  fallback?: string;
+  variant?: "icon" | "text";
+}) {
   const router = useRouter();
   const navigate = useNavigate();
 
@@ -18,12 +24,17 @@ export function BackButton({ fallback = "/circles" }: { fallback?: string }) {
   return (
     <Button
       variant="ghost"
-      size="icon"
+      size={variant === "icon" ? "icon" : "default"}
       onClick={handleClick}
       aria-label="Retour"
-      className="h-10 w-10"
+      className={
+        variant === "text"
+          ? "h-10 px-2 text-sm font-medium text-muted-foreground hover:text-foreground -ml-2"
+          : "h-10 w-10"
+      }
     >
-      <ArrowLeft className="h-5 w-5" />
+      <ArrowLeft className={variant === "text" ? "h-4 w-4 mr-1" : "h-5 w-5"} />
+      {variant === "text" && "Retour"}
     </Button>
   );
 }
