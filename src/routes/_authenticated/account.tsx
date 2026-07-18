@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, Trash2, User as UserIcon, Mail, KeyRound } from "lucide-react";
+import { Eye, EyeOff, Trash2, User as UserIcon, Mail, KeyRound, Download } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteMyAccount } from "@/lib/account.functions";
+import { deleteMyAccount, exportMyData } from "@/lib/account.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,6 +57,29 @@ function AccountPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
   const deleteAccountFn = useServerFn(deleteMyAccount);
+  const exportDataFn = useServerFn(exportMyData);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const data = await exportDataFn();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gift-plan-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Export téléchargé ✅");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export impossible");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -270,6 +293,20 @@ function AccountPage() {
             {savingPwd ? "Mise à jour..." : "Changer le mot de passe"}
           </Button>
         </form>
+      </Card>
+
+      <Card className="p-5 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Download className="h-4 w-4" /> Exporter mes données
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Téléchargez au format JSON toutes les données personnelles que Gift-Plan détient à votre
+          sujet (profil, cercles, listes, cadeaux, réservations que vous avez posées).
+          Les réservations posées par d'autres sur vos propres cadeaux sont exclues pour préserver la surprise.
+        </p>
+        <Button variant="outline" className="w-full" onClick={handleExport} disabled={exporting}>
+          {exporting ? "Préparation..." : "Télécharger mon export (JSON)"}
+        </Button>
       </Card>
 
       <Card className="p-5 space-y-3 border-destructive/40">
