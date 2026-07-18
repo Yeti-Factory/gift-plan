@@ -3,14 +3,36 @@ import { isIP } from "net";
 /**
  * SSRF protection: reject hostnames/IPs that target internal networks or cloud metadata.
  *
- * We defensively handle two runtimes:
- * - Node (production Docker): use `dns.promises.lookup` for full DNS resolution.
- * - Cloudflare Workers preview: `dns` may be missing → fall back to hostname-only checks.
+ * Two runtimes are supported:
+ * - Node (production Docker): full DNS resolution via `dns.promises.lookup(host, {all:true})`.
+ *   Missing DNS is treated as a hard failure (fail-closed).
+ * - Cloudflare Workers preview: `dns` is missing → we only apply hostname/IP-literal checks.
+ *   Callers running in Workers should never scrape untrusted URLs in that mode.
+ *
+ * Residual risk: DNS rebinding between the pre-check and the fetch remains possible for
+ * short-lived attacks. Mitigation: assertSafeUrl is re-invoked on every redirect hop in
+ * gift-scrape (the fetch pipeline never follows redirects automatically). For higher
+ * assurance, wrap fetch with a pinned undici Agent — currently out of scope.
  */
 
-const BLOCKED_HOSTNAMES = new Set(["localhost", "ip6-localhost", "ip6-loopback", "broadcasthost"]);
+const BLOCKED_HOSTNAMES = new Set([
+  "localhost",
+  "ip6-localhost",
+  "ip6-loopback",
+  "broadcasthost",
+  "metadata.google.internal",
+  "metadata.goog",
+]);
 
-const BLOCKED_HOSTNAME_SUFFIXES = [".localhost", ".local", ".internal", ".lan"];
+const BLOCKED_HOSTNAME_SUFFIXES = [
+  ".localhost",
+  ".local",
+  ".internal",
+  ".lan",
+  ".intranet",
+  ".corp",
+  ".home.arpa",
+];
 
 function ipv4ToInt(ip: string): number | null {
   const parts = ip.split(".");
@@ -69,17 +91,41 @@ export function isBlockedIp(ip: string): boolean {
   return false;
 }
 
+/**
+ * Normalize a hostname as it might appear in URL.hostname:
+ * - lowercased
+ * - trailing dot removed
+ * - IPv6 brackets removed ("[::1]" -> "::1")
+ */
+export function normalizeHostname(hostname: string): string {
+  let h = hostname.toLowerCase();
+  if (h.endsWith(".")) h = h.slice(0, -1);
+  if (h.startsWith("[") && h.endsWith("]")) h = h.slice(1, -1);
+  return h;
+}
+
 export function isBlockedHostname(hostname: string): boolean {
-  const lower = hostname.toLowerCase();
+  const lower = normalizeHostname(hostname);
+  if (!lower) return true;
   if (BLOCKED_HOSTNAMES.has(lower)) return true;
   for (const suf of BLOCKED_HOSTNAME_SUFFIXES) {
     if (lower.endsWith(suf)) return true;
   }
-  // Literal IP as hostname
   if (isBlockedIp(lower)) return true;
   return false;
 }
 
+/**
+ * Validate a URL is safe to fetch server-side (SSRF-hardened).
+ *
+ * Behavior:
+ * - Rejects non-http(s) schemes.
+ * - Rejects URL-embedded credentials.
+ * - Rejects hostnames matching internal suffixes and IP literals in private ranges.
+ * - Resolves DNS and rejects if ANY resolved address is private/loopback/link-local/etc.
+ * - Fails closed if DNS lookup errors in the Node runtime.
+ *   In Workers (no `dns` module), only hostname/IP-literal checks apply.
+ */
 export async function assertSafeUrl(rawUrl: string): Promise<URL> {
   let url: URL;
   try {
@@ -93,22 +139,35 @@ export async function assertSafeUrl(rawUrl: string): Promise<URL> {
   if (url.username || url.password) {
     throw new Error("URL_CREDENTIALS_FORBIDDEN");
   }
-  if (isBlockedHostname(url.hostname)) {
+  const host = normalizeHostname(url.hostname);
+  if (isBlockedHostname(host)) {
     throw new Error("BLOCKED_HOST");
   }
 
-  // Best-effort DNS resolution (Node runtime).
+  // Detect Node runtime — Workers exposes globalThis.WebSocketPair but has no `dns`.
+  let dns: typeof import("dns/promises") | null = null;
   try {
-    const dns = await import("dns/promises");
-    const results = await dns.lookup(url.hostname, { all: true });
+    dns = await import("dns/promises");
+  } catch {
+    dns = null;
+  }
+
+  if (dns) {
+    // Fail-closed: if DNS resolution fails for any reason, refuse the request.
+    let results: { address: string; family: number }[];
+    try {
+      results = await dns.lookup(host, { all: true });
+    } catch (e) {
+      throw new Error(
+        "DNS_LOOKUP_FAILED:" + (e instanceof Error ? e.message : "unknown"),
+      );
+    }
+    if (results.length === 0) throw new Error("DNS_LOOKUP_EMPTY");
     for (const r of results) {
       if (isBlockedIp(r.address)) {
         throw new Error("BLOCKED_RESOLVED_IP");
       }
     }
-  } catch (e) {
-    if (e instanceof Error && e.message.startsWith("BLOCKED_")) throw e;
-    // dns module unavailable (Workers) — hostname-only check already applied above.
   }
 
   return url;
