@@ -1,10 +1,10 @@
-import * as React from 'react'
+import * as React from "react";
 
-import { Heading, Text } from '@react-email/components'
-import { GiftPlanHtml, codeBox, codeText, text, footer, h1 } from './brand'
+import { Heading, Text } from "@react-email/components";
+import { GiftPlanHtml, codeBox, codeText, text, footer, h1 } from "./brand";
 
 interface ReauthenticationEmailProps {
-  token: string
+  token: string;
 }
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
@@ -14,10 +14,11 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
     <Text style={codeBox}>
       <span style={codeText}>{token}</span>
     </Text>
-    <Text style={{ ...footer, marginTop: '32px' }}>
-      Ce code expirera sous peu. Si vous n'avez pas demandé ce code, vous pouvez ignorer cet email en toute sécurité.
+    <Text style={{ ...footer, marginTop: "32px" }}>
+      Ce code expirera sous peu. Si vous n'avez pas demandé ce code, vous pouvez ignorer cet email
+      en toute sécurité.
     </Text>
   </GiftPlanHtml>
-)
+);
 
-export default ReauthenticationEmail
+export default ReauthenticationEmail;

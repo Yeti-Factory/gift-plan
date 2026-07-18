@@ -19,7 +19,14 @@ function serializeError(err: unknown): LogFields {
   return { message: String(err) };
 }
 
-function emit(level: LogLevel, scope: string, msg: string, base: LogFields, extra?: LogFields, err?: unknown) {
+function emit(
+  level: LogLevel,
+  scope: string,
+  msg: string,
+  base: LogFields,
+  extra?: LogFields,
+  err?: unknown,
+) {
   const line: LogFields = {
     ts: new Date().toISOString(),
     level,

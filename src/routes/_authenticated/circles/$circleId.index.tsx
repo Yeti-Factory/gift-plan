@@ -1,6 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, RefreshCw, ChevronRight, Gift, MoreVertical, LogOut, Shield, ShieldOff, UserMinus, Crown, History } from "lucide-react";
+import {
+  Copy,
+  RefreshCw,
+  ChevronRight,
+  Gift,
+  MoreVertical,
+  LogOut,
+  Shield,
+  ShieldOff,
+  UserMinus,
+  Crown,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -204,7 +216,9 @@ function CircleDetail() {
       toast.error(translateError(error.message));
       return;
     }
-    toast.success(role === "admin" ? "Membre promu administrateur" : "Rôle d'administrateur retiré");
+    toast.success(
+      role === "admin" ? "Membre promu administrateur" : "Rôle d'administrateur retiré",
+    );
     load();
   }
 
@@ -224,8 +238,7 @@ function CircleDetail() {
 
   const isCreator = !!(circle && me && circle.created_by === me);
   const otherMembers = members.filter((m) => m.user_id !== me);
-  const successor =
-    otherMembers.find((m) => m.role === "admin") ?? otherMembers[0] ?? null;
+  const successor = otherMembers.find((m) => m.role === "admin") ?? otherMembers[0] ?? null;
   const isLastMember = otherMembers.length === 0;
 
   async function confirmLeave() {
@@ -237,9 +250,11 @@ function CircleDetail() {
       toast.error(translateError(error.message));
       return;
     }
-    const result = data as
-      | { circle_deleted?: boolean; new_owner_id?: string; new_owner_name?: string }
-      | null;
+    const result = data as {
+      circle_deleted?: boolean;
+      new_owner_id?: string;
+      new_owner_name?: string;
+    } | null;
     const circleName = circle?.name ?? "le cercle";
     navigate({ to: "/circles" });
     if (result?.circle_deleted) {
@@ -265,22 +280,23 @@ function CircleDetail() {
     <div className="mx-auto max-w-md px-4 py-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">{circle.name}</h1>
-        <p className="text-sm text-muted-foreground">{members.length} membre{members.length > 1 ? "s" : ""}</p>
+        <p className="text-sm text-muted-foreground">
+          {members.length} membre{members.length > 1 ? "s" : ""}
+        </p>
       </div>
 
       {isAdmin ? (
         <Card className="p-4 bg-secondary">
           <p className="text-xs text-muted-foreground">Code d'invitation</p>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-2xl font-bold tracking-widest">
-              {inviteCode ?? "……"}
-            </span>
+            <span className="text-2xl font-bold tracking-widest">{inviteCode ?? "……"}</span>
             <div className="flex items-center gap-1">
               <Button size="sm" variant="ghost" onClick={copyCode} disabled={!inviteCode}>
                 <Copy className="h-4 w-4 mr-1" /> Copier
               </Button>
               <Button size="sm" variant="ghost" onClick={regenerateCode} disabled={regenBusy}>
-                <RefreshCw className={`h-4 w-4 mr-1 ${regenBusy ? "animate-spin" : ""}`} /> Régénérer
+                <RefreshCw className={`h-4 w-4 mr-1 ${regenBusy ? "animate-spin" : ""}`} />{" "}
+                Régénérer
               </Button>
             </div>
           </div>
@@ -416,9 +432,7 @@ function CircleDetail() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isCreator && isLastMember
-                ? "Supprimer le cercle ?"
-                : "Quitter le cercle ?"}
+              {isCreator && isLastMember ? "Supprimer le cercle ?" : "Quitter le cercle ?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isCreator && isLastMember

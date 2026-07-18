@@ -37,15 +37,21 @@ export function initials(name: string | null | undefined) {
 // It sniffs magic bytes, caps size, stores image_path (private), and display URLs
 // are minted on demand via getGiftImageSignedUrls (5 min TTL).
 
-export async function ensureProfile(user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> }) {
+export async function ensureProfile(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}) {
   const meta = user.user_metadata || {};
   const displayName =
     (meta.full_name as string) ||
     (meta.name as string) ||
     (user.email ? user.email.split("@")[0] : "Ami");
   const avatarUrl = (meta.avatar_url as string) || null;
-  await supabase.from("profiles").upsert(
-    { id: user.id, display_name: displayName, avatar_url: avatarUrl },
-    { onConflict: "id", ignoreDuplicates: false },
-  );
+  await supabase
+    .from("profiles")
+    .upsert(
+      { id: user.id, display_name: displayName, avatar_url: avatarUrl },
+      { onConflict: "id", ignoreDuplicates: false },
+    );
 }

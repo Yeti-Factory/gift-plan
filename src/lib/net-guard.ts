@@ -8,12 +8,7 @@ import { isIP } from "net";
  * - Cloudflare Workers preview: `dns` may be missing → fall back to hostname-only checks.
  */
 
-const BLOCKED_HOSTNAMES = new Set([
-  "localhost",
-  "ip6-localhost",
-  "ip6-loopback",
-  "broadcasthost",
-]);
+const BLOCKED_HOSTNAMES = new Set(["localhost", "ip6-localhost", "ip6-loopback", "broadcasthost"]);
 
 const BLOCKED_HOSTNAME_SUFFIXES = [".localhost", ".local", ".internal", ".lan"];
 

@@ -88,6 +88,7 @@ Nouvelle migration :
 ### Fichiers Phase 1
 
 **Nouveaux :**
+
 - `supabase/migrations/<ts>_phase1_security.sql` (une seule migration atomique)
 - `src/lib/gift-scrape.functions.test.ts`
 - `src/lib/net-guard.ts` (helpers DNS/IP privé)
@@ -96,6 +97,7 @@ Nouvelle migration :
 - `vitest.config.ts` si absent
 
 **Modifiés :**
+
 - `src/lib/gift-scrape.functions.ts` (réécriture)
 - `src/routes/lovable/email/auth/webhook.ts` (auth + no-log)
 - `src/routes/_authenticated/circles/index.tsx` (join via RPC seulement — déjà OK, vérifié)

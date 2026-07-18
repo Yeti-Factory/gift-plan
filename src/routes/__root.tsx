@@ -82,19 +82,39 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Gift-Plan — Listes de cadeaux partagées" },
-      { name: "description", content: "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise." },
+      {
+        name: "description",
+        content:
+          "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise.",
+      },
       { name: "theme-color", content: "#ef5a6f" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Gift-Plan" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { property: "og:title", content: "Gift-Plan — Listes de cadeaux partagées" },
-      { property: "og:description", content: "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise." },
+      {
+        property: "og:description",
+        content:
+          "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Gift-Plan — Listes de cadeaux partagées" },
-      { name: "twitter:description", content: "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Créez et partagez vos listes de cadeaux avec vos proches. Réservez sans gâcher la surprise.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png",
+      },
     ],
     links: [
       {
@@ -163,11 +183,14 @@ function RootComponent() {
       host === "beta.lovable.dev" ||
       host.endsWith(".beta.lovable.dev");
     if (isLovablePreview || new URL(window.location.href).searchParams.get("sw") === "off") {
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        regs.forEach((r) => {
-          if (r.active?.scriptURL.endsWith("/sw.js")) r.unregister();
-        });
-      }).catch(() => undefined);
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => {
+          regs.forEach((r) => {
+            if (r.active?.scriptURL.endsWith("/sw.js")) r.unregister();
+          });
+        })
+        .catch(() => undefined);
       return;
     }
     const onLoad = () => {

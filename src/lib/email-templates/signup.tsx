@@ -1,13 +1,13 @@
-import * as React from 'react'
+import * as React from "react";
 
-import { Button, Heading, Link, Text } from '@react-email/components'
-import { GiftPlanHtml, BRAND, text, button, link, footer, h1 } from './brand'
+import { Button, Heading, Link, Text } from "@react-email/components";
+import { GiftPlanHtml, BRAND, text, button, link, footer, h1 } from "./brand";
 
 interface SignupEmailProps {
-  siteName: string
-  siteUrl: string
-  recipient: string
-  confirmationUrl: string
+  siteName: string;
+  siteUrl: string;
+  recipient: string;
+  confirmationUrl: string;
 }
 
 export const SignupEmail = ({
@@ -19,10 +19,10 @@ export const SignupEmail = ({
   <GiftPlanHtml preview={`Confirmez votre adresse email pour ${siteName}`}>
     <Heading style={h1}>Confirmez votre email</Heading>
     <Text style={text}>
-      Merci de votre inscription sur{' '}
+      Merci de votre inscription sur{" "}
       <Link href={siteUrl} style={link}>
         <strong>{siteName}</strong>
-      </Link>{' '}
+      </Link>{" "}
       !
     </Text>
     <Text style={text}>
@@ -35,10 +35,10 @@ export const SignupEmail = ({
     <Button style={button} href={confirmationUrl}>
       Vérifier mon email
     </Button>
-    <Text style={{ ...footer, marginTop: '32px' }}>
+    <Text style={{ ...footer, marginTop: "32px" }}>
       Si vous n'avez pas créé de compte, vous pouvez ignorer cet email en toute sécurité.
     </Text>
   </GiftPlanHtml>
-)
+);
 
-export default SignupEmail
+export default SignupEmail;

@@ -19,7 +19,10 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Se connecter — Gift-Plan" },
-      { name: "description", content: "Connectez-vous à Gift-Plan pour partager vos listes de cadeaux." },
+      {
+        name: "description",
+        content: "Connectez-vous à Gift-Plan pour partager vos listes de cadeaux.",
+      },
     ],
   }),
   component: AuthPage,
@@ -67,7 +70,11 @@ function AuthPage() {
     if (m.includes("invalid login") || m.includes("invalid credentials")) {
       return "Email ou mot de passe incorrect.";
     }
-    if (m.includes("already registered") || m.includes("already exists") || m.includes("user already")) {
+    if (
+      m.includes("already registered") ||
+      m.includes("already exists") ||
+      m.includes("user already")
+    ) {
       return "Cet email est déjà utilisé.";
     }
     if (m.includes("password") && (m.includes("6") || m.includes("short") || m.includes("weak"))) {
@@ -173,7 +180,12 @@ function AuthPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Envoi..." : "Envoyer le lien"}
             </Button>
-            <Button type="button" variant="ghost" className="w-full" onClick={() => setForgotOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setForgotOpen(false)}
+            >
               Retour
             </Button>
           </form>
@@ -214,10 +226,16 @@ function AuthPage() {
                       <button
                         type="button"
                         onClick={() => setShowSigninPwd((v) => !v)}
-                        aria-label={showSigninPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                        aria-label={
+                          showSigninPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"
+                        }
                         className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
                       >
-                        {showSigninPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showSigninPwd ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -227,7 +245,10 @@ function AuthPage() {
                 </form>
                 <button
                   type="button"
-                  onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                  onClick={() => {
+                    setForgotEmail(email);
+                    setForgotOpen(true);
+                  }}
                   className="text-sm text-muted-foreground hover:text-primary underline w-full text-center"
                 >
                   Mot de passe oublié ?
@@ -276,10 +297,16 @@ function AuthPage() {
                       <button
                         type="button"
                         onClick={() => setShowSignupPwd((v) => !v)}
-                        aria-label={showSignupPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                        aria-label={
+                          showSignupPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"
+                        }
                         className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
                       >
-                        {showSignupPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showSignupPwd ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                     <p className="text-xs text-muted-foreground">6 caractères minimum.</p>
@@ -307,9 +334,15 @@ function AuthPage() {
       </Card>
 
       <nav className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
-        <Link to="/legal/mentions-legales" className="hover:text-primary">Mentions légales</Link>
-        <Link to="/legal/confidentialite" className="hover:text-primary">Confidentialité</Link>
-        <Link to="/legal/cgu" className="hover:text-primary">CGU</Link>
+        <Link to="/legal/mentions-legales" className="hover:text-primary">
+          Mentions légales
+        </Link>
+        <Link to="/legal/confidentialite" className="hover:text-primary">
+          Confidentialité
+        </Link>
+        <Link to="/legal/cgu" className="hover:text-primary">
+          CGU
+        </Link>
       </nav>
     </div>
   );

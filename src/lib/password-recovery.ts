@@ -25,7 +25,9 @@ export function clearPasswordRecoveryMark() {
 
 export function isPasswordRecoveryInProgress() {
   if (typeof window === "undefined") return false;
-  return window.sessionStorage.getItem(PASSWORD_RECOVERY_FLAG) === "1" || hasPasswordRecoveryMarker();
+  return (
+    window.sessionStorage.getItem(PASSWORD_RECOVERY_FLAG) === "1" || hasPasswordRecoveryMarker()
+  );
 }
 
 export function redirectToResetPasswordIfNeeded() {
@@ -34,8 +36,11 @@ export function redirectToResetPasswordIfNeeded() {
 
   markPasswordRecovery();
   if (window.location.pathname !== "/reset-password") {
-    const targetOrigin = window.location.origin === PASSWORD_RESET_ORIGIN ? "" : PASSWORD_RESET_ORIGIN;
-    window.location.replace(`${targetOrigin}/reset-password${window.location.search}${window.location.hash}`);
+    const targetOrigin =
+      window.location.origin === PASSWORD_RESET_ORIGIN ? "" : PASSWORD_RESET_ORIGIN;
+    window.location.replace(
+      `${targetOrigin}/reset-password${window.location.search}${window.location.hash}`,
+    );
     return true;
   }
 

@@ -33,7 +33,8 @@ async function pingDatabase(): Promise<{ ok: boolean; latencyMs: number }> {
     global: {
       fetch: (input, init) => {
         const h = new Headers(init?.headers);
-        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
+        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`)
+          h.delete("Authorization");
         h.set("apikey", key);
         return fetch(input, { ...init, headers: h });
       },
@@ -46,7 +47,11 @@ async function pingDatabase(): Promise<{ ok: boolean; latencyMs: number }> {
     // request round-trips without a network/transport error.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3000);
-    const { error } = await supabase.from("profiles").select("id", { head: true, count: "exact" }).limit(1).abortSignal(controller.signal);
+    const { error } = await supabase
+      .from("profiles")
+      .select("id", { head: true, count: "exact" })
+      .limit(1)
+      .abortSignal(controller.signal);
     clearTimeout(timer);
     const latency = Date.now() - started;
     // A PostgREST "empty" response or a RLS-blocked response both mean the

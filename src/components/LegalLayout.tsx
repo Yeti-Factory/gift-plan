@@ -32,9 +32,15 @@ export function LegalLayout({
           </article>
 
           <nav className="mt-10 flex flex-wrap gap-4 text-xs text-muted-foreground border-t pt-4">
-            <Link to="/legal/mentions-legales" className="hover:text-primary">Mentions légales</Link>
-            <Link to="/legal/confidentialite" className="hover:text-primary">Confidentialité</Link>
-            <Link to="/legal/cgu" className="hover:text-primary">CGU</Link>
+            <Link to="/legal/mentions-legales" className="hover:text-primary">
+              Mentions légales
+            </Link>
+            <Link to="/legal/confidentialite" className="hover:text-primary">
+              Confidentialité
+            </Link>
+            <Link to="/legal/cgu" className="hover:text-primary">
+              CGU
+            </Link>
           </nav>
         </div>
       </main>

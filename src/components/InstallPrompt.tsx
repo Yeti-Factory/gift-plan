@@ -42,8 +42,7 @@ function detectDesktopBrowser(): "chrome" | "edge" | "firefox" | "safari" | "oth
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   const mm = window.matchMedia?.("(display-mode: standalone)").matches;
-  const iosStandalone = (window.navigator as unknown as { standalone?: boolean })
-    .standalone;
+  const iosStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone;
   return Boolean(mm || iosStandalone);
 }
 
@@ -65,7 +64,9 @@ export function InstallPrompt() {
   const [ios, setIos] = useState(false);
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
   const [showIosSheet, setShowIosSheet] = useState(false);
-  const [desktopFallback, setDesktopFallback] = useState<null | "chrome" | "edge" | "firefox" | "safari" | "other">(null);
+  const [desktopFallback, setDesktopFallback] = useState<
+    null | "chrome" | "edge" | "firefox" | "safari" | "other"
+  >(null);
   const [showDesktopSheet, setShowDesktopSheet] = useState(false);
 
   useEffect(() => {
@@ -149,9 +150,7 @@ export function InstallPrompt() {
             <Download className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold leading-tight">
-              Installer Gift-Plan
-            </p>
+            <p className="text-sm font-semibold leading-tight">Installer Gift-Plan</p>
             <p className="text-xs text-muted-foreground">
               {ios
                 ? "Ajoutez l'appli à votre écran d'accueil."
@@ -173,12 +172,7 @@ export function InstallPrompt() {
               Installer
             </Button>
           )}
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="Fermer"
-            onClick={dismiss}
-          >
+          <Button size="icon" variant="ghost" aria-label="Fermer" onClick={dismiss}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -198,8 +192,8 @@ export function InstallPrompt() {
                 1
               </span>
               <span className="flex items-center gap-2">
-                Touchez <Share className="inline h-4 w-4" />{" "}
-                <strong>Partager</strong> dans la barre d'outils.
+                Touchez <Share className="inline h-4 w-4" /> <strong>Partager</strong> dans la barre
+                d'outils.
               </span>
             </li>
             <li className="flex items-start gap-3">
@@ -238,7 +232,9 @@ export function InstallPrompt() {
                   : "Suivez ces étapes dans votre navigateur :"}
             </SheetDescription>
           </SheetHeader>
-          {(desktopFallback === "chrome" || desktopFallback === "edge" || desktopFallback === "other") && (
+          {(desktopFallback === "chrome" ||
+            desktopFallback === "edge" ||
+            desktopFallback === "other") && (
             <ol className="mt-4 space-y-3 text-sm">
               <li className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
@@ -254,9 +250,8 @@ export function InstallPrompt() {
                   2
                 </span>
                 <span>
-                  Ou ouvrez le menu <strong>⋮</strong> puis{" "}
-                  <strong>Installer Gift-Plan…</strong> (Chrome) /{" "}
-                  <strong>Applications → Installer ce site</strong> (Edge).
+                  Ou ouvrez le menu <strong>⋮</strong> puis <strong>Installer Gift-Plan…</strong>{" "}
+                  (Chrome) / <strong>Applications → Installer ce site</strong> (Edge).
                 </span>
               </li>
               <li className="flex items-start gap-3">
@@ -264,13 +259,15 @@ export function InstallPrompt() {
                   3
                 </span>
                 <span>
-                  Confirmez avec <strong>Installer</strong>. L'appli s'ouvrira dans sa propre fenêtre.
+                  Confirmez avec <strong>Installer</strong>. L'appli s'ouvrira dans sa propre
+                  fenêtre.
                 </span>
               </li>
             </ol>
           )}
           <p className="mt-4 text-xs text-muted-foreground">
-            Si vous ne voyez pas l'option, rechargez la page ou vérifiez que vous êtes bien en HTTPS.
+            Si vous ne voyez pas l'option, rechargez la page ou vérifiez que vous êtes bien en
+            HTTPS.
           </p>
         </SheetContent>
       </Sheet>
