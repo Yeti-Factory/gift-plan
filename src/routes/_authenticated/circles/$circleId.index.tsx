@@ -1,12 +1,29 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, RefreshCw, ChevronRight, Gift } from "lucide-react";
+import { Copy, RefreshCw, ChevronRight, Gift, MoreVertical, LogOut, Shield, ShieldOff, UserMinus, Crown } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { initials } from "@/lib/gift-box";
 
 export const Route = createFileRoute("/_authenticated/circles/$circleId/")({
@@ -20,14 +37,25 @@ type Member = {
   listCount: number;
 };
 
+function translateError(msg: string): string {
+  if (msg.includes("NOT_ADMIN")) return "Seul un administrateur peut faire cela";
+  if (msg.includes("FORBIDDEN_CREATOR")) return "Le créateur du cercle ne peut pas être modifié";
+  if (msg.includes("NOT_MEMBER")) return "Tu ne fais pas partie de ce cercle";
+  if (msg.includes("NOT_AUTHENTICATED")) return "Session expirée, reconnecte-toi";
+  return msg || "Erreur";
+}
+
 function CircleDetail() {
   const { circleId } = Route.useParams();
-  const [circle, setCircle] = useState<{ name: string } | null>(null);
+  const navigate = useNavigate();
+  const [circle, setCircle] = useState<{ name: string; created_by: string } | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [me, setMe] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [regenBusy, setRegenBusy] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [leaveBusy, setLeaveBusy] = useState(false);
 
   async function load() {
     const { data: user } = await supabase.auth.getUser();
@@ -35,15 +63,16 @@ function CircleDetail() {
 
     const { data: c } = await supabase
       .from("circles")
-      .select("name")
+      .select("name, created_by")
       .eq("id", circleId)
       .maybeSingle();
     setCircle(c);
 
     const { data: mems } = await supabase
       .from("circle_members")
-      .select("user_id, role")
-      .eq("circle_id", circleId);
+      .select("user_id, role, joined_at")
+      .eq("circle_id", circleId)
+      .order("joined_at", { ascending: true });
 
     const meId = user.user?.id;
     const admin = !!(mems ?? []).find((m) => m.user_id === meId && m.role === "admin");
@@ -104,13 +133,65 @@ function CircleDetail() {
     const { data, error } = await supabase.rpc("regenerate_invite_code", { _circle_id: circleId });
     setRegenBusy(false);
     if (error || !data) {
-      const msg = error?.message ?? "";
-      if (msg.includes("NOT_ADMIN")) toast.error("Seul un administrateur peut régénérer le code.");
-      else toast.error(msg || "Erreur");
+      toast.error(translateError(error?.message ?? ""));
       return;
     }
     setInviteCode(data);
     toast.success("Nouveau code généré !");
+  }
+
+  async function setMemberRole(userId: string, role: "admin" | "member") {
+    const { error } = await supabase.rpc("set_member_role", {
+      _circle_id: circleId,
+      _user_id: userId,
+      _role: role,
+    });
+    if (error) {
+      toast.error(translateError(error.message));
+      return;
+    }
+    toast.success(role === "admin" ? "Membre promu administrateur" : "Rôle d'administrateur retiré");
+    load();
+  }
+
+  async function removeMember(userId: string, name: string) {
+    if (!confirm(`Retirer ${name} du cercle ?`)) return;
+    const { error } = await supabase.rpc("remove_member", {
+      _circle_id: circleId,
+      _user_id: userId,
+    });
+    if (error) {
+      toast.error(translateError(error.message));
+      return;
+    }
+    toast.success("Membre retiré");
+    load();
+  }
+
+  const isCreator = !!(circle && me && circle.created_by === me);
+  const otherMembers = members.filter((m) => m.user_id !== me);
+  const successor =
+    otherMembers.find((m) => m.role === "admin") ?? otherMembers[0] ?? null;
+  const isLastMember = otherMembers.length === 0;
+
+  async function confirmLeave() {
+    setLeaveBusy(true);
+    const { data, error } = await supabase.rpc("leave_circle", { _circle_id: circleId });
+    setLeaveBusy(false);
+    setLeaveOpen(false);
+    if (error) {
+      toast.error(translateError(error.message));
+      return;
+    }
+    const result = data as { circle_deleted?: boolean; new_owner_name?: string } | null;
+    if (result?.circle_deleted) {
+      toast.success("Le cercle a été supprimé");
+    } else if (result?.new_owner_name) {
+      toast.success(`L'administration a été transférée à ${result.new_owner_name}`);
+    } else {
+      toast.success("Tu as quitté le cercle");
+    }
+    navigate({ to: "/circles" });
   }
 
   if (!circle) return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
@@ -154,6 +235,9 @@ function CircleDetail() {
         {members.map((m) => {
           const isMe = m.user_id === me;
           const name = m.profile?.display_name ?? "Membre";
+          const memberIsCreator = m.user_id === circle.created_by;
+          const memberIsAdmin = m.role === "admin";
+          const canManage = isAdmin && !isMe && !memberIsCreator;
           return (
             <Card key={m.user_id} className="p-3 flex flex-col gap-3">
               <div className="flex items-center gap-3">
@@ -162,13 +246,50 @@ function CircleDetail() {
                   <AvatarFallback>{initials(name)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {name} {isMe && <span className="text-xs text-muted-foreground">(vous)</span>}
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium truncate">
+                      {name} {isMe && <span className="text-xs text-muted-foreground">(vous)</span>}
+                    </p>
+                    {memberIsCreator ? (
+                      <Badge variant="default" className="gap-1">
+                        <Crown className="h-3 w-3" /> Créateur
+                      </Badge>
+                    ) : memberIsAdmin ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <Shield className="h-3 w-3" /> Admin
+                      </Badge>
+                    ) : null}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {m.listCount} liste{m.listCount > 1 ? "s" : ""}
                   </p>
                 </div>
+                {canManage && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" aria-label="Actions">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {memberIsAdmin ? (
+                        <DropdownMenuItem onClick={() => setMemberRole(m.user_id, "member")}>
+                          <ShieldOff className="h-4 w-4 mr-2" /> Retirer le rôle admin
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => setMemberRole(m.user_id, "admin")}>
+                          <Shield className="h-4 w-4 mr-2" /> Nommer administrateur
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => removeMember(m.user_id, name)}
+                      >
+                        <UserMinus className="h-4 w-4 mr-2" /> Retirer du cercle
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
               <div className="flex items-center justify-between gap-3 border-t pt-3">
                 <span className="text-xs text-muted-foreground">
@@ -190,6 +311,48 @@ function CircleDetail() {
           );
         })}
       </div>
+
+      <div className="pt-4">
+        <Button
+          variant="outline"
+          className="w-full text-destructive hover:text-destructive"
+          onClick={() => setLeaveOpen(true)}
+        >
+          <LogOut className="h-4 w-4 mr-2" /> Quitter le cercle
+        </Button>
+      </div>
+
+      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isCreator && isLastMember
+                ? "Supprimer le cercle ?"
+                : "Quitter le cercle ?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isCreator && isLastMember
+                ? "Tu es le dernier membre. Quitter ce cercle le supprimera définitivement, ainsi que toutes les listes et réservations associées. Cette action est irréversible."
+                : isCreator && successor
+                  ? `Tu es le créateur de ce cercle. En le quittant, l'administration sera transférée à ${successor.profile?.display_name ?? "un autre membre"}. Continuer ?`
+                  : "Es-tu sûr de vouloir quitter ce cercle ?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaveBusy}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={leaveBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmLeave();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isCreator && isLastMember ? "Supprimer" : "Quitter"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
