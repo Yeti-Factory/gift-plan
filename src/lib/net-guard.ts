@@ -161,9 +161,7 @@ export async function assertSafeUrl(rawUrl: string): Promise<URL> {
     try {
       results = await dns.lookup(host, { all: true });
     } catch (e) {
-      throw new Error(
-        "DNS_LOOKUP_FAILED:" + (e instanceof Error ? e.message : "unknown"),
-      );
+      throw new Error("DNS_LOOKUP_FAILED:" + (e instanceof Error ? e.message : "unknown"));
     }
     if (results.length === 0) throw new Error("DNS_LOOKUP_EMPTY");
     for (const r of results) {

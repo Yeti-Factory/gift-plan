@@ -136,79 +136,84 @@ function MyLists() {
         </Card>
       )}
 
-      {!loading && lists.map((list) => {
-        const items = gifts.filter((g) => g.list_id === list.id);
-        const circle = circles.find((c) => c.id === list.circle_id);
-        return (
-          <section key={list.id} className="space-y-3">
-            <div className="flex items-end justify-between gap-2">
-              <div className="min-w-0">
-                <h2 className="font-semibold text-lg leading-tight">{list.title}</h2>
-                <p className="text-xs text-muted-foreground">
-                  {circle?.name}
-                  {list.occasion ? ` · ${list.occasion}` : ""}
-                </p>
-              </div>
-              <div className="flex gap-1 shrink-0">
-                <GiftFormDialog mode="create" listId={list.id} userId={me} onSaved={load} />
-                <EditListDialog list={list} circles={circles} onSaved={load} />
-                <DeleteListButton listId={list.id} onDeleted={load} />
-              </div>
-            </div>
-
-            {items.length === 0 && (
-              <p className="text-sm text-muted-foreground px-1">Ajoutez votre premier cadeau.</p>
-            )}
-
-            {items.map((g) => (
-              <Card key={g.id} className="p-3 flex gap-3">
-                {(() => {
-                  const src = g.image_path ? signedUrls?.[g.id] : g.image_url;
-                  return src ? (
-                    <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover bg-muted" />
-                  ) : (
-                    <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center">
-                      <GiftIcon className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  );
-                })()}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium leading-tight">{g.title}</p>
-                    <Badge className={PRIORITY_COLOR[g.priority]}>
-                      {PRIORITY_LABEL[g.priority]}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    {g.price != null && (
-                      <span className="text-sm font-semibold">
-                        {formatPrice(g.price, g.currency)}
-                      </span>
-                    )}
-                    <div className="flex gap-1 ml-auto">
-                      <GiftFormDialog
-                        mode="edit"
-                        listId={g.list_id}
-                        userId={me}
-                        gift={g}
-                        onSaved={load}
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label="Supprimer le cadeau"
-                        onClick={() => setDeleteGift(g)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+      {!loading &&
+        lists.map((list) => {
+          const items = gifts.filter((g) => g.list_id === list.id);
+          const circle = circles.find((c) => c.id === list.circle_id);
+          return (
+            <section key={list.id} className="space-y-3">
+              <div className="flex items-end justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="font-semibold text-lg leading-tight">{list.title}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {circle?.name}
+                    {list.occasion ? ` · ${list.occasion}` : ""}
+                  </p>
                 </div>
-              </Card>
-            ))}
-          </section>
-        );
-      })}
+                <div className="flex gap-1 shrink-0">
+                  <GiftFormDialog mode="create" listId={list.id} userId={me} onSaved={load} />
+                  <EditListDialog list={list} circles={circles} onSaved={load} />
+                  <DeleteListButton listId={list.id} onDeleted={load} />
+                </div>
+              </div>
+
+              {items.length === 0 && (
+                <p className="text-sm text-muted-foreground px-1">Ajoutez votre premier cadeau.</p>
+              )}
+
+              {items.map((g) => (
+                <Card key={g.id} className="p-3 flex gap-3">
+                  {(() => {
+                    const src = g.image_path ? signedUrls?.[g.id] : g.image_url;
+                    return src ? (
+                      <img
+                        src={src}
+                        alt=""
+                        className="h-16 w-16 rounded-xl object-cover bg-muted"
+                      />
+                    ) : (
+                      <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center">
+                        <GiftIcon className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    );
+                  })()}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium leading-tight">{g.title}</p>
+                      <Badge className={PRIORITY_COLOR[g.priority]}>
+                        {PRIORITY_LABEL[g.priority]}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      {g.price != null && (
+                        <span className="text-sm font-semibold">
+                          {formatPrice(g.price, g.currency)}
+                        </span>
+                      )}
+                      <div className="flex gap-1 ml-auto">
+                        <GiftFormDialog
+                          mode="edit"
+                          listId={g.list_id}
+                          userId={me}
+                          gift={g}
+                          onSaved={load}
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Supprimer le cadeau"
+                          onClick={() => setDeleteGift(g)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </section>
+          );
+        })}
 
       <AlertDialog open={!!deleteGift} onOpenChange={(o) => !o && setDeleteGift(null)}>
         <AlertDialogContent>
@@ -432,9 +437,10 @@ function GiftFormDialog({
       image_url: imagePath ? null : imageUrl,
       image_path: imagePath,
     };
-    const { error } = isEdit && gift
-      ? await supabase.from("gifts").update(payload).eq("id", gift.id)
-      : await supabase.from("gifts").insert({ ...payload, list_id: listId, owner_id: userId });
+    const { error } =
+      isEdit && gift
+        ? await supabase.from("gifts").update(payload).eq("id", gift.id)
+        : await supabase.from("gifts").insert({ ...payload, list_id: listId, owner_id: userId });
     setBusy(false);
     if (error) toast.error(error.message);
     else {
@@ -454,7 +460,12 @@ function GiftFormDialog({
             <Pencil className="h-4 w-4" />
           </Button>
         ) : (
-          <Button size="icon" variant="outline" className="rounded-xl" aria-label="Ajouter un cadeau">
+          <Button
+            size="icon"
+            variant="outline"
+            className="rounded-xl"
+            aria-label="Ajouter un cadeau"
+          >
             <Plus className="h-4 w-4" />
           </Button>
         )}

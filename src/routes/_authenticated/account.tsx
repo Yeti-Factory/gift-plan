@@ -59,6 +59,7 @@ function AccountPage() {
   // Delete
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [deletePwd, setDeletePwd] = useState("");
   const deleteAccountFn = useServerFn(deleteMyAccount);
   const exportDataFn = useServerFn(exportMyData);
   const [exporting, setExporting] = useState(false);
@@ -176,7 +177,7 @@ function AccountPage() {
   async function handleDelete() {
     setDeleting(true);
     try {
-      await deleteAccountFn();
+      await deleteAccountFn({ data: { password: deletePwd || undefined } });
       await supabase.auth.signOut();
       router.invalidate();
       toast.success("Compte supprimé.");
@@ -187,6 +188,12 @@ function AccountPage() {
     } finally {
       setDeleting(false);
     }
+  }
+
+  async function reauthViaSignout() {
+    await supabase.auth.signOut();
+    router.invalidate();
+    navigate({ to: "/auth", replace: true });
   }
 
   return (
@@ -349,18 +356,42 @@ function AccountPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Supprimer définitivement votre compte ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Cette action est irréversible. Pour confirmer, tapez <strong>SUPPRIMER</strong>{" "}
-                ci-dessous.
+                Cette action est irréversible. Pour confirmer, saisissez votre mot de passe (ou
+                reconnectez-vous si vous utilisez Google) et tapez <strong>SUPPRIMER</strong>. La
+                réauthentification est valable 5 minutes.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <Input
-              value={deleteConfirm}
-              onChange={(e) => setDeleteConfirm(e.target.value)}
-              placeholder="SUPPRIMER"
-              autoComplete="off"
-            />
+            <div className="space-y-2">
+              <Input
+                type="password"
+                value={deletePwd}
+                onChange={(e) => setDeletePwd(e.target.value)}
+                placeholder="Mot de passe actuel (facultatif si Google)"
+                autoComplete="current-password"
+              />
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="SUPPRIMER"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                onClick={reauthViaSignout}
+                className="text-xs text-muted-foreground underline"
+              >
+                Se reconnecter pour rafraîchir la session
+              </button>
+            </div>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDeleteConfirm("")}>Annuler</AlertDialogCancel>
+              <AlertDialogCancel
+                onClick={() => {
+                  setDeleteConfirm("");
+                  setDeletePwd("");
+                }}
+              >
+                Annuler
+              </AlertDialogCancel>
               <AlertDialogAction
                 disabled={deleteConfirm !== "SUPPRIMER" || deleting}
                 onClick={handleDelete}
