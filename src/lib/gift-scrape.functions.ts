@@ -1,8 +1,31 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertSafeUrl } from "./net-guard";
 
 const schema = z.object({ url: z.string().url() });
+
+const MAX_BYTES = 1_000_000; // 1 MB
+const TIMEOUT_MS = 5_000;
+const MAX_REDIRECTS = 3;
+
+// In-memory per-worker rate limit: 10 requests / 5 min per user.
+// Best-effort (per instance). Combined with authenticated middleware.
+const RATE_WINDOW_MS = 5 * 60 * 1000;
+const RATE_MAX = 10;
+const rateHits = new Map<string, number[]>();
+
+function rateLimited(userId: string): boolean {
+  const now = Date.now();
+  const hits = (rateHits.get(userId) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (hits.length >= RATE_MAX) {
+    rateHits.set(userId, hits);
+    return true;
+  }
+  hits.push(now);
+  rateHits.set(userId, hits);
+  return false;
+}
 
 function pickMeta(html: string, patterns: RegExp[]): string | null {
   for (const re of patterns) {
@@ -22,21 +45,85 @@ function decodeEntities(s: string): string {
     .replace(/&nbsp;/g, " ");
 }
 
+async function fetchWithGuards(rawUrl: string, requestId: string): Promise<string | null> {
+  let currentUrl = rawUrl;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const safe = await assertSafeUrl(currentUrl);
+      const res = await fetch(safe.toString(), {
+        method: "GET",
+        redirect: "manual",
+        signal: controller.signal,
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (compatible; GiftPlanBot/1.0; +https://gift-plan.yeti-lab.fr)",
+          Accept: "text/html,application/xhtml+xml",
+        },
+      });
+
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get("location");
+        if (!loc) return null;
+        currentUrl = new URL(loc, safe).toString();
+        continue;
+      }
+
+      if (!res.ok) return null;
+
+      const ct = (res.headers.get("content-type") ?? "").toLowerCase();
+      if (!ct.startsWith("text/html") && !ct.startsWith("application/xhtml+xml")) {
+        return null;
+      }
+
+      if (!res.body) return null;
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let total = 0;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (!value) continue;
+        total += value.byteLength;
+        if (total > MAX_BYTES) {
+          await reader.cancel();
+          return null;
+        }
+        chunks.push(value);
+      }
+      const buf = new Uint8Array(total);
+      let off = 0;
+      for (const c of chunks) {
+        buf.set(c, off);
+        off += c.byteLength;
+      }
+      return new TextDecoder("utf-8", { fatal: false }).decode(buf);
+    }
+    console.warn(`[scrape:${requestId}] too many redirects`);
+    return null;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[scrape:${requestId}] fetch aborted: ${msg}`);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const scrapeGiftUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => schema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const requestId = crypto.randomUUID().slice(0, 8);
+    if (rateLimited(context.userId)) {
+      console.warn(`[scrape:${requestId}] rate limited user=${context.userId}`);
+      return { ok: false as const };
+    }
+    const html = await fetchWithGuards(data.url, requestId);
+    if (!html) return { ok: false as const };
     try {
-      const res = await fetch(data.url, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (compatible; GiftPlanBot/1.0; +https://gift-plan.lovable.app)",
-          Accept: "text/html,application/xhtml+xml",
-        },
-        redirect: "follow",
-      });
-      if (!res.ok) return { ok: false as const };
-      const html = (await res.text()).slice(0, 500_000);
+      const trimmed = html.slice(0, 500_000);
 
       const metaContent = (prop: string) =>
         new RegExp(
@@ -50,7 +137,7 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
         );
 
       const title =
-        pickMeta(html, [
+        pickMeta(trimmed, [
           metaContent("og:title"),
           metaContentRev("og:title"),
           metaContent("twitter:title"),
@@ -58,7 +145,7 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
         ]) ?? null;
 
       const imageUrl =
-        pickMeta(html, [
+        pickMeta(trimmed, [
           metaContent("og:image:secure_url"),
           metaContent("og:image"),
           metaContentRev("og:image"),
@@ -66,14 +153,14 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
         ]) ?? null;
 
       const priceRaw =
-        pickMeta(html, [
+        pickMeta(trimmed, [
           metaContent("product:price:amount"),
           metaContent("og:price:amount"),
           metaContent("product:sale_price:amount"),
         ]) ?? null;
 
       const currency =
-        pickMeta(html, [
+        pickMeta(trimmed, [
           metaContent("product:price:currency"),
           metaContent("og:price:currency"),
         ]) ?? null;
@@ -87,7 +174,8 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
         price: Number.isFinite(price) ? price : null,
         currency: currency ?? null,
       };
-    } catch {
+    } catch (err) {
+      console.warn(`[scrape:${requestId}] parse failed: ${err instanceof Error ? err.message : "?"}`);
       return { ok: false as const };
     }
   });
