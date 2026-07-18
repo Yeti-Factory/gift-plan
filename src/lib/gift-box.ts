@@ -33,26 +33,9 @@ export function initials(name: string | null | undefined) {
     .join("");
 }
 
-/**
- * Upload a gift image to the private "gift-images" bucket and return a long-lived signed URL.
- * Path convention: `<user_id>/<uuid>.<ext>` — required by the storage RLS policy.
- */
-export async function uploadGiftImage(userId: string, file: File): Promise<string> {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("gift-images").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: file.type || "image/jpeg",
-  });
-  if (error) throw error;
-  // Signed URL valid ~10 years (enough for MVP; storage is private).
-  const { data, error: signErr } = await supabase.storage
-    .from("gift-images")
-    .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-  if (signErr || !data) throw signErr ?? new Error("signed url failed");
-  return data.signedUrl;
-}
+// uploadGiftImage was removed: use uploadGiftImageChecked from "@/lib/gift-image".
+// It sniffs magic bytes, caps size, stores image_path (private), and display URLs
+// are minted on demand via getGiftImageSignedUrls (5 min TTL).
 
 export async function ensureProfile(user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> }) {
   const meta = user.user_metadata || {};

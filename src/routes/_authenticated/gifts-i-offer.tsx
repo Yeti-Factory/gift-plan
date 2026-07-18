@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/gift-box";
+import { useGiftImageUrls } from "@/lib/gift-image";
 
 export const Route = createFileRoute("/_authenticated/gifts-i-offer")({
   component: GiftsIOffer,
@@ -19,6 +20,7 @@ type Row = {
   price: number | null;
   currency: string;
   image_url: string | null;
+  image_path: string | null;
   recipient: string;
 };
 
@@ -47,7 +49,7 @@ function GiftsIOffer() {
     const giftIds = res.map((r) => r.gift_id);
     const { data: gifts } = await supabase
       .from("gifts")
-      .select("id, title, price, currency, image_url, owner_id")
+      .select("id, title, price, currency, image_url, image_path, owner_id")
       .in("id", giftIds);
 
     const ownerIds = [...new Set((gifts ?? []).map((g) => g.owner_id))];
@@ -70,6 +72,7 @@ function GiftsIOffer() {
             price: g.price,
             currency: g.currency,
             image_url: g.image_url,
+            image_path: g.image_path,
             recipient: nameMap.get(g.owner_id) ?? "Membre",
           } as Row;
         })
@@ -91,6 +94,9 @@ function GiftsIOffer() {
   }
 
   const total = (rows ?? []).reduce((s, r) => s + (r.price ?? 0), 0);
+
+  const idsWithPath = (rows ?? []).filter((r) => r.image_path).map((r) => r.gift_id);
+  const { data: signedUrls } = useGiftImageUrls(idsWithPath);
 
   return (
     <div className="mx-auto max-w-md px-4 py-6 space-y-4">
@@ -118,13 +124,16 @@ function GiftsIOffer() {
 
           {rows.map((r) => (
             <Card key={r.reservation_id} className="p-3 flex gap-3 items-center">
-              {r.image_url ? (
-                <img src={r.image_url} alt="" className="h-14 w-14 rounded-xl object-cover" />
-              ) : (
-                <div className="h-14 w-14 rounded-xl bg-secondary flex items-center justify-center">
-                  <GiftIcon className="h-6 w-6 text-muted-foreground" />
-                </div>
-              )}
+              {(() => {
+                const src = r.image_path ? signedUrls?.[r.gift_id] : r.image_url;
+                return src ? (
+                  <img src={src} alt="" className="h-14 w-14 rounded-xl object-cover" />
+                ) : (
+                  <div className="h-14 w-14 rounded-xl bg-secondary flex items-center justify-center">
+                    <GiftIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                );
+              })()}
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{r.title}</p>
                 <p className="text-xs text-muted-foreground">Pour {r.recipient}</p>
