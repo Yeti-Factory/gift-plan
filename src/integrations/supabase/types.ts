@@ -55,6 +55,35 @@ export type Database = {
           },
         ]
       }
+      circle_bans: {
+        Row: {
+          banned_at: string
+          banned_by: string | null
+          circle_id: string
+          user_id: string
+        }
+        Insert: {
+          banned_at?: string
+          banned_by?: string | null
+          circle_id: string
+          user_id: string
+        }
+        Update: {
+          banned_at?: string
+          banned_by?: string | null
+          circle_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_bans_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circle_members: {
         Row: {
           circle_id: string
@@ -90,6 +119,9 @@ export type Database = {
           created_by: string
           id: string
           invite_code: string
+          invite_code_created_at: string
+          invite_code_expires_at: string
+          invite_code_revoked_at: string | null
           name: string
         }
         Insert: {
@@ -97,6 +129,9 @@ export type Database = {
           created_by: string
           id?: string
           invite_code: string
+          invite_code_created_at?: string
+          invite_code_expires_at?: string
+          invite_code_revoked_at?: string | null
           name: string
         }
         Update: {
@@ -104,6 +139,9 @@ export type Database = {
           created_by?: string
           id?: string
           invite_code?: string
+          invite_code_created_at?: string
+          invite_code_expires_at?: string
+          invite_code_revoked_at?: string | null
           name?: string
         }
         Relationships: []
@@ -157,6 +195,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      join_attempts: {
+        Row: {
+          attempted_at: string
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       lists: {
         Row: {
@@ -262,6 +315,9 @@ export type Database = {
           created_by: string
           id: string
           invite_code: string
+          invite_code_created_at: string
+          invite_code_expires_at: string
+          invite_code_revoked_at: string | null
           name: string
         }
         SetofOptions: {
@@ -290,6 +346,9 @@ export type Database = {
           created_by: string
           id: string
           invite_code: string
+          invite_code_created_at: string
+          invite_code_expires_at: string
+          invite_code_revoked_at: string | null
           name: string
         }
         SetofOptions: {
@@ -310,6 +369,7 @@ export type Database = {
         Args: { _circle_id: string; _role: string; _user_id: string }
         Returns: undefined
       }
+      shares_circle_with: { Args: { _other: string }; Returns: boolean }
     }
     Enums: {
       circle_role: "admin" | "member"
