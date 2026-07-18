@@ -463,6 +463,59 @@ function CircleDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={regenOpen} onOpenChange={setRegenOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Régénérer le code d'invitation ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'ancien code cessera immédiatement de fonctionner. Les membres qui ne l'ont pas
+              encore utilisé devront recevoir le nouveau.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={regenBusy}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={regenBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                regenerateCode();
+              }}
+            >
+              Régénérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => !o && setRemoveTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer {removeTarget?.name} du cercle ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette personne perdra l'accès au cercle et à ses listes. Elle ne pourra plus le
+              rejoindre avec le code actuel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                const target = removeTarget;
+                setRemoveTarget(null);
+                if (target) removeMember(target.userId);
+              }}
+            >
+              Retirer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
