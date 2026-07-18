@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LegalMentionsLegalesRouteImport } from './routes/legal/mentions-legales'
 import { Route as LegalConfidentialiteRouteImport } from './routes/legal/confidentialite'
+import { Route as LegalCguRouteImport } from './routes/legal/cgu'
 import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -52,6 +53,11 @@ const LegalMentionsLegalesRoute = LegalMentionsLegalesRouteImport.update({
 const LegalConfidentialiteRoute = LegalConfidentialiteRouteImport.update({
   id: '/legal/confidentialite',
   path: '/legal/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalCguRoute = LegalCguRouteImport.update({
+  id: '/legal/cgu',
+  path: '/legal/cgu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedMyListsRoute = AuthenticatedMyListsRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
+  '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
+  '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
+  '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/gifts-i-offer'
     | '/my-lists'
+    | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/circles/$circleId'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/gifts-i-offer'
     | '/my-lists'
+    | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/circles'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/gifts-i-offer'
     | '/_authenticated/my-lists'
+    | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/_authenticated/circles/$circleId'
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  LegalCguRoute: typeof LegalCguRoute
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/confidentialite'
       fullPath: '/legal/confidentialite'
       preLoaderRoute: typeof LegalConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/cgu': {
+      id: '/legal/cgu'
+      path: '/legal/cgu'
+      fullPath: '/legal/cgu'
+      preLoaderRoute: typeof LegalCguRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/my-lists': {
@@ -369,6 +389,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  LegalCguRoute: LegalCguRoute,
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
