@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/circles/")({
   component: CirclesPage,
 });
 
-type Circle = { id: string; name: string; invite_code: string; created_at: string };
+type Circle = { id: string; name: string; created_at: string };
 
 function CirclesPage() {
   const [circles, setCircles] = useState<Circle[] | null>(null);
@@ -27,7 +27,7 @@ function CirclesPage() {
   async function load() {
     const { data, error } = await supabase
       .from("circles")
-      .select("id, name, invite_code, created_at")
+      .select("id, name, created_at")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     else setCircles(data ?? []);
@@ -155,9 +155,6 @@ function CirclesPage() {
             <Card className="p-4 flex items-center justify-between hover:bg-accent transition-colors">
               <div>
                 <p className="font-semibold">{c.name}</p>
-                <p className="text-xs text-muted-foreground tracking-widest">
-                  Code : {c.invite_code}
-                </p>
               </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground" />
             </Card>
