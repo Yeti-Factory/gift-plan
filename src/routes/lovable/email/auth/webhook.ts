@@ -315,20 +315,5 @@ async function handleAuthWebhook(request: Request, requestId: string, ip: string
     return new Response('Unauthorized', { status: 401 })
   }
 
-  if (getResendApiKey()) {
-    return sendAuthEmailWithResend(payload)
-  }
-
-  const handler = createConfiguredHandler()
-  if (handler) {
-    // Rebuild a request with the already-consumed body for the SDK handler.
-    const forwarded = new Request(request.url, {
-      method: 'POST',
-      headers: request.headers,
-      body: JSON.stringify(payload),
-    })
-    return handler(forwarded)
-  }
-
   return sendAuthEmailWithResend(payload)
 }
