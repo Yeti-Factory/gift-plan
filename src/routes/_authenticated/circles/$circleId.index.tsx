@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, RefreshCw, ChevronRight, Gift, MoreVertical, LogOut, Shield, ShieldOff, UserMinus, Crown } from "lucide-react";
+import { Copy, RefreshCw, ChevronRight, Gift, MoreVertical, LogOut, Shield, ShieldOff, UserMinus, Crown, History } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,48 @@ type Member = {
   listCount: number;
 };
 
+type ActivityRow = {
+  id: string;
+  action: string;
+  actor_name: string | null;
+  target_name: string | null;
+  created_at: string;
+};
+
+function describeActivity(row: ActivityRow): string {
+  const actor = row.actor_name?.trim() || "Quelqu'un";
+  const target = row.target_name?.trim() || "un membre";
+  switch (row.action) {
+    case "role_promoted":
+      return `${actor} a nommé ${target} administrateur`;
+    case "role_demoted":
+      return `${actor} a retiré le rôle d'administrateur à ${target}`;
+    case "member_removed":
+      return `${actor} a retiré ${target} du cercle`;
+    case "member_left":
+      return `${actor} a quitté le cercle`;
+    case "ownership_transferred":
+      return `${actor} a transféré l'administration à ${target}`;
+    case "circle_deleted_on_leave":
+      return `${actor} a supprimé le cercle en le quittant`;
+    default:
+      return `${actor} a effectué une action`;
+  }
+}
+
+function formatActivityDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 function translateError(msg: string): string {
   if (msg.includes("NOT_ADMIN")) return "Seul un administrateur peut faire cela";
   if (msg.includes("FORBIDDEN_CREATOR")) return "Le créateur du cercle ne peut pas être modifié";
@@ -56,6 +98,7 @@ function CircleDetail() {
   const [regenBusy, setRegenBusy] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [leaveBusy, setLeaveBusy] = useState(false);
+  const [activity, setActivity] = useState<ActivityRow[]>([]);
 
   async function load() {
     const { data: user } = await supabase.auth.getUser();
@@ -115,6 +158,14 @@ function CircleDetail() {
         listCount: listCounts.get(m.user_id) ?? 0,
       })),
     );
+
+    const { data: acts } = await supabase
+      .from("circle_activity")
+      .select("id, action, actor_name, target_name, created_at")
+      .eq("circle_id", circleId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    setActivity((acts ?? []) as ActivityRow[]);
   }
 
   useEffect(() => {
@@ -331,6 +382,31 @@ function CircleDetail() {
         >
           <LogOut className="h-4 w-4 mr-2" /> Quitter le cercle
         </Button>
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-1 flex items-center gap-2">
+          <History className="h-4 w-4" /> Journal d'activité
+        </h2>
+        {activity.length === 0 ? (
+          <Card className="p-4">
+            <p className="text-sm text-muted-foreground">
+              Aucune activité pour le moment. Les promotions d'administrateur, les retraits et les
+              départs de membres apparaîtront ici.
+            </p>
+          </Card>
+        ) : (
+          <Card className="divide-y">
+            {activity.map((row) => (
+              <div key={row.id} className="p-3">
+                <p className="text-sm">{describeActivity(row)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {formatActivityDate(row.created_at)}
+                </p>
+              </div>
+            ))}
+          </Card>
+        )}
       </div>
 
       <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
