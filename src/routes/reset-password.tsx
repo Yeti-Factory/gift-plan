@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { clearPasswordRecoveryMark, markPasswordRecovery } from "@/lib/password-recovery";
+import { BackButton } from "@/components/BackButton";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -118,6 +119,9 @@ function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-background px-6 py-10 flex flex-col items-center justify-center">
+      <div className="w-full max-w-sm mb-2 -mt-4">
+        <BackButton fallback="/auth" />
+      </div>
       <div className="flex flex-col items-center gap-3 mb-8">
         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg">
           <Gift className="h-8 w-8" />
