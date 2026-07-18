@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      circle_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          circle_id: string
+          created_at: string
+          id: string
+          target_id: string | null
+          target_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          circle_id: string
+          created_at?: string
+          id?: string
+          target_id?: string | null
+          target_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          circle_id?: string
+          created_at?: string
+          id?: string
+          target_id?: string | null
+          target_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_activity_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circle_members: {
         Row: {
           circle_id: string
@@ -213,6 +254,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _display_name: { Args: { _user_id: string }; Returns: string }
       create_circle: {
         Args: { _name: string }
         Returns: {
