@@ -330,8 +330,9 @@ function NewGiftDialog({
       setImagePath(path);
       setImagePreview(URL.createObjectURL(file));
       setImageUrl(null); // uploaded image wins over any scraped URL
-    } catch (err: any) {
-      toast.error(err?.message ?? "Upload échoué");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload échoué";
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
