@@ -22,7 +22,8 @@ type Member = {
 
 function CircleDetail() {
   const { circleId } = Route.useParams();
-  const [circle, setCircle] = useState<{ name: string; invite_code: string } | null>(null);
+  const [circle, setCircle] = useState<{ name: string } | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [me, setMe] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -34,7 +35,7 @@ function CircleDetail() {
 
     const { data: c } = await supabase
       .from("circles")
-      .select("name, invite_code")
+      .select("name")
       .eq("id", circleId)
       .maybeSingle();
     setCircle(c);
@@ -45,7 +46,15 @@ function CircleDetail() {
       .eq("circle_id", circleId);
 
     const meId = user.user?.id;
-    setIsAdmin(!!(mems ?? []).find((m) => m.user_id === meId && m.role === "admin"));
+    const admin = !!(mems ?? []).find((m) => m.user_id === meId && m.role === "admin");
+    setIsAdmin(admin);
+
+    if (admin) {
+      const { data: code } = await supabase.rpc("get_invite_code", { _circle_id: circleId });
+      setInviteCode(code ?? null);
+    } else {
+      setInviteCode(null);
+    }
 
     const userIds = (mems ?? []).map((m) => m.user_id);
     if (userIds.length === 0) {
@@ -84,8 +93,8 @@ function CircleDetail() {
   }, [circleId]);
 
   function copyCode() {
-    if (!circle) return;
-    navigator.clipboard.writeText(circle.invite_code);
+    if (!inviteCode) return;
+    navigator.clipboard.writeText(inviteCode);
     toast.success("Code copié !");
   }
 
@@ -100,7 +109,7 @@ function CircleDetail() {
       else toast.error(msg || "Erreur");
       return;
     }
-    setCircle((c) => (c ? { ...c, invite_code: data } : c));
+    setInviteCode(data);
     toast.success("Nouveau code généré !");
   }
 
@@ -113,22 +122,30 @@ function CircleDetail() {
         <p className="text-sm text-muted-foreground">{members.length} membre{members.length > 1 ? "s" : ""}</p>
       </div>
 
-      <Card className="p-4 bg-secondary">
-        <p className="text-xs text-muted-foreground">Code d'invitation</p>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-2xl font-bold tracking-widest">{circle.invite_code}</span>
-          <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" onClick={copyCode}>
-              <Copy className="h-4 w-4 mr-1" /> Copier
-            </Button>
-            {isAdmin && (
+      {isAdmin ? (
+        <Card className="p-4 bg-secondary">
+          <p className="text-xs text-muted-foreground">Code d'invitation</p>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-2xl font-bold tracking-widest">
+              {inviteCode ?? "……"}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="ghost" onClick={copyCode} disabled={!inviteCode}>
+                <Copy className="h-4 w-4 mr-1" /> Copier
+              </Button>
               <Button size="sm" variant="ghost" onClick={regenerateCode} disabled={regenBusy}>
                 <RefreshCw className={`h-4 w-4 mr-1 ${regenBusy ? "animate-spin" : ""}`} /> Régénérer
               </Button>
-            )}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      ) : (
+        <Card className="p-4 bg-secondary">
+          <p className="text-sm text-muted-foreground">
+            Seul l'administrateur du cercle peut inviter de nouveaux membres.
+          </p>
+        </Card>
+      )}
 
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-1">
