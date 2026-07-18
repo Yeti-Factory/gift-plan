@@ -280,6 +280,8 @@ function NewGiftDialog({
   const [price, setPrice] = useState("");
   const [priority, setPriority] = useState<Priority>("j_adorerais");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imagePath, setImagePath] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(false);
   const scrape = useServerFn(scrapeGiftUrl);
@@ -320,8 +322,10 @@ function NewGiftDialog({
     if (!file || !userId) return;
     setBusy(true);
     try {
-      const signed = await uploadGiftImage(userId, file);
-      setImageUrl(signed);
+      const { path } = await uploadGiftImageChecked(userId, file);
+      setImagePath(path);
+      setImagePreview(URL.createObjectURL(file));
+      setImageUrl(null); // uploaded image wins over any scraped URL
     } catch (err: any) {
       toast.error(err?.message ?? "Upload échoué");
     } finally {
@@ -342,7 +346,8 @@ function NewGiftDialog({
       price: priceNum,
       currency: "EUR",
       priority,
-      image_url: imageUrl,
+      image_url: imagePath ? null : imageUrl,
+      image_path: imagePath,
     });
     setBusy(false);
     if (error) toast.error(error.message);
@@ -353,6 +358,9 @@ function NewGiftDialog({
       setUrl("");
       setPrice("");
       setImageUrl(null);
+      setImagePath(null);
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
       setPriority("j_adorerais");
       setOpen(false);
       onCreated();
@@ -436,10 +444,19 @@ function NewGiftDialog({
           </div>
           <div>
             <Label>Photo (optionnel)</Label>
-            {imageUrl ? (
+            {(imagePreview || imageUrl) ? (
               <div className="mt-1 flex items-center gap-2">
-                <img src={imageUrl} alt="" className="h-16 w-16 object-cover rounded-xl" />
-                <Button variant="ghost" size="sm" onClick={() => setImageUrl(null)}>
+                <img src={imagePreview ?? imageUrl!} alt="" className="h-16 w-16 object-cover rounded-xl" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setImageUrl(null);
+                    setImagePath(null);
+                    if (imagePreview) URL.revokeObjectURL(imagePreview);
+                    setImagePreview(null);
+                  }}
+                >
                   Retirer
                 </Button>
               </div>
