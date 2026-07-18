@@ -20,6 +20,7 @@ import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -82,6 +83,11 @@ const AuthenticatedCirclesIndexRoute =
     path: '/circles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCirclesCircleIdRoute =
   AuthenticatedCirclesCircleIdRouteImport.update({
     id: '/circles/$circleId',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/circles/$circleId'
+    | '/api/public/health'
     | '/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
+    | '/api/public/health'
     | '/circles'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/_authenticated/circles/$circleId'
+    | '/api/public/health'
     | '/_authenticated/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   LegalCguRoute: typeof LegalCguRoute
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/circles/'
       preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/circles/$circleId': {
       id: '/_authenticated/circles/$circleId'
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalCguRoute: LegalCguRoute,
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
