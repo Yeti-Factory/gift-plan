@@ -1,6 +1,5 @@
 import * as React from 'react'
 import {
-  createAuthEmailHandler,
   type AuthEmailActionType,
   type AuthEmailDefinitions,
   type AuthEmailHookData,
@@ -251,24 +250,6 @@ async function sendAuthEmailWithResend(body: unknown) {
   }
 
   return Response.json({ success: true, sent: true })
-}
-
-function createConfiguredHandler() {
-  const apiKey = process.env.LOVABLE_API_KEY
-
-  if (!apiKey) {
-    return null
-  }
-
-  // The SDK handler owns verification, dispatch, and retry semantics; this file
-  // owns only the email decisions: subjects, templates, and per-type props.
-  return createAuthEmailHandler({
-    apiKey,
-    from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-    senderDomain: SENDER_DOMAIN,
-    sendUrl: process.env.LOVABLE_SEND_URL,
-    emails: authEmails,
-  })
 }
 
 export const Route = createFileRoute("/lovable/email/auth/webhook")({
