@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouter, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Gift, Home, Package, ListChecks, LogOut } from "lucide-react";
+import { Gift, Home, Package, ListChecks, LogOut, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +24,7 @@ function AuthLayout() {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const pathname = useLocation({ select: (l) => l.pathname });
-  const topLevel = new Set(["/circles", "/my-lists", "/gifts-i-offer"]);
+  const topLevel = new Set(["/circles", "/my-lists", "/gifts-i-offer", "/account"]);
   const showBack = !topLevel.has(pathname);
 
   useEffect(() => {
@@ -89,10 +89,11 @@ function AuthLayout() {
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur">
-        <div className="mx-auto grid max-w-md grid-cols-3">
+        <div className="mx-auto grid max-w-md grid-cols-4">
           <NavItem to="/circles" icon={<Home className="h-5 w-5" />} label="Cercles" />
           <NavItem to="/my-lists" icon={<ListChecks className="h-5 w-5" />} label="Mes listes" />
           <NavItem to="/gifts-i-offer" icon={<Package className="h-5 w-5" />} label="J'offre" />
+          <NavItem to="/account" icon={<UserIcon className="h-5 w-5" />} label="Compte" />
         </div>
       </nav>
     </div>
