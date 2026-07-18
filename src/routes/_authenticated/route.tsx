@@ -68,21 +68,23 @@ function AuthLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-background/90 backdrop-blur px-4 py-3">
-        <div className="flex items-center gap-2">
-          {showBack && <BackButton />}
-          <Link to="/circles" className="flex items-center gap-2 font-bold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Gift className="h-4 w-4" />
-            </div>
-            Gift-Plan
-          </Link>
-        </div>
+        <Link to="/circles" className="flex items-center gap-2 font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Gift className="h-4 w-4" />
+          </div>
+          Gift-Plan
+        </Link>
         <Button variant="ghost" size="icon" onClick={signOut} disabled={signingOut} aria-label="Se déconnecter">
           <LogOut className="h-5 w-5" />
         </Button>
       </header>
 
       <main className="flex-1 pb-24">
+        {showBack && (
+          <div className="mx-auto max-w-md px-4 pt-4">
+            <BackButton fallback="/circles" />
+          </div>
+        )}
         <Outlet />
       </main>
 
