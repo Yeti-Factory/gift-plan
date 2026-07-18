@@ -357,8 +357,8 @@ function AccountPage() {
               <AlertDialogTitle>Supprimer définitivement votre compte ?</AlertDialogTitle>
               <AlertDialogDescription>
                 Cette action est irréversible. Pour confirmer, saisissez votre mot de passe (ou
-                reconnectez-vous si vous utilisez Google) et tapez <strong>SUPPRIMER</strong>.
-                La réauthentification est valable 5 minutes.
+                reconnectez-vous si vous utilisez Google) et tapez <strong>SUPPRIMER</strong>. La
+                réauthentification est valable 5 minutes.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="space-y-2">

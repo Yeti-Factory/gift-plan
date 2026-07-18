@@ -85,8 +85,7 @@ function CirclesPage() {
         toast.error("Trop de tentatives, réessaie dans quelques minutes.");
       else if (code === "BANNED")
         toast.error("Tu as été retiré de ce cercle et ne peux pas y revenir.");
-      else if (code === "NOT_AUTHENTICATED")
-        toast.error("Session expirée, reconnectez-vous.");
+      else if (code === "NOT_AUTHENTICATED") toast.error("Session expirée, reconnectez-vous.");
       else toast.error(code || "Erreur");
       return;
     }

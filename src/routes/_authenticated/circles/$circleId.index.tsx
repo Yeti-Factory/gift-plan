@@ -488,10 +488,7 @@ function CircleDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
-        open={!!removeTarget}
-        onOpenChange={(o) => !o && setRemoveTarget(null)}
-      >
+      <AlertDialog open={!!removeTarget} onOpenChange={(o) => !o && setRemoveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Retirer {removeTarget?.name} du cercle ?</AlertDialogTitle>

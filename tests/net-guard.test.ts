@@ -84,14 +84,12 @@ describe("assertSafeUrl", () => {
   });
   it("rejects internal suffix hostnames", async () => {
     await expect(assertSafeUrl("http://foo.internal/x")).rejects.toThrow("BLOCKED_HOST");
-    await expect(assertSafeUrl("http://metadata.google.internal/")).rejects.toThrow(
-      "BLOCKED_HOST",
-    );
+    await expect(assertSafeUrl("http://metadata.google.internal/")).rejects.toThrow("BLOCKED_HOST");
   });
   it("fails closed on DNS lookup failure", async () => {
     // A syntactically valid but non-resolvable TLD.
-    await expect(
-      assertSafeUrl("http://this-domain-should-not-exist.invalid/"),
-    ).rejects.toThrow(/DNS_LOOKUP_FAILED|DNS_LOOKUP_EMPTY|BLOCKED_/);
+    await expect(assertSafeUrl("http://this-domain-should-not-exist.invalid/")).rejects.toThrow(
+      /DNS_LOOKUP_FAILED|DNS_LOOKUP_EMPTY|BLOCKED_/,
+    );
   });
 });
