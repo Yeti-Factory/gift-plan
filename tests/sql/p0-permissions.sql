@@ -44,24 +44,20 @@ END $$;
 
 -- ---------------------------------------------------------------
 -- P0-2 (comportement): rate limit persiste les échecs.
--- Simulation: on impersonne un uuid, insère 5 tentatives, la 6e doit refuser.
--- ---------------------------------------------------------------
+-- Wrapped in a transaction that's rolled back so no join_attempts row survives.
+BEGIN;
 DO $$
 DECLARE
   fake_user constant uuid := gen_random_uuid();
   result jsonb;
   i int;
 BEGIN
-  -- Nettoyage préventif
-  DELETE FROM public.join_attempts WHERE user_id = fake_user;
-
-  -- Impersonation via SET LOCAL role + jwt.claims
   PERFORM set_config('request.jwt.claim.sub', fake_user::text, true);
   PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', fake_user::text)::text, true);
   SET LOCAL role authenticated;
 
   FOR i IN 1..5 LOOP
-    result := public.join_circle_v2('AAAAAAAAAAAA'); -- code invalide
+    result := public.join_circle_v2('AAAAAAAAAAAA');
     IF (result->>'error') <> 'CODE_INVALID' THEN
       RAISE EXCEPTION 'expected CODE_INVALID, got %', result;
     END IF;
@@ -70,11 +66,9 @@ BEGIN
   IF (result->>'error') <> 'RATE_LIMITED' THEN
     RAISE EXCEPTION 'P0-2 FAIL: 6th attempt not rate limited, got %', result;
   END IF;
-
-  RESET role;
-  DELETE FROM public.join_attempts WHERE user_id = fake_user;
   RAISE NOTICE 'P0-2 OK: invalid attempts count toward rate limit';
 END $$;
+ROLLBACK;
 
 -- ---------------------------------------------------------------
 -- P0-4 : image_path scoping — un gift ne peut pas pointer vers le
