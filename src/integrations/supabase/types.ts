@@ -152,6 +152,7 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          image_path: string | null
           image_url: string | null
           list_id: string
           owner_id: string
@@ -165,6 +166,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          image_path?: string | null
           image_url?: string | null
           list_id: string
           owner_id: string
@@ -178,6 +180,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          image_path?: string | null
           image_url?: string | null
           list_id?: string
           owner_id?: string
@@ -301,6 +304,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      storage_deletions_queue: {
+        Row: {
+          bucket: string
+          enqueued_at: string
+          id: string
+          object_path: string
+          processed_at: string | null
+          reason: string | null
+        }
+        Insert: {
+          bucket: string
+          enqueued_at?: string
+          id?: string
+          object_path: string
+          processed_at?: string | null
+          reason?: string | null
+        }
+        Update: {
+          bucket?: string
+          enqueued_at?: string
+          id?: string
+          object_path?: string
+          processed_at?: string | null
+          reason?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
