@@ -295,6 +295,20 @@ function AccountPage() {
         </form>
       </Card>
 
+      <Card className="p-5 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Download className="h-4 w-4" /> Exporter mes données
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Téléchargez au format JSON toutes les données personnelles que Gift-Plan détient à votre
+          sujet (profil, cercles, listes, cadeaux, réservations que vous avez posées).
+          Les réservations posées par d'autres sur vos propres cadeaux sont exclues pour préserver la surprise.
+        </p>
+        <Button variant="outline" className="w-full" onClick={handleExport} disabled={exporting}>
+          {exporting ? "Préparation..." : "Télécharger mon export (JSON)"}
+        </Button>
+      </Card>
+
       <Card className="p-5 space-y-3 border-destructive/40">
         <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
           <Trash2 className="h-4 w-4" /> Zone de danger
