@@ -1,5 +1,48 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
+
+const REAUTH_MAX_AGE_SECONDS = 300;
+
+function makeScratchClient() {
+  const url = process.env.SUPABASE_URL!;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
+    global: {
+      fetch: (input, init) => {
+        const headers = new Headers(init?.headers);
+        if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`) {
+          headers.delete("Authorization");
+        }
+        headers.set("apikey", key);
+        return fetch(input, { ...init, headers });
+      },
+    },
+  });
+}
+
+async function assertRecentReauth(
+  password: string | undefined,
+  email: string | null | undefined,
+  iat: number | undefined,
+) {
+  const now = Math.floor(Date.now() / 1000);
+  const sessionAge = iat ? now - iat : Number.POSITIVE_INFINITY;
+
+  if (password && email) {
+    const scratch = makeScratchClient();
+    const { error } = await scratch.auth.signInWithPassword({ email, password });
+    if (error) throw new Error("Mot de passe incorrect.");
+    return;
+  }
+
+  if (sessionAge <= REAUTH_MAX_AGE_SECONDS) return;
+
+  throw new Error(
+    "Réauthentification requise : reconnectez-vous puis relancez la suppression dans les 5 minutes.",
+  );
+}
 
 /**
  * Deletes the caller's account.
@@ -12,8 +55,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const deleteMyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+  .inputValidator((input: { password?: string } | undefined) => input ?? {})
+  .handler(async ({ context, data }) => {
+    const { supabase, userId, claims } = context;
+
+    await assertRecentReauth(
+      data.password?.trim() || undefined,
+      (claims.email as string | undefined) ?? null,
+      typeof claims.iat === "number" ? claims.iat : undefined,
+    );
 
     const { data: memberships, error: mErr } = await supabase
       .from("circle_members")
