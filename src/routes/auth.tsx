@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Gift, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
+import { BrandMark } from "@/components/BrandMark";
 
 const RESET_PASSWORD_REDIRECT_URL = "https://gift-plan.yeti-lab.fr/reset-password";
 
@@ -151,18 +152,22 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-6 py-10 flex flex-col items-center justify-center">
-      <div className="flex flex-col items-center gap-3 mb-8">
-        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg">
-          <Gift className="h-8 w-8" />
+    <div className="gp-mesh relative min-h-screen overflow-hidden px-6 py-10 flex flex-col items-center justify-center">
+      <div className="gp-dots pointer-events-none absolute inset-0 opacity-50" />
+      <div className="relative z-10 flex flex-col items-center gap-3 mb-8">
+        <BrandMark />
+        <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
+          <Sparkles className="h-3.5 w-3.5" /> La surprise commence ici
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Gift-Plan</h1>
+        <h1 className="mt-2 max-w-sm text-center font-display text-4xl font-bold tracking-[-0.04em]">
+          Heureux de vous revoir.
+        </h1>
         <p className="text-center text-sm text-muted-foreground max-w-xs">
-          Vos listes de cadeaux, partagées avec ceux qui comptent.
+          Vos envies, vos proches, et toujours le plaisir de la surprise.
         </p>
       </div>
 
-      <Card className="w-full max-w-sm p-6 space-y-4">
+      <Card className="gp-glass relative z-10 w-full max-w-sm space-y-4 rounded-[1.75rem] border-0 p-6">
         {forgotOpen ? (
           <form onSubmit={handleForgot} className="space-y-3">
             <div className="space-y-2">
@@ -333,7 +338,7 @@ function AuthPage() {
         )}
       </Card>
 
-      <nav className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
+      <nav className="relative z-10 mt-6 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
         <Link to="/legal/mentions-legales" className="hover:text-primary">
           Mentions légales
         </Link>

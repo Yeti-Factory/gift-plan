@@ -9,13 +9,13 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Gift,
   Package,
   ListChecks,
   LogOut,
   UserRoundSearch,
   Users,
   UserCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureProfile } from "@/lib/gift-box";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -39,12 +40,23 @@ function AuthLayout() {
   const navigate = useNavigate();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const pathname = useLocation({ select: (l) => l.pathname });
-  const topLevel = new Set(["/people", "/my-lists", "/gifts-i-offer", "/circles", "/profile"]);
+  const topLevel = new Set([
+    "/people",
+    "/my-lists",
+    "/gifts-i-offer",
+    "/circles",
+    "/profile",
+    "/admin",
+  ]);
   const showBack = !topLevel.has(pathname);
 
   useEffect(() => {
     ensureProfile(user).catch(() => {});
+    supabase.rpc("is_superadmin").then(({ data }) => {
+      setIsSuperadmin(data === true);
+    });
   }, [user]);
 
   useEffect(() => {
@@ -82,23 +94,31 @@ function AuthLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-background/90 backdrop-blur px-4 py-3">
-        <Link to="/people" className="flex items-center gap-2 font-bold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Gift className="h-4 w-4" />
+    <div className="gp-mesh min-h-screen bg-background flex flex-col">
+      <header className="sticky top-0 z-40 border-b border-white/70 bg-background/75 px-4 py-3 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <Link to="/people" aria-label="Accueil Gift-Plan">
+            <BrandMark />
+          </Link>
+          <div className="flex items-center gap-1">
+            {isSuperadmin && (
+              <Button asChild variant="ghost" size="icon" aria-label="Administration">
+                <Link to="/admin">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                </Link>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              disabled={signingOut}
+              aria-label="Se déconnecter"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
-          Gift-Plan
-        </Link>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={signOut}
-          disabled={signingOut}
-          aria-label="Se déconnecter"
-        >
-          <LogOut className="h-5 w-5" />
-        </Button>
+        </div>
       </header>
 
       <main className="flex-1 pb-24">
@@ -110,8 +130,8 @@ function AuthLayout() {
         <Outlet />
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur">
-        <div className="mx-auto grid max-w-md grid-cols-5">
+      <nav className="fixed bottom-3 inset-x-3 z-40 mx-auto max-w-md rounded-[1.4rem] border border-white/80 bg-background/90 shadow-xl backdrop-blur-xl">
+        <div className="grid grid-cols-5 px-1">
           <NavItem to="/people" icon={<UserRoundSearch className="h-5 w-5" />} label="Profils" />
           <NavItem to="/my-lists" icon={<ListChecks className="h-5 w-5" />} label="Mes listes" />
           <NavItem to="/gifts-i-offer" icon={<Package className="h-5 w-5" />} label="J'offre" />
@@ -127,7 +147,7 @@ function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label
   return (
     <Link
       to={to}
-      className="flex flex-col items-center justify-center gap-1 py-3 text-xs text-muted-foreground data-[status=active]:text-primary"
+      className="flex flex-col items-center justify-center gap-1 rounded-2xl py-2.5 text-[11px] text-muted-foreground transition data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
       activeProps={{ className: "text-primary font-medium" }}
     >
       {icon}

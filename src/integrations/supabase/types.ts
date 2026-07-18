@@ -413,6 +413,8 @@ export type Database = {
     };
     Functions: {
       _display_name: { Args: { _user_id: string }; Returns: string };
+      get_app_status: { Args: never; Returns: Json };
+      is_superadmin: { Args: never; Returns: boolean };
       create_profile_share_link: {
         Args: { _expires_at?: string | null; _label?: string | null; _list_ids: string[] };
         Returns: Json;
@@ -488,6 +490,10 @@ export type Database = {
       search_public_profiles: { Args: { _query: string }; Returns: Json };
       set_gift_reservation: {
         Args: { _action: string; _gift_id: string; _share_token?: string | null };
+        Returns: Json;
+      };
+      set_maintenance_mode: {
+        Args: { _enabled: boolean; _message?: string | null };
         Returns: Json;
       };
       remove_member: {

@@ -4,16 +4,18 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { MaintenanceScreen } from "@/components/MaintenanceScreen";
 import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 
 function NotFoundComponent() {
@@ -149,6 +151,39 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const [appStatus, setAppStatus] = useState<{
+    maintenance: boolean;
+    message: string;
+    is_superadmin: boolean;
+  } | null>(null);
+
+  const loadAppStatus = useCallback(async () => {
+    const { data } = await supabase.rpc("get_app_status");
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    const status = data as Record<string, unknown>;
+    setAppStatus({
+      maintenance: status.maintenance === true,
+      message:
+        typeof status.message === "string"
+          ? status.message
+          : "Gift-Plan revient dans quelques instants.",
+      is_superadmin: status.is_superadmin === true,
+    });
+  }, []);
+
+  useEffect(() => {
+    loadAppStatus();
+    const interval = window.setInterval(loadAppStatus, 30_000);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") loadAppStatus();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [loadAppStatus]);
 
   useEffect(() => {
     if (redirectToResetPasswordIfNeeded()) return;
@@ -162,10 +197,11 @@ function RootComponent() {
       if (event === "SIGNED_IN" && redirectToResetPasswordIfNeeded()) return;
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
+      loadAppStatus();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
     return () => sub.subscription.unsubscribe();
-  }, [router, queryClient]);
+  }, [router, queryClient, loadAppStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -200,6 +236,13 @@ function RootComponent() {
     else window.addEventListener("load", onLoad, { once: true });
     return () => window.removeEventListener("load", onLoad);
   }, []);
+
+  const authAllowedDuringMaintenance =
+    pathname === "/auth" || pathname === "/reset-password" || pathname.startsWith("/legal/");
+
+  if (appStatus?.maintenance && !appStatus.is_superadmin && !authAllowedDuringMaintenance) {
+    return <MaintenanceScreen message={appStatus.message} />;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

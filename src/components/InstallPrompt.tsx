@@ -103,7 +103,7 @@ export function InstallPrompt() {
       if (isStandalone() || recentlyDismissed()) return;
       setDesktopFallback((prev) => prev ?? detectDesktopBrowser());
       setVisible(true);
-    }, 1500);
+    }, 9000);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBIP);
@@ -144,13 +144,13 @@ export function InstallPrompt() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto mb-3 flex max-w-md items-center gap-3 rounded-2xl border border-border/60 bg-card/95 p-3 shadow-lg backdrop-blur mx-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Download className="h-5 w-5" />
+      <div className="fixed bottom-24 left-3 right-3 z-50 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:left-auto sm:right-5 sm:w-[22rem]">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-white/80 bg-card/90 p-2.5 shadow-xl backdrop-blur-xl">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Download className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold leading-tight">Installer Gift-Plan</p>
+            <p className="text-xs font-bold leading-tight">Garder Gift-Plan sous la main</p>
             <p className="text-xs text-muted-foreground">
               {ios
                 ? "Ajoutez l'appli à votre écran d'accueil."
@@ -172,7 +172,13 @@ export function InstallPrompt() {
               Installer
             </Button>
           )}
-          <Button size="icon" variant="ghost" aria-label="Fermer" onClick={dismiss}>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8"
+            aria-label="Fermer"
+            onClick={dismiss}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>

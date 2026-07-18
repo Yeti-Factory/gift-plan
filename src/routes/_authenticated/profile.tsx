@@ -230,7 +230,11 @@ function ManageProfilePage() {
               Enregistrer
             </Button>
             <Button asChild type="button" variant="outline">
-              <Link to="/p/$username" params={{ username: profile.username }}>
+              <Link
+                to="/p/$username"
+                params={{ username: profile.username }}
+                search={{ invite: undefined }}
+              >
                 <Eye className="h-4 w-4" />
               </Link>
             </Button>
