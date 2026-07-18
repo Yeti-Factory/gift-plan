@@ -49,23 +49,26 @@ function ipv4ToInt(ip: string): number | null {
 function isPrivateIPv4(ip: string): boolean {
   const n = ipv4ToInt(ip);
   if (n === null) return false;
+  // JS bitwise ops return Int32 (signed). Force unsigned before comparison
+  // so masks with the top bit set (172.16.x, 169.254.x, 224+, 240+) work.
+  const masked = (bits: number) => (n & bits) >>> 0;
   // 0.0.0.0/8
-  if ((n & 0xff000000) === 0x00000000) return true;
+  if (masked(0xff000000) === 0x00000000) return true;
   // 10.0.0.0/8
-  if ((n & 0xff000000) === 0x0a000000) return true;
+  if (masked(0xff000000) === 0x0a000000) return true;
   // 127.0.0.0/8
-  if ((n & 0xff000000) === 0x7f000000) return true;
+  if (masked(0xff000000) === 0x7f000000) return true;
   // 169.254.0.0/16 (link-local, incl. 169.254.169.254 metadata)
-  if ((n & 0xffff0000) === 0xa9fe0000) return true;
+  if (masked(0xffff0000) === 0xa9fe0000) return true;
   // 172.16.0.0/12
-  if ((n & 0xfff00000) === 0xac100000) return true;
+  if (masked(0xfff00000) === 0xac100000) return true;
   // 192.168.0.0/16
-  if ((n & 0xffff0000) === 0xc0a80000) return true;
+  if (masked(0xffff0000) === 0xc0a80000) return true;
   // 100.64.0.0/10 (CGNAT)
-  if ((n & 0xffc00000) === 0x64400000) return true;
+  if (masked(0xffc00000) === 0x64400000) return true;
   // 224.0.0.0/4 multicast + 240.0.0.0/4 reserved
-  if ((n & 0xf0000000) === 0xe0000000) return true;
-  if ((n & 0xf0000000) === 0xf0000000) return true;
+  if (masked(0xf0000000) === 0xe0000000) return true;
+  if (masked(0xf0000000) === 0xf0000000) return true;
   return false;
 }
 
