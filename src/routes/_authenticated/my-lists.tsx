@@ -24,9 +24,9 @@ import {
   PRIORITY_LABEL,
   PRIORITY_COLOR,
   formatPrice,
-  uploadGiftImage,
   type Priority,
 } from "@/lib/gift-box";
+import { uploadGiftImageChecked, useGiftImageUrls } from "@/lib/gift-image";
 
 export const Route = createFileRoute("/_authenticated/my-lists")({
   component: MyLists,
@@ -41,6 +41,7 @@ type Gift = {
   description: string | null;
   url: string | null;
   image_url: string | null;
+  image_path: string | null;
   price: number | null;
   currency: string;
   priority: Priority;
@@ -74,7 +75,7 @@ function MyLists() {
     }
     const { data: gs } = await supabase
       .from("gifts")
-      .select("*")
+      .select("id, list_id, title, description, url, image_url, image_path, price, currency, priority")
       .in("list_id", listIds)
       .order("created_at", { ascending: false });
     setGifts((gs as Gift[]) ?? []);
@@ -83,6 +84,9 @@ function MyLists() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const giftIdsWithPath = gifts.filter((g) => g.image_path).map((g) => g.id);
+  const { data: signedUrls } = useGiftImageUrls(giftIdsWithPath);
 
   return (
     <div className="mx-auto max-w-md px-4 py-6 space-y-6">
@@ -131,13 +135,16 @@ function MyLists() {
 
             {items.map((g) => (
               <Card key={g.id} className="p-3 flex gap-3">
-                {g.image_url ? (
-                  <img src={g.image_url} alt="" className="h-16 w-16 rounded-xl object-cover bg-muted" />
-                ) : (
-                  <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center">
-                    <GiftIcon className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                )}
+                {(() => {
+                  const src = g.image_path ? signedUrls?.[g.id] : g.image_url;
+                  return src ? (
+                    <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover bg-muted" />
+                  ) : (
+                    <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center">
+                      <GiftIcon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  );
+                })()}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-medium leading-tight">{g.title}</p>
