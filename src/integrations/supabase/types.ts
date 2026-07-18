@@ -230,6 +230,7 @@ export type Database = {
         }
       }
       gen_invite_code: { Args: never; Returns: string }
+      get_invite_code: { Args: { _circle_id: string }; Returns: string }
       gift_circle_id: { Args: { _gift_id: string }; Returns: string }
       gift_owner_id: { Args: { _gift_id: string }; Returns: string }
       is_circle_admin: {
