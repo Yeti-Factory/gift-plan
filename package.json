@@ -13,7 +13,9 @@
     "format:check": "prettier --check .",
     "typecheck": "tsgo --noEmit",
     "start": "node .output/server/index.mjs",
-    "check": "bun run lint && bun run typecheck && bun run format:check"
+    "test": "vitest run",
+    "test:sql": "psql -f tests/sql/p0-permissions.sql",
+    "check": "bun run lint && bun run typecheck && bun run format:check && bun run test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
