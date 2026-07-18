@@ -31,13 +31,18 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 
+# Non-root user for the runtime process (defense-in-depth).
+RUN addgroup -S app && adduser -S app -G app
+
 # Nitro node-server output is fully self-contained in .output/
-COPY --from=builder /app/.output ./.output
+COPY --from=builder --chown=app:app /app/.output ./.output
+
+USER app
 
 EXPOSE 3000
 
-# Basic healthcheck — Coolify will also probe this
+# Healthcheck hits the dedicated JSON endpoint (200 = healthy, 503 = degraded)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/api/public/health >/dev/null 2>&1 || exit 1
 
 CMD ["node", ".output/server/index.mjs"]
