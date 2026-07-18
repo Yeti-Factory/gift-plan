@@ -183,15 +183,26 @@ function CircleDetail() {
       toast.error(translateError(error.message));
       return;
     }
-    const result = data as { circle_deleted?: boolean; new_owner_name?: string } | null;
-    if (result?.circle_deleted) {
-      toast.success("Le cercle a été supprimé");
-    } else if (result?.new_owner_name) {
-      toast.success(`L'administration a été transférée à ${result.new_owner_name}`);
-    } else {
-      toast.success("Tu as quitté le cercle");
-    }
+    const result = data as
+      | { circle_deleted?: boolean; new_owner_id?: string; new_owner_name?: string }
+      | null;
+    const circleName = circle?.name ?? "le cercle";
     navigate({ to: "/circles" });
+    if (result?.circle_deleted) {
+      toast.success(`« ${circleName} » a été supprimé`, {
+        description: "Toutes les listes, cadeaux et réservations associés ont été effacés.",
+      });
+    } else if (result?.new_owner_id) {
+      const ownerName =
+        result.new_owner_name?.trim() ||
+        members.find((m) => m.user_id === result.new_owner_id)?.profile?.display_name ||
+        "un autre membre";
+      toast.success(`Tu as quitté « ${circleName} »`, {
+        description: `L'administration a été transférée à ${ownerName}.`,
+      });
+    } else {
+      toast.success(`Tu as quitté « ${circleName} »`);
+    }
   }
 
   if (!circle) return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
