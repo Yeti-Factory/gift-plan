@@ -17,7 +17,8 @@ import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 const SITE_NAME = "Gift-Plan"
 const SENDER_DOMAIN = "yeti-lab.fr"
 const FROM_DOMAIN = "yeti-lab.fr"
-const SITE_URL = "https://gift-plan.yeti-lab.fr"
+const APP_URL = process.env.APP_URL ?? "https://gift-plan.yeti-lab.fr"
+const SITE_URL = APP_URL
 const RESET_PASSWORD_URL = `${SITE_URL}/reset-password`
 const ALLOWED_RECOVERY_REDIRECT_ORIGINS = new Set([
   SITE_URL,
@@ -25,6 +26,47 @@ const ALLOWED_RECOVERY_REDIRECT_ORIGINS = new Set([
   'https://id-preview--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app',
   'https://96df8292-ee19-43bf-af6b-a257a4d04dfb.lovableproject.com',
 ])
+
+// Per-IP rate limit (best-effort in-memory).
+const WEBHOOK_RATE_WINDOW_MS = 60_000
+const WEBHOOK_RATE_MAX = 20
+const webhookHits = new Map<string, number[]>()
+
+function webhookRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const hits = (webhookHits.get(ip) ?? []).filter((t) => now - t < WEBHOOK_RATE_WINDOW_MS)
+  if (hits.length >= WEBHOOK_RATE_MAX) {
+    webhookHits.set(ip, hits)
+    return true
+  }
+  hits.push(now)
+  webhookHits.set(ip, hits)
+  return false
+}
+
+function timingSafeStringEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let out = 0
+  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return out === 0
+}
+
+function verifyWebhookAuth(request: Request): { ok: boolean; reason?: string } {
+  const secret = process.env.AUTH_EMAIL_WEBHOOK_SECRET
+  if (!secret) return { ok: false, reason: 'missing_secret' }
+  const provided = request.headers.get('x-webhook-secret')
+  if (!provided) return { ok: false, reason: 'missing_header' }
+  if (!timingSafeStringEqual(provided, secret)) return { ok: false, reason: 'bad_secret' }
+  return { ok: true }
+}
+
+function clientIp(request: Request): string {
+  return (
+    request.headers.get('cf-connecting-ip') ??
+    request.headers.get('x-real-ip') ??
+    (request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown')
+  )
+}
 
 const authEmails = {
   signup: {
@@ -201,7 +243,6 @@ async function sendAuthEmailWithResend(request: Request) {
   if (event.data.action_type !== 'recovery' || !isExpectedRecoveryUrl(event.data.url)) {
     console.error('[auth-email] Unsupported recovery URL', {
       action_type: event.data.action_type,
-      has_url: Boolean(event.data.url),
     })
     return Response.json({ error: 'Unsupported auth email action' }, { status: 400 })
   }
@@ -260,6 +301,22 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
       POST: ({ request }) => {
+        const requestId = crypto.randomUUID().slice(0, 8)
+        const ip = clientIp(request)
+
+        // 1. Rate limit before any work
+        if (webhookRateLimited(ip)) {
+          console.warn(`[auth-email:${requestId}] rate limited ip=${ip}`)
+          return new Response('Too Many Requests', { status: 429 })
+        }
+
+        // 2. Signature/shared-secret verification
+        const auth = verifyWebhookAuth(request)
+        if (!auth.ok) {
+          console.warn(`[auth-email:${requestId}] rejected reason=${auth.reason} ip=${ip}`)
+          return new Response('Unauthorized', { status: 401 })
+        }
+
         if (getResendApiKey()) {
           return sendAuthEmailWithResend(request)
         }
