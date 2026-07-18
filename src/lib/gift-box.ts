@@ -48,10 +48,15 @@ export async function ensureProfile(user: {
     (meta.name as string) ||
     (user.email ? user.email.split("@")[0] : "Ami");
   const avatarUrl = (meta.avatar_url as string) || null;
+
+  // The profile row is the canonical, user-editable source for display_name.
+  // This helper runs on every sign-in and authenticated layout mount, so an
+  // updating upsert would restore stale auth-provider metadata after a user
+  // changes their name from the account page. Only fill a missing profile.
   await supabase
     .from("profiles")
     .upsert(
       { id: user.id, display_name: displayName, avatar_url: avatarUrl },
-      { onConflict: "id", ignoreDuplicates: false },
+      { onConflict: "id", ignoreDuplicates: true },
     );
 }
