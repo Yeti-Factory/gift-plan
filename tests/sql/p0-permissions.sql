@@ -52,9 +52,10 @@ DECLARE
   result jsonb;
   i int;
 BEGIN
+  -- Managed-role psql may lack SET ROLE authenticated; set jwt.claims and
+  -- rely on auth.uid() reading them directly. Rollback wipes any writes.
   PERFORM set_config('request.jwt.claim.sub', fake_user::text, true);
   PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', fake_user::text)::text, true);
-  SET LOCAL role authenticated;
 
   FOR i IN 1..5 LOOP
     result := public.join_circle_v2('AAAAAAAAAAAA');
