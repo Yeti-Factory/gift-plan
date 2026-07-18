@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PRIORITY_LABEL, PRIORITY_COLOR, formatPrice, initials, type Priority } from "@/lib/gift-box";
+import { useGiftImageUrls } from "@/lib/gift-image";
 
 export const Route = createFileRoute("/_authenticated/circles/$circleId/members/$userId")({
   component: MemberLists,
@@ -20,6 +21,7 @@ type Gift = {
   description: string | null;
   url: string | null;
   image_url: string | null;
+  image_path: string | null;
   price: number | null;
   currency: string;
   priority: Priority;
@@ -157,6 +159,9 @@ function MemberLists() {
 
   const name = profile?.display_name ?? "Membre";
 
+  const idsWithPath = gifts.filter((g) => g.image_path).map((g) => g.id);
+  const { data: signedUrls } = useGiftImageUrls(idsWithPath);
+
   return (
     <div className="mx-auto max-w-md px-4 py-6 space-y-6">
       <div className="flex items-center gap-3">
@@ -204,13 +209,16 @@ function MemberLists() {
                   key={g.id}
                   className={`p-3 flex gap-3 transition-opacity ${dimmed ? "opacity-60" : ""}`}
                 >
-                  {g.image_url ? (
-                    <img src={g.image_url} alt="" className="h-20 w-20 rounded-xl object-cover bg-muted" />
-                  ) : (
-                    <div className="h-20 w-20 rounded-xl bg-secondary flex items-center justify-center">
-                      <GiftIcon className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
+                  {(() => {
+                    const src = g.image_path ? signedUrls?.[g.id] : g.image_url;
+                    return src ? (
+                      <img src={src} alt="" className="h-20 w-20 rounded-xl object-cover bg-muted" />
+                    ) : (
+                      <div className="h-20 w-20 rounded-xl bg-secondary flex items-center justify-center">
+                        <GiftIcon className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    );
+                  })()}
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-medium leading-tight">{g.title}</p>
