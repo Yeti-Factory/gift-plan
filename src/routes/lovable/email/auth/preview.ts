@@ -8,7 +8,10 @@ import { RecoveryEmail } from "@/lib/email-templates/recovery";
 import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
 
-const EMAIL_TEMPLATES: Record<string, React.ComponentType<Record<string, unknown>>> = {
+// Each email template has its own props shape; we validate `type` at runtime
+// and pass the matching SAMPLE_DATA entry. Using ComponentType<never> keeps
+// TS out of the way of the heterogeneous mapping.
+const EMAIL_TEMPLATES: Record<string, React.ComponentType<never>> = {
   signup: SignupEmail,
   invite: InviteEmail,
   magiclink: MagicLinkEmail,
