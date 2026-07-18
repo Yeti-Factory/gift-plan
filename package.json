@@ -9,7 +9,11 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsgo --noEmit",
+    "start": "node .output/server/index.mjs",
+    "check": "bun run lint && bun run typecheck && bun run format:check"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

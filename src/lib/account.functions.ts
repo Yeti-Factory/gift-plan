@@ -59,7 +59,10 @@ export const exportMyData = createServerFn({ method: "POST" })
 
     const circleIds = (memberships.data ?? []).map((m) => m.circle_id);
     const { data: circles, error: cErr } = circleIds.length
-      ? await supabase.from("circles").select("id, name, created_by, created_at").in("id", circleIds)
+      ? await supabase
+          .from("circles")
+          .select("id, name, created_by, created_at")
+          .in("id", circleIds)
       : { data: [], error: null };
     if (cErr) throw new Error(cErr.message);
 

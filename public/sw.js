@@ -18,7 +18,7 @@ self.addEventListener("install", (event) => {
     caches
       .open(STATIC_CACHE)
       .then((cache) => cache.addAll(PRECACHE_URLS).catch(() => undefined))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -27,19 +27,15 @@ self.addEventListener("activate", (event) => {
     (async () => {
       const keys = await caches.keys();
       await Promise.all(
-        keys
-          .filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
-          .map((k) => caches.delete(k))
+        keys.filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE).map((k) => caches.delete(k)),
       );
       await self.clients.claim();
-    })()
+    })(),
   );
 });
 
 function isStaticAsset(url) {
-  return /\.(?:js|mjs|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf)$/i.test(
-    url.pathname
-  );
+  return /\.(?:js|mjs|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname);
 }
 
 self.addEventListener("fetch", (event) => {
@@ -67,7 +63,7 @@ self.addEventListener("fetch", (event) => {
           if (shell) return shell;
           return new Response("Hors ligne", { status: 503, statusText: "Offline" });
         }
-      })()
+      })(),
     );
     return;
   }
@@ -88,7 +84,7 @@ self.addEventListener("fetch", (event) => {
         } catch {
           return cached || Response.error();
         }
-      })()
+      })(),
     );
   }
 });

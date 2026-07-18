@@ -12,7 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -20,12 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  PRIORITY_LABEL,
-  PRIORITY_COLOR,
-  formatPrice,
-  type Priority,
-} from "@/lib/gift-box";
+import { PRIORITY_LABEL, PRIORITY_COLOR, formatPrice, type Priority } from "@/lib/gift-box";
 import { uploadGiftImageChecked, useGiftImageUrls } from "@/lib/gift-image";
 
 export const Route = createFileRoute("/_authenticated/my-lists")({
@@ -75,7 +77,9 @@ function MyLists() {
     }
     const { data: gs } = await supabase
       .from("gifts")
-      .select("id, list_id, title, description, url, image_url, image_path, price, currency, priority")
+      .select(
+        "id, list_id, title, description, url, image_url, image_path, price, currency, priority",
+      )
       .in("list_id", listIds)
       .order("created_at", { ascending: false });
     setGifts((gs as Gift[]) ?? []);
@@ -326,8 +330,9 @@ function NewGiftDialog({
       setImagePath(path);
       setImagePreview(URL.createObjectURL(file));
       setImageUrl(null); // uploaded image wins over any scraped URL
-    } catch (err: any) {
-      toast.error(err?.message ?? "Upload échoué");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload échoué";
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -381,7 +386,11 @@ function NewGiftDialog({
         <div className="space-y-3">
           <div>
             <Label>Nom</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Livre, jeu, écharpe…" />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Livre, jeu, écharpe…"
+            />
           </div>
           <div>
             <Label>Description</Label>
@@ -444,9 +453,13 @@ function NewGiftDialog({
           </div>
           <div>
             <Label>Photo (optionnel)</Label>
-            {(imagePreview || imageUrl) ? (
+            {imagePreview || imageUrl ? (
               <div className="mt-1 flex items-center gap-2">
-                <img src={imagePreview ?? imageUrl!} alt="" className="h-16 w-16 object-cover rounded-xl" />
+                <img
+                  src={imagePreview ?? imageUrl!}
+                  alt=""
+                  className="h-16 w-16 object-cover rounded-xl"
+                />
                 <Button
                   variant="ghost"
                   size="sm"

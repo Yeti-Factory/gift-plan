@@ -8,7 +8,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PRIORITY_LABEL, PRIORITY_COLOR, formatPrice, initials, type Priority } from "@/lib/gift-box";
+import {
+  PRIORITY_LABEL,
+  PRIORITY_COLOR,
+  formatPrice,
+  initials,
+  type Priority,
+} from "@/lib/gift-box";
 import { useGiftImageUrls } from "@/lib/gift-image";
 
 export const Route = createFileRoute("/_authenticated/circles/$circleId/members/$userId")({
@@ -36,7 +42,10 @@ type BuyerProfile = { id: string; display_name: string | null };
 function MemberLists() {
   const { circleId, userId } = Route.useParams();
   const [me, setMe] = useState<string | null>(null);
-  const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
+  const [profile, setProfile] = useState<{
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null>(null);
   const [lists, setLists] = useState<List[]>([]);
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -170,9 +179,7 @@ function MemberLists() {
           <AvatarFallback>{initials(name)}</AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="text-xl font-bold">
-            {isOwn ? "Vos listes" : `Idées pour ${name}`}
-          </h1>
+          <h1 className="text-xl font-bold">{isOwn ? "Vos listes" : `Idées pour ${name}`}</h1>
           {isOwn && (
             <p className="text-xs text-muted-foreground">
               Les réservations sont cachées pour préserver la surprise.
@@ -183,7 +190,9 @@ function MemberLists() {
 
       {lists.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
-          {isOwn ? "Créez votre première liste dans « Mes listes »." : `${name} n'a pas encore de liste ici.`}
+          {isOwn
+            ? "Créez votre première liste dans « Mes listes »."
+            : `${name} n'a pas encore de liste ici.`}
         </Card>
       )}
 
@@ -203,7 +212,7 @@ function MemberLists() {
               const reservedByMe = res?.buyer_id === me;
               const purchased = res?.status === "purchased";
               const dimmed = !isOwn && !!res;
-              const buyerName = res ? buyers[res.buyer_id]?.display_name ?? "Quelqu'un" : null;
+              const buyerName = res ? (buyers[res.buyer_id]?.display_name ?? "Quelqu'un") : null;
               return (
                 <Card
                   key={g.id}
@@ -212,7 +221,11 @@ function MemberLists() {
                   {(() => {
                     const src = g.image_path ? signedUrls?.[g.id] : g.image_url;
                     return src ? (
-                      <img src={src} alt="" className="h-20 w-20 rounded-xl object-cover bg-muted" />
+                      <img
+                        src={src}
+                        alt=""
+                        className="h-20 w-20 rounded-xl object-cover bg-muted"
+                      />
                     ) : (
                       <div className="h-20 w-20 rounded-xl bg-secondary flex items-center justify-center">
                         <GiftIcon className="h-8 w-8 text-muted-foreground" />
@@ -222,7 +235,9 @@ function MemberLists() {
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-medium leading-tight">{g.title}</p>
-                      <Badge className={PRIORITY_COLOR[g.priority]}>{PRIORITY_LABEL[g.priority]}</Badge>
+                      <Badge className={PRIORITY_COLOR[g.priority]}>
+                        {PRIORITY_LABEL[g.priority]}
+                      </Badge>
                     </div>
                     {g.description && (
                       <p className="text-xs text-muted-foreground line-clamp-2">{g.description}</p>
@@ -230,7 +245,9 @@ function MemberLists() {
                     <div className="flex items-center justify-between pt-1">
                       <div className="flex items-center gap-2">
                         {g.price != null && (
-                          <span className="text-sm font-semibold">{formatPrice(g.price, g.currency)}</span>
+                          <span className="text-sm font-semibold">
+                            {formatPrice(g.price, g.currency)}
+                          </span>
                         )}
                         {g.url && (
                           <a
@@ -280,7 +297,9 @@ function MemberLists() {
                           {res && !reservedByMe && (
                             <Badge
                               variant="secondary"
-                              className={purchased ? "bg-green-600 hover:bg-green-600 text-white" : ""}
+                              className={
+                                purchased ? "bg-green-600 hover:bg-green-600 text-white" : ""
+                              }
                             >
                               {purchased ? "✓ Acheté" : "Réservé"} par {buyerName}
                             </Badge>

@@ -33,7 +33,7 @@ function StatusPage() {
     refetchInterval: 30_000,
   });
 
-  const overall = isError ? "degraded" : data?.status ?? "ok";
+  const overall = isError ? "degraded" : (data?.status ?? "ok");
   const Icon = overall === "ok" ? CheckCircle2 : AlertTriangle;
   const color = overall === "ok" ? "text-emerald-600" : "text-amber-600";
 
@@ -53,15 +53,20 @@ function StatusPage() {
               {isLoading
                 ? "Vérification en cours…"
                 : overall === "ok"
-                ? "Tous les systèmes sont opérationnels"
-                : "Service dégradé"}
+                  ? "Tous les systèmes sont opérationnels"
+                  : "Service dégradé"}
             </p>
           </div>
         </div>
 
         <div className="mt-6 space-y-3">
           <Row label="Application web" ok={!isError} />
-          <Row label="Base de données" ok={data?.checks.database === "ok"} loading={isLoading} extra={data?.latencyMs.database ? `${data.latencyMs.database} ms` : undefined} />
+          <Row
+            label="Base de données"
+            ok={data?.checks.database === "ok"}
+            loading={isLoading}
+            extra={data?.latencyMs.database ? `${data.latencyMs.database} ms` : undefined}
+          />
         </div>
 
         {data && (
@@ -77,7 +82,12 @@ function StatusPage() {
           </div>
         )}
 
-        <Button variant="outline" onClick={() => refetch()} disabled={isFetching} className="mt-6 w-full">
+        <Button
+          variant="outline"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="mt-6 w-full"
+        >
           <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           Rafraîchir
         </Button>
@@ -92,7 +102,17 @@ function StatusPage() {
   );
 }
 
-function Row({ label, ok, loading, extra }: { label: string; ok?: boolean; loading?: boolean; extra?: string }) {
+function Row({
+  label,
+  ok,
+  loading,
+  extra,
+}: {
+  label: string;
+  ok?: boolean;
+  loading?: boolean;
+  extra?: string;
+}) {
   return (
     <div className="flex items-center justify-between rounded-lg border bg-background px-4 py-3">
       <span className="text-sm font-medium">{label}</span>
@@ -101,9 +121,13 @@ function Row({ label, ok, loading, extra }: { label: string; ok?: boolean; loadi
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : ok ? (
-          <span className="flex items-center gap-1 text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Opérationnel</span>
+          <span className="flex items-center gap-1 text-emerald-600">
+            <CheckCircle2 className="h-4 w-4" /> Opérationnel
+          </span>
         ) : (
-          <span className="flex items-center gap-1 text-amber-600"><AlertTriangle className="h-4 w-4" /> Indisponible</span>
+          <span className="flex items-center gap-1 text-amber-600">
+            <AlertTriangle className="h-4 w-4" /> Indisponible
+          </span>
         )}
       </div>
     </div>

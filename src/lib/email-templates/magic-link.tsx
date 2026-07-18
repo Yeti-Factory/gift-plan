@@ -1,17 +1,14 @@
-import * as React from 'react'
+import * as React from "react";
 
-import { Button, Heading, Text } from '@react-email/components'
-import { GiftPlanHtml, text, button, footer, h1 } from './brand'
+import { Button, Heading, Text } from "@react-email/components";
+import { GiftPlanHtml, text, button, footer, h1 } from "./brand";
 
 interface MagicLinkEmailProps {
-  siteName: string
-  confirmationUrl: string
+  siteName: string;
+  confirmationUrl: string;
 }
 
-export const MagicLinkEmail = ({
-  siteName,
-  confirmationUrl,
-}: MagicLinkEmailProps) => (
+export const MagicLinkEmail = ({ siteName, confirmationUrl }: MagicLinkEmailProps) => (
   <GiftPlanHtml preview={`Votre lien de connexion pour ${siteName}`}>
     <Heading style={h1}>Votre lien de connexion</Heading>
     <Text style={text}>
@@ -20,10 +17,10 @@ export const MagicLinkEmail = ({
     <Button style={button} href={confirmationUrl}>
       Se connecter
     </Button>
-    <Text style={{ ...footer, marginTop: '32px' }}>
+    <Text style={{ ...footer, marginTop: "32px" }}>
       Si vous n'avez pas demandé ce lien, vous pouvez ignorer cet email en toute sécurité.
     </Text>
   </GiftPlanHtml>
-)
+);
 
-export default MagicLinkEmail
+export default MagicLinkEmail;

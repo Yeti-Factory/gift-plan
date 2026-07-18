@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/circles/")({
   component: CirclesPage,
@@ -62,8 +69,10 @@ function CirclesPage() {
     if (error || !c) {
       const msg = error?.message ?? "";
       if (msg.includes("CODE_INVALID")) toast.error("Code invalide");
-      else if (msg.includes("RATE_LIMITED")) toast.error("Trop de tentatives, réessaie dans quelques minutes.");
-      else if (msg.includes("BANNED")) toast.error("Tu as été retiré de ce cercle et ne peux pas y revenir.");
+      else if (msg.includes("RATE_LIMITED"))
+        toast.error("Trop de tentatives, réessaie dans quelques minutes.");
+      else if (msg.includes("BANNED"))
+        toast.error("Tu as été retiré de ce cercle et ne peux pas y revenir.");
       else if (msg.includes("NOT_AUTHENTICATED")) toast.error("Session expirée, reconnectez-vous.");
       else toast.error(msg || "Erreur");
       return;
@@ -78,7 +87,9 @@ function CirclesPage() {
     <div className="mx-auto max-w-md px-4 py-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Vos cercles</h1>
-        <p className="text-sm text-muted-foreground">Famille, amis, collègues… Rassemblez vos proches.</p>
+        <p className="text-sm text-muted-foreground">
+          Famille, amis, collègues… Rassemblez vos proches.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -148,12 +159,7 @@ function CirclesPage() {
           </Card>
         )}
         {circles?.map((c) => (
-          <Link
-            key={c.id}
-            to="/circles/$circleId"
-            params={{ circleId: c.id }}
-            className="block"
-          >
+          <Link key={c.id} to="/circles/$circleId" params={{ circleId: c.id }} className="block">
             <Card className="p-4 flex items-center justify-between hover:bg-accent transition-colors">
               <div>
                 <p className="font-semibold">{c.name}</p>

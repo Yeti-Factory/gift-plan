@@ -15,7 +15,10 @@ export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
       { title: "Nouveau mot de passe — Gift-Plan" },
-      { name: "description", content: "Choisissez un nouveau mot de passe pour votre compte Gift-Plan." },
+      {
+        name: "description",
+        content: "Choisissez un nouveau mot de passe pour votre compte Gift-Plan.",
+      },
     ],
   }),
   component: ResetPasswordPage,
@@ -49,7 +52,9 @@ function ResetPasswordPage() {
 
         if (!alive) return;
         if (error) {
-          setLinkError("Ce lien de réinitialisation est invalide ou expiré. Demande un nouveau lien.");
+          setLinkError(
+            "Ce lien de réinitialisation est invalide ou expiré. Demande un nouveau lien.",
+          );
           setCheckingLink(false);
           return;
         }
@@ -65,7 +70,9 @@ function ResetPasswordPage() {
 
         if (!alive) return;
         if (error) {
-          setLinkError("Ce lien de réinitialisation est invalide ou expiré. Demande un nouveau lien.");
+          setLinkError(
+            "Ce lien de réinitialisation est invalide ou expiré. Demande un nouveau lien.",
+          );
           setCheckingLink(false);
           return;
         }
@@ -137,7 +144,11 @@ function ResetPasswordPage() {
         ) : linkError ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-muted-foreground">{linkError}</p>
-            <Button type="button" className="w-full" onClick={() => navigate({ to: "/auth", replace: true })}>
+            <Button
+              type="button"
+              className="w-full"
+              onClick={() => navigate({ to: "/auth", replace: true })}
+            >
               Demander un nouveau lien
             </Button>
           </div>
@@ -146,7 +157,11 @@ function ResetPasswordPage() {
             <p className="text-sm text-muted-foreground">
               Ouvre cette page depuis le lien reçu par email pour choisir un nouveau mot de passe.
             </p>
-            <Button type="button" className="w-full" onClick={() => navigate({ to: "/auth", replace: true })}>
+            <Button
+              type="button"
+              className="w-full"
+              onClick={() => navigate({ to: "/auth", replace: true })}
+            >
               Retour à la connexion
             </Button>
           </div>

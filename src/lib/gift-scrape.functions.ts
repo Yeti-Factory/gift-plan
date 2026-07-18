@@ -136,15 +136,9 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
       const trimmed = html.slice(0, 500_000);
 
       const metaContent = (prop: string) =>
-        new RegExp(
-          `<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)["']`,
-          "i",
-        );
+        new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)["']`, "i");
       const metaContentRev = (prop: string) =>
-        new RegExp(
-          `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`,
-          "i",
-        );
+        new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`, "i");
 
       const title =
         pickMeta(trimmed, [

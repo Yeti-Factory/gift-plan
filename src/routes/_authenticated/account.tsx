@@ -26,7 +26,10 @@ export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
     meta: [
       { title: "Mon compte — Gift-Plan" },
-      { name: "description", content: "Gérez votre profil, votre email, votre mot de passe et votre compte Gift-Plan." },
+      {
+        name: "description",
+        content: "Gérez votre profil, votre email, votre mot de passe et votre compte Gift-Plan.",
+      },
     ],
   }),
   component: AccountPage,
@@ -84,7 +87,11 @@ function AccountPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle();
       if (!cancelled) setDisplayName(data?.display_name ?? "");
     })();
     return () => {
@@ -100,7 +107,10 @@ function AccountPage() {
       return;
     }
     setSavingName(true);
-    const { error } = await supabase.from("profiles").update({ display_name: trimmed }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_name: trimmed })
+      .eq("id", user.id);
     setSavingName(false);
     if (error) toast.error("Impossible de mettre à jour le nom.");
     else toast.success("Nom mis à jour.");
@@ -114,10 +124,16 @@ function AccountPage() {
     const { error } = await supabase.auth.updateUser({ email: next });
     setSavingEmail(false);
     if (error) {
-      toast.error(error.message.includes("already") ? "Cet email est déjà utilisé." : "Impossible de changer l'email.");
+      toast.error(
+        error.message.includes("already")
+          ? "Cet email est déjà utilisé."
+          : "Impossible de changer l'email.",
+      );
       return;
     }
-    toast.success("Un email de confirmation vient d'être envoyé aux deux adresses.", { duration: 8000 });
+    toast.success("Un email de confirmation vient d'être envoyé aux deux adresses.", {
+      duration: 8000,
+    });
   }
 
   async function savePassword(e: React.FormEvent) {
@@ -220,7 +236,11 @@ function AccountPage() {
               Un lien de confirmation sera envoyé à la nouvelle adresse.
             </p>
           </div>
-          <Button type="submit" disabled={savingEmail || email.trim() === user.email} className="w-full">
+          <Button
+            type="submit"
+            disabled={savingEmail || email.trim() === user.email}
+            className="w-full"
+          >
             {savingEmail ? "Envoi..." : "Changer l'email"}
           </Button>
         </form>
@@ -301,8 +321,9 @@ function AccountPage() {
         </div>
         <p className="text-sm text-muted-foreground">
           Téléchargez au format JSON toutes les données personnelles que Gift-Plan détient à votre
-          sujet (profil, cercles, listes, cadeaux, réservations que vous avez posées).
-          Les réservations posées par d'autres sur vos propres cadeaux sont exclues pour préserver la surprise.
+          sujet (profil, cercles, listes, cadeaux, réservations que vous avez posées). Les
+          réservations posées par d'autres sur vos propres cadeaux sont exclues pour préserver la
+          surprise.
         </p>
         <Button variant="outline" className="w-full" onClick={handleExport} disabled={exporting}>
           {exporting ? "Préparation..." : "Télécharger mon export (JSON)"}
@@ -320,13 +341,16 @@ function AccountPage() {
         </p>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" className="w-full">Supprimer mon compte</Button>
+            <Button variant="destructive" className="w-full">
+              Supprimer mon compte
+            </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Supprimer définitivement votre compte ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Cette action est irréversible. Pour confirmer, tapez <strong>SUPPRIMER</strong> ci-dessous.
+                Cette action est irréversible. Pour confirmer, tapez <strong>SUPPRIMER</strong>{" "}
+                ci-dessous.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <Input

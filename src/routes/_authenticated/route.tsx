@@ -1,4 +1,12 @@
-import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouter, useLocation } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  Link,
+  useNavigate,
+  useRouter,
+  useLocation,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Gift, Home, Package, ListChecks, LogOut, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -74,7 +82,13 @@ function AuthLayout() {
           </div>
           Gift-Plan
         </Link>
-        <Button variant="ghost" size="icon" onClick={signOut} disabled={signingOut} aria-label="Se déconnecter">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={signOut}
+          disabled={signingOut}
+          aria-label="Se déconnecter"
+        >
           <LogOut className="h-5 w-5" />
         </Button>
       </header>

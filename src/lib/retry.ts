@@ -5,11 +5,11 @@
 import { createLogger, type Logger } from "./logger";
 
 export interface RetryOptions {
-  attempts?: number;      // total attempts including the first (default 3)
-  baseDelayMs?: number;   // initial backoff (default 250)
-  maxDelayMs?: number;    // cap on backoff (default 3000)
-  logger?: Logger;        // where to log retry attempts
-  label?: string;         // short label for logs
+  attempts?: number; // total attempts including the first (default 3)
+  baseDelayMs?: number; // initial backoff (default 250)
+  maxDelayMs?: number; // cap on backoff (default 3000)
+  logger?: Logger; // where to log retry attempts
+  label?: string; // short label for logs
 }
 
 const RETRIABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -49,7 +49,10 @@ export async function retryFetch(
     } catch (err) {
       lastErr = err;
       if (i === attempts) throw err;
-      log.warn(`${label} threw`, { attempt: i, err: err instanceof Error ? err.message : String(err) });
+      log.warn(`${label} threw`, {
+        attempt: i,
+        err: err instanceof Error ? err.message : String(err),
+      });
     }
     const delay = Math.min(max, base * 2 ** (i - 1)) + Math.floor(Math.random() * 100);
     await sleep(delay);
