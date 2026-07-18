@@ -24,7 +24,9 @@ function supabaseOrigin(): string {
 export function buildCsp(): string {
   const sb = supabaseOrigin();
   const sbWs = sb ? sb.replace(/^http/, "ws") : "";
-  const connect = ["'self'", sb, sbWs, "https://*.lovable.dev", "https://*.lovable.app"].filter(Boolean).join(" ");
+  const connect = ["'self'", sb, sbWs, "https://*.lovable.dev", "https://*.lovable.app"]
+    .filter(Boolean)
+    .join(" ");
   const img = ["'self'", "data:", "blob:", sb, "https:"].filter(Boolean).join(" ");
   return [
     "default-src 'self'",
