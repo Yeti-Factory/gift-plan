@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Gift, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
@@ -305,6 +305,12 @@ function AuthPage() {
           </>
         )}
       </Card>
+
+      <nav className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
+        <Link to="/legal/mentions-legales" className="hover:text-primary">Mentions légales</Link>
+        <Link to="/legal/confidentialite" className="hover:text-primary">Confidentialité</Link>
+        <Link to="/legal/cgu" className="hover:text-primary">CGU</Link>
+      </nav>
     </div>
   );
 }
