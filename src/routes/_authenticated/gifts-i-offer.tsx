@@ -6,6 +6,17 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatPrice } from "@/lib/gift-box";
 import { useGiftImageUrls } from "@/lib/gift-image";
 
@@ -27,6 +38,7 @@ type Row = {
 function GiftsIOffer() {
   const [me, setMe] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [toCancel, setToCancel] = useState<Row | null>(null);
 
   const load = useCallback(async () => {
     const { data: user } = await supabase.auth.getUser();
@@ -107,7 +119,13 @@ function GiftsIOffer() {
         </p>
       </div>
 
-      {rows === null && <p className="text-sm text-muted-foreground">Chargement…</p>}
+      {rows === null && (
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+        </div>
+      )}
 
       {rows?.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
@@ -141,13 +159,45 @@ function GiftsIOffer() {
                   <p className="text-sm font-semibold">{formatPrice(r.price, r.currency)}</p>
                 )}
               </div>
-              <Button size="icon" variant="ghost" onClick={() => cancel(r.reservation_id)}>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Annuler la réservation"
+                onClick={() => setToCancel(r)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </Card>
           ))}
         </>
       )}
+
+      <AlertDialog open={!!toCancel} onOpenChange={(o) => !o && setToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Annuler cette réservation ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              « {toCancel?.title} » redeviendra disponible pour tout le monde. Attention à ne pas
+              gâcher la surprise si tu l'as déjà acheté.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Garder</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                if (!toCancel) return;
+                const id = toCancel.reservation_id;
+                setToCancel(null);
+                cancel(id);
+              }}
+            >
+              Annuler la réservation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

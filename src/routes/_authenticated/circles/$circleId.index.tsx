@@ -114,6 +114,8 @@ function CircleDetail() {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [leaveBusy, setLeaveBusy] = useState(false);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
 
   async function load() {
     const { data: user } = await supabase.auth.getUser();
@@ -194,10 +196,10 @@ function CircleDetail() {
   }
 
   async function regenerateCode() {
-    if (!confirm("Générer un nouveau code ? L'ancien ne fonctionnera plus.")) return;
     setRegenBusy(true);
     const { data, error } = await supabase.rpc("regenerate_invite_code", { _circle_id: circleId });
     setRegenBusy(false);
+    setRegenOpen(false);
     if (error || !data) {
       toast.error(translateError(error?.message ?? ""));
       return;
@@ -222,8 +224,7 @@ function CircleDetail() {
     load();
   }
 
-  async function removeMember(userId: string, name: string) {
-    if (!confirm(`Retirer ${name} du cercle ?`)) return;
+  async function removeMember(userId: string) {
     const { error } = await supabase.rpc("remove_member", {
       _circle_id: circleId,
       _user_id: userId,
@@ -294,7 +295,12 @@ function CircleDetail() {
               <Button size="sm" variant="ghost" onClick={copyCode} disabled={!inviteCode}>
                 <Copy className="h-4 w-4 mr-1" /> Copier
               </Button>
-              <Button size="sm" variant="ghost" onClick={regenerateCode} disabled={regenBusy}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setRegenOpen(true)}
+                disabled={regenBusy}
+              >
                 <RefreshCw className={`h-4 w-4 mr-1 ${regenBusy ? "animate-spin" : ""}`} />{" "}
                 Régénérer
               </Button>
@@ -364,7 +370,7 @@ function CircleDetail() {
                       )}
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
-                        onClick={() => removeMember(m.user_id, name)}
+                        onClick={() => setRemoveTarget({ userId: m.user_id, name })}
                       >
                         <UserMinus className="h-4 w-4 mr-2" /> Retirer du cercle
                       </DropdownMenuItem>
@@ -453,6 +459,59 @@ function CircleDetail() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isCreator && isLastMember ? "Supprimer" : "Quitter"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={regenOpen} onOpenChange={setRegenOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Régénérer le code d'invitation ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'ancien code cessera immédiatement de fonctionner. Les membres qui ne l'ont pas
+              encore utilisé devront recevoir le nouveau.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={regenBusy}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={regenBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                regenerateCode();
+              }}
+            >
+              Régénérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => !o && setRemoveTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer {removeTarget?.name} du cercle ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette personne perdra l'accès au cercle et à ses listes. Elle ne pourra plus le
+              rejoindre avec le code actuel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                const target = removeTarget;
+                setRemoveTarget(null);
+                if (target) removeMember(target.userId);
+              }}
+            >
+              Retirer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
