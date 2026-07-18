@@ -12,6 +12,8 @@ import { MagicLinkEmail } from '@/lib/email-templates/magic-link'
 import { RecoveryEmail } from '@/lib/email-templates/recovery'
 import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
+import { createLogger, newRequestId } from '@/lib/logger'
+import { retryFetch } from '@/lib/retry'
 
 // Configuration
 const SITE_NAME = "Gift-Plan"
@@ -199,10 +201,11 @@ function parseAuthPayload(body: unknown): { run_id?: string; data: AuthEmailHook
   }
 }
 
-async function sendAuthEmailWithResend(body: unknown) {
+async function sendAuthEmailWithResend(body: unknown, requestId: string) {
+  const log = createLogger('auth-email', { requestId })
   const resendKey = getResendApiKey()
   if (!resendKey) {
-    console.error('[auth-email] Neither RESEND_API_KEY_GIFT_PLAN nor RESEND_API_KEY is configured')
+    log.error('resend key missing')
     return Response.json({ error: 'Email sender is not configured for this deployment' }, { status: 503 })
   }
 
@@ -214,9 +217,7 @@ async function sendAuthEmailWithResend(body: unknown) {
     return Response.json({ error: `Unsupported payload version: ${event.version}` }, { status: 400 })
   }
   if (event.data.action_type !== 'recovery' || !isExpectedRecoveryUrl(event.data.url)) {
-    console.error('[auth-email] Unsupported recovery URL', {
-      action_type: event.data.action_type,
-    })
+    log.warn('unsupported recovery url', { action_type: event.data.action_type })
     return Response.json({ error: 'Unsupported auth email action' }, { status: 400 })
   }
 
@@ -227,28 +228,35 @@ async function sendAuthEmailWithResend(body: unknown) {
   const html = await render(element)
   const text = await render(element, { plainText: true })
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendKey}`,
-      'Content-Type': 'application/json',
-      ...(event.run_id ? { 'Idempotency-Key': event.run_id } : {}),
-    },
-    body: JSON.stringify({
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-      to: [event.data.email],
-      subject,
-      html,
-      text,
-    }),
-  })
+  const started = Date.now()
+  const response = await retryFetch(
+    () =>
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+          ...(event.run_id ? { 'Idempotency-Key': event.run_id } : {}),
+        },
+        body: JSON.stringify({
+          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          to: [event.data.email],
+          subject,
+          html,
+          text,
+        }),
+      }),
+    { attempts: 3, logger: log, label: 'resend' },
+  )
 
+  const latencyMs = Date.now() - started
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('[auth-email] Resend failed', response.status, errorText)
+    log.error('resend failed', undefined, { status: response.status, latencyMs, body: errorText.slice(0, 200) })
     return Response.json({ error: 'Failed to send email' }, { status: 500 })
   }
 
+  log.info('sent', { action: event.data.action_type, latencyMs })
   return Response.json({ success: true, sent: true })
 }
 
@@ -256,7 +264,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
       POST: ({ request }) => {
-        const requestId = crypto.randomUUID().slice(0, 8)
+        const requestId = newRequestId()
         const ip = clientIp(request)
 
         // 1. Rate limit before any work
@@ -272,12 +280,13 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
 })
 
 async function handleAuthWebhook(request: Request, requestId: string, ip: string): Promise<Response> {
+  const log = createLogger('auth-email', { requestId })
   const apiKey = process.env.LOVABLE_API_KEY
   const fallbackSecret = process.env.AUTH_EMAIL_WEBHOOK_SECRET
   const secrets = [apiKey, fallbackSecret].filter((v): v is string => Boolean(v))
 
   if (secrets.length === 0) {
-    console.error(`[auth-email:${requestId}] no signing secret configured (LOVABLE_API_KEY or AUTH_EMAIL_WEBHOOK_SECRET)`)
+    log.error('no signing secret configured')
     return new Response('Server misconfigured', { status: 503 })
   }
 
@@ -292,9 +301,9 @@ async function handleAuthWebhook(request: Request, requestId: string, ip: string
     payload = result.payload
   } catch (e) {
     const code = e instanceof WebhookError ? e.code : 'unknown'
-    console.warn(`[auth-email:${requestId}] hmac rejected reason=${code} ip=${ip}`)
+    log.warn('hmac rejected', { reason: code, ip })
     return new Response('Unauthorized', { status: 401 })
   }
 
-  return sendAuthEmailWithResend(payload)
+  return sendAuthEmailWithResend(payload, requestId)
 }

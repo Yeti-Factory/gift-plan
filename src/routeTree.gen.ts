@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StatusRouteImport } from './routes/status'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -20,12 +21,18 @@ import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
 
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -82,6 +89,11 @@ const AuthenticatedCirclesIndexRoute =
     path: '/circles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCirclesCircleIdRoute =
   AuthenticatedCirclesCircleIdRouteImport.update({
     id: '/circles/$circleId',
@@ -115,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/status': typeof StatusRoute
   '/account': typeof AuthenticatedAccountRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
@@ -122,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -132,12 +146,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/status': typeof StatusRoute
   '/account': typeof AuthenticatedAccountRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -150,6 +166,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/status': typeof StatusRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
@@ -157,6 +174,7 @@ export interface FileRoutesById {
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -169,6 +187,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/status'
     | '/account'
     | '/gifts-i-offer'
     | '/my-lists'
@@ -176,6 +195,7 @@ export interface FileRouteTypes {
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/circles/$circleId'
+    | '/api/public/health'
     | '/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -186,12 +206,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/status'
     | '/account'
     | '/gifts-i-offer'
     | '/my-lists'
     | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
+    | '/api/public/health'
     | '/circles'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -203,6 +225,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/status'
     | '/_authenticated/account'
     | '/_authenticated/gifts-i-offer'
     | '/_authenticated/my-lists'
@@ -210,6 +233,7 @@ export interface FileRouteTypes {
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/_authenticated/circles/$circleId'
+    | '/api/public/health'
     | '/_authenticated/circles/'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -222,15 +246,24 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  StatusRoute: typeof StatusRoute
   LegalCguRoute: typeof LegalCguRoute
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -307,6 +340,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/circles/'
       preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/circles/$circleId': {
       id: '/_authenticated/circles/$circleId'
@@ -389,9 +429,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  StatusRoute: StatusRoute,
   LegalCguRoute: LegalCguRoute,
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
