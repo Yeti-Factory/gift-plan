@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertSafeUrl } from "./net-guard";
+import { createLogger, newRequestId } from "./logger";
+import { retryFetch } from "./retry";
 
 const schema = z.object({ url: z.string().url() });
 
@@ -46,22 +48,27 @@ function decodeEntities(s: string): string {
 }
 
 async function fetchWithGuards(rawUrl: string, requestId: string): Promise<string | null> {
+  const log = createLogger("scrape", { requestId });
   let currentUrl = rawUrl;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       const safe = await assertSafeUrl(currentUrl);
-      const res = await fetch(safe.toString(), {
-        method: "GET",
-        redirect: "manual",
-        signal: controller.signal,
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (compatible; GiftPlanBot/1.0; +https://gift-plan.yeti-lab.fr)",
-          Accept: "text/html,application/xhtml+xml",
-        },
-      });
+      const res = await retryFetch(
+        () =>
+          fetch(safe.toString(), {
+            method: "GET",
+            redirect: "manual",
+            signal: controller.signal,
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (compatible; GiftPlanBot/1.0; +https://gift-plan.yeti-lab.fr)",
+              Accept: "text/html,application/xhtml+xml",
+            },
+          }),
+        { attempts: 2, baseDelayMs: 200, logger: log, label: "scrape-fetch" },
+      );
 
       if (res.status >= 300 && res.status < 400) {
         const loc = res.headers.get("location");
@@ -70,7 +77,10 @@ async function fetchWithGuards(rawUrl: string, requestId: string): Promise<strin
         continue;
       }
 
-      if (!res.ok) return null;
+      if (!res.ok) {
+        log.warn("non-ok response", { status: res.status });
+        return null;
+      }
 
       const ct = (res.headers.get("content-type") ?? "").toLowerCase();
       if (!ct.startsWith("text/html") && !ct.startsWith("application/xhtml+xml")) {
@@ -100,11 +110,10 @@ async function fetchWithGuards(rawUrl: string, requestId: string): Promise<strin
       }
       return new TextDecoder("utf-8", { fatal: false }).decode(buf);
     }
-    console.warn(`[scrape:${requestId}] too many redirects`);
+    log.warn("too many redirects");
     return null;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`[scrape:${requestId}] fetch aborted: ${msg}`);
+    log.warn("fetch aborted", { err: err instanceof Error ? err.message : String(err) });
     return null;
   } finally {
     clearTimeout(timer);
@@ -115,9 +124,10 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => schema.parse(input))
   .handler(async ({ data, context }) => {
-    const requestId = crypto.randomUUID().slice(0, 8);
+    const requestId = newRequestId();
+    const log = createLogger("scrape", { requestId });
     if (rateLimited(context.userId)) {
-      console.warn(`[scrape:${requestId}] rate limited user=${context.userId}`);
+      log.warn("rate limited", { userId: context.userId });
       return { ok: false as const };
     }
     const html = await fetchWithGuards(data.url, requestId);
@@ -175,7 +185,7 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
         currency: currency ?? null,
       };
     } catch (err) {
-      console.warn(`[scrape:${requestId}] parse failed: ${err instanceof Error ? err.message : "?"}`);
+      log.warn("parse failed", { err: err instanceof Error ? err.message : "?" });
       return { ok: false as const };
     }
   });
