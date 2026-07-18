@@ -64,12 +64,19 @@ function MemberLists() {
       .maybeSingle();
     setProfile(p);
 
-    const { data: ls } = await supabase
-      .from("lists")
-      .select("id, title, occasion, event_date")
-      .eq("circle_id", circleId)
-      .eq("owner_id", userId)
-      .order("created_at", { ascending: false });
+    const { data: accessRows } = await supabase
+      .from("list_circle_access")
+      .select("list_id")
+      .eq("circle_id", circleId);
+    const accessibleListIds = (accessRows ?? []).map((row) => row.list_id);
+    const { data: ls } = accessibleListIds.length
+      ? await supabase
+          .from("lists")
+          .select("id, title, occasion, event_date")
+          .in("id", accessibleListIds)
+          .eq("owner_id", userId)
+          .order("created_at", { ascending: false })
+      : { data: [] };
     setLists(ls ?? []);
 
     const listIds = (ls ?? []).map((l) => l.id);
@@ -131,9 +138,11 @@ function MemberLists() {
 
   async function reserve(giftId: string) {
     if (!me) return;
-    const { error } = await supabase
-      .from("reservations")
-      .insert({ gift_id: giftId, buyer_id: me, status: "reserved" });
+    const { error } = await supabase.rpc("set_gift_reservation", {
+      _gift_id: giftId,
+      _action: "reserve",
+      _share_token: null,
+    });
     if (error) {
       if ((error as { code?: string }).code === "23505") {
         toast.error("Trop tard ! Quelqu'un vient de réserver ce cadeau.");
@@ -146,22 +155,22 @@ function MemberLists() {
 
   async function unreserve(giftId: string) {
     if (!me) return;
-    const { error } = await supabase
-      .from("reservations")
-      .delete()
-      .eq("gift_id", giftId)
-      .eq("buyer_id", me);
+    const { error } = await supabase.rpc("set_gift_reservation", {
+      _gift_id: giftId,
+      _action: "cancel",
+      _share_token: null,
+    });
     if (error) toast.error(error.message);
     else toast.success("Réservation annulée");
   }
 
   async function markPurchased(giftId: string) {
     if (!me) return;
-    const { error } = await supabase
-      .from("reservations")
-      .update({ status: "purchased" })
-      .eq("gift_id", giftId)
-      .eq("buyer_id", me);
+    const { error } = await supabase.rpc("set_gift_reservation", {
+      _gift_id: giftId,
+      _action: "purchased",
+      _share_token: null,
+    });
     if (error) toast.error(error.message);
     else toast.success("Marqué comme acheté 🎁");
   }

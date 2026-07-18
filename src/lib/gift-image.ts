@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { getGiftImageSignedUrls } from "@/lib/gift-image.functions";
+import { getGiftImageSignedUrls, getPublicGiftImageSignedUrls } from "@/lib/gift-image.functions";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -91,7 +91,7 @@ export async function uploadGiftImageChecked(
  * Hook: batch-fetch short-lived signed URLs for a list of gift ids.
  * Returns `Record<giftId, signedUrl>` for gifts the caller can see.
  */
-export function useGiftImageUrls(giftIds: string[]) {
+export function useGiftImageUrls(giftIds: string[], enabled = true) {
   const fetchUrls = useServerFn(getGiftImageSignedUrls);
   const key = [...giftIds].sort().join(",");
   return useQuery({
@@ -104,6 +104,27 @@ export function useGiftImageUrls(giftIds: string[]) {
     // Signed URLs expire after 5 min; refresh at 4 min.
     staleTime: 4 * 60 * 1000,
     refetchInterval: 4 * 60 * 1000,
-    enabled: giftIds.length > 0,
+    enabled: enabled && giftIds.length > 0,
+  });
+}
+
+export function usePublicGiftImageUrls(
+  username: string,
+  shareToken: string | undefined,
+  giftIds: string[],
+  enabled = true,
+) {
+  const fetchUrls = useServerFn(getPublicGiftImageSignedUrls);
+  const key = [...giftIds].sort().join(",");
+  return useQuery({
+    queryKey: ["public-gift-image-urls", username, shareToken ?? "", key],
+    queryFn: async () => {
+      if (giftIds.length === 0) return {} as Record<string, string>;
+      const response = await fetchUrls({ data: { username, shareToken, giftIds } });
+      return response.urls;
+    },
+    staleTime: 4 * 60 * 1000,
+    refetchInterval: 4 * 60 * 1000,
+    enabled: enabled && giftIds.length > 0,
   });
 }

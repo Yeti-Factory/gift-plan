@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Copy,
   RefreshCw,
@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/circles/$circleId/")({
 type Member = {
   user_id: string;
   role: string;
-  profile: { display_name: string | null; avatar_url: string | null } | null;
+  profile: { display_name: string | null; avatar_url: string | null; username: string } | null;
   listCount: number;
 };
 
@@ -117,7 +117,7 @@ function CircleDetail() {
   const [regenOpen, setRegenOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const { data: user } = await supabase.auth.getUser();
     setMe(user.user?.id ?? null);
 
@@ -152,12 +152,16 @@ function CircleDetail() {
     }
     const { data: profs } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url")
+      .select("id, display_name, avatar_url, username")
       .in("id", userIds);
-    const { data: lists } = await supabase
-      .from("lists")
-      .select("owner_id")
+    const { data: accessRows } = await supabase
+      .from("list_circle_access")
+      .select("list_id")
       .eq("circle_id", circleId);
+    const accessibleListIds = (accessRows ?? []).map((row) => row.list_id);
+    const { data: lists } = accessibleListIds.length
+      ? await supabase.from("lists").select("owner_id").in("id", accessibleListIds)
+      : { data: [] };
     const listCounts = new Map<string, number>();
     (lists ?? []).forEach((l) => listCounts.set(l.owner_id, (listCounts.get(l.owner_id) ?? 0) + 1));
     const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
@@ -170,6 +174,7 @@ function CircleDetail() {
           ? {
               display_name: profMap.get(m.user_id)!.display_name,
               avatar_url: profMap.get(m.user_id)!.avatar_url,
+              username: profMap.get(m.user_id)!.username,
             }
           : null,
         listCount: listCounts.get(m.user_id) ?? 0,
@@ -183,11 +188,11 @@ function CircleDetail() {
       .order("created_at", { ascending: false })
       .limit(30);
     setActivity((acts ?? []) as ActivityRow[]);
-  }
+  }, [circleId]);
 
   useEffect(() => {
     load();
-  }, [circleId]);
+  }, [load]);
 
   function copyCode() {
     if (!inviteCode) return;
@@ -384,8 +389,10 @@ function CircleDetail() {
                 </span>
                 <Button asChild size="sm" className="shrink-0 rounded-full">
                   <Link
-                    to="/circles/$circleId/members/$userId"
-                    params={{ circleId, userId: m.user_id }}
+                    to={isMe ? "/my-lists" : "/p/$username"}
+                    params={
+                      isMe ? undefined : { username: m.profile?.username ?? "profil-introuvable" }
+                    }
                     aria-label={`${isMe ? "Gérer mes cadeaux" : `Voir les cadeaux de ${name}`}`}
                   >
                     <Gift className="h-4 w-4" />

@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "start": "node .output/server/index.mjs",
     "test": "vitest run",
-    "test:sql": "psql -f tests/sql/p0-permissions.sql",
+    "test:sql": "psql -f tests/sql/p0-permissions.sql && psql -f tests/sql/profile-model.sql",
     "check": "bun run lint && bun run typecheck && bun run format:check && bun run test"
   },
   "dependencies": {

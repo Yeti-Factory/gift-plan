@@ -208,33 +208,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      list_circle_access: {
+        Row: { circle_id: string; created_at: string; list_id: string };
+        Insert: { circle_id: string; created_at?: string; list_id: string };
+        Update: { circle_id?: string; created_at?: string; list_id?: string };
+        Relationships: [
+          {
+            foreignKeyName: "list_circle_access_circle_id_fkey";
+            columns: ["circle_id"];
+            isOneToOne: false;
+            referencedRelation: "circles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "list_circle_access_list_id_fkey";
+            columns: ["list_id"];
+            isOneToOne: false;
+            referencedRelation: "lists";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lists: {
         Row: {
-          circle_id: string;
+          circle_id: string | null;
           created_at: string;
           event_date: string | null;
           id: string;
           occasion: string | null;
           owner_id: string;
           title: string;
+          visibility: Database["public"]["Enums"]["list_visibility"];
         };
         Insert: {
-          circle_id: string;
+          circle_id?: string | null;
           created_at?: string;
           event_date?: string | null;
           id?: string;
           occasion?: string | null;
           owner_id: string;
           title: string;
+          visibility?: Database["public"]["Enums"]["list_visibility"];
         };
         Update: {
-          circle_id?: string;
+          circle_id?: string | null;
           created_at?: string;
           event_date?: string | null;
           id?: string;
           occasion?: string | null;
           owner_id?: string;
           title?: string;
+          visibility?: Database["public"]["Enums"]["list_visibility"];
         };
         Relationships: [
           {
@@ -249,21 +273,69 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null;
+          bio: string | null;
           created_at: string;
           display_name: string | null;
+          email_searchable: boolean;
           id: string;
+          username: string;
+          visibility: Database["public"]["Enums"]["profile_visibility"];
         };
         Insert: {
           avatar_url?: string | null;
+          bio?: string | null;
           created_at?: string;
           display_name?: string | null;
+          email_searchable?: boolean;
           id: string;
+          username: string;
+          visibility?: Database["public"]["Enums"]["profile_visibility"];
         };
         Update: {
           avatar_url?: string | null;
+          bio?: string | null;
           created_at?: string;
           display_name?: string | null;
+          email_searchable?: boolean;
           id?: string;
+          username?: string;
+          visibility?: Database["public"]["Enums"]["profile_visibility"];
+        };
+        Relationships: [];
+      };
+      profile_share_link_lists: {
+        Row: { list_id: string; share_link_id: string };
+        Insert: { list_id: string; share_link_id: string };
+        Update: { list_id?: string; share_link_id?: string };
+        Relationships: [];
+      };
+      profile_share_links: {
+        Row: {
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          label: string | null;
+          owner_id: string;
+          revoked_at: string | null;
+          token: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          label?: string | null;
+          owner_id: string;
+          revoked_at?: string | null;
+          token?: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          label?: string | null;
+          owner_id?: string;
+          revoked_at?: string | null;
+          token?: string;
         };
         Relationships: [];
       };
@@ -341,6 +413,10 @@ export type Database = {
     };
     Functions: {
       _display_name: { Args: { _user_id: string }; Returns: string };
+      create_profile_share_link: {
+        Args: { _expires_at?: string | null; _label?: string | null; _list_ids: string[] };
+        Returns: Json;
+      };
       create_circle: {
         Args: { _name: string };
         Returns: {
@@ -362,6 +438,14 @@ export type Database = {
       };
       gen_invite_code: { Args: never; Returns: string };
       get_invite_code: { Args: { _circle_id: string }; Returns: string };
+      get_profile_page: {
+        Args: { _share_token?: string | null; _username: string };
+        Returns: Json;
+      };
+      get_public_list_page: {
+        Args: { _list_id: string; _share_token?: string | null };
+        Returns: Json;
+      };
       gift_circle_id: { Args: { _gift_id: string }; Returns: string };
       gift_owner_id: { Args: { _gift_id: string }; Returns: string };
       is_circle_admin: {
@@ -372,6 +456,11 @@ export type Database = {
         Args: { _circle_id: string; _user_id: string };
         Returns: boolean;
       };
+      list_is_visible: {
+        Args: { _list_id: string; _share_token?: string | null; _viewer_id?: string | null };
+        Returns: boolean;
+      };
+      list_profile_share_links: { Args: never; Returns: Json };
       join_circle: {
         Args: { _code: string };
         Returns: {
@@ -395,6 +484,12 @@ export type Database = {
       join_circle_v2: { Args: { _code: string }; Returns: Json };
       leave_circle: { Args: { _circle_id: string }; Returns: Json };
       regenerate_invite_code: { Args: { _circle_id: string }; Returns: string };
+      revoke_profile_share_link: { Args: { _share_id: string }; Returns: undefined };
+      search_public_profiles: { Args: { _query: string }; Returns: Json };
+      set_gift_reservation: {
+        Args: { _action: string; _gift_id: string; _share_token?: string | null };
+        Returns: Json;
+      };
       remove_member: {
         Args: { _circle_id: string; _user_id: string };
         Returns: undefined;
@@ -404,10 +499,20 @@ export type Database = {
         Returns: undefined;
       };
       shares_circle_with: { Args: { _other: string }; Returns: boolean };
+      update_list_access: {
+        Args: {
+          _circle_ids?: string[];
+          _list_id: string;
+          _visibility: Database["public"]["Enums"]["list_visibility"];
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       circle_role: "admin" | "member";
       gift_priority: "indispensable" | "j_adorerais" | "me_plairait";
+      list_visibility: "public" | "circles";
+      profile_visibility: "public" | "private";
       reservation_status: "reserved" | "purchased";
     };
     CompositeTypes: {
