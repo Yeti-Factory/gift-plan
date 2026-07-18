@@ -11,12 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PUsernameRouteImport } from './routes/p/$username'
 import { Route as LegalMentionsLegalesRouteImport } from './routes/legal/mentions-legales'
 import { Route as LegalConfidentialiteRouteImport } from './routes/legal/confidentialite'
 import { Route as LegalCguRouteImport } from './routes/legal/cgu'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -39,6 +43,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -51,6 +60,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PUsernameRoute = PUsernameRouteImport.update({
+  id: '/p/$username',
+  path: '/p/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalMentionsLegalesRoute = LegalMentionsLegalesRouteImport.update({
@@ -67,6 +81,16 @@ const LegalCguRoute = LegalCguRouteImport.update({
   id: '/legal/cgu',
   path: '/legal/cgu',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMyListsRoute = AuthenticatedMyListsRouteImport.update({
   id: '/my-lists',
@@ -133,14 +157,18 @@ const AuthenticatedCirclesCircleIdMembersUserIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/discover': typeof DiscoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
   '/account': typeof AuthenticatedAccountRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
+  '/people': typeof AuthenticatedPeopleRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/p/$username': typeof PUsernameRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/api/public/health': typeof ApiPublicHealthRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
@@ -153,14 +181,18 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/discover': typeof DiscoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
   '/account': typeof AuthenticatedAccountRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
+  '/people': typeof AuthenticatedPeopleRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/p/$username': typeof PUsernameRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
@@ -174,14 +206,18 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/discover': typeof DiscoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
+  '/_authenticated/people': typeof AuthenticatedPeopleRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/legal/cgu': typeof LegalCguRoute
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
+  '/p/$username': typeof PUsernameRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/api/public/health': typeof ApiPublicHealthRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
@@ -196,14 +232,18 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/discover'
     | '/reset-password'
     | '/status'
     | '/account'
     | '/gifts-i-offer'
     | '/my-lists'
+    | '/people'
+    | '/profile'
     | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
+    | '/p/$username'
     | '/circles/$circleId'
     | '/api/public/health'
     | '/circles/'
@@ -216,14 +256,18 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/discover'
     | '/reset-password'
     | '/status'
     | '/account'
     | '/gifts-i-offer'
     | '/my-lists'
+    | '/people'
+    | '/profile'
     | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
+    | '/p/$username'
     | '/api/public/health'
     | '/circles'
     | '/api/public/hooks/purge-storage'
@@ -236,14 +280,18 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/discover'
     | '/reset-password'
     | '/status'
     | '/_authenticated/account'
     | '/_authenticated/gifts-i-offer'
     | '/_authenticated/my-lists'
+    | '/_authenticated/people'
+    | '/_authenticated/profile'
     | '/legal/cgu'
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
+    | '/p/$username'
     | '/_authenticated/circles/$circleId'
     | '/api/public/health'
     | '/_authenticated/circles/'
@@ -258,11 +306,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  DiscoverRoute: typeof DiscoverRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StatusRoute: typeof StatusRoute
   LegalCguRoute: typeof LegalCguRoute
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
+  PUsernameRoute: typeof PUsernameRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicHooksPurgeStorageRoute: typeof ApiPublicHooksPurgeStorageRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -283,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -306,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$username': {
+      id: '/p/$username'
+      path: '/p/$username'
+      fullPath: '/p/$username'
+      preLoaderRoute: typeof PUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/legal/mentions-legales': {
       id: '/legal/mentions-legales'
       path: '/legal/mentions-legales'
@@ -326,6 +390,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/cgu'
       preLoaderRoute: typeof LegalCguRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/people': {
+      id: '/_authenticated/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof AuthenticatedPeopleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/my-lists': {
       id: '/_authenticated/my-lists'
@@ -429,6 +507,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedGiftsIOfferRoute: typeof AuthenticatedGiftsIOfferRoute
   AuthenticatedMyListsRoute: typeof AuthenticatedMyListsRoute
+  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRouteWithChildren
   AuthenticatedCirclesIndexRoute: typeof AuthenticatedCirclesIndexRoute
 }
@@ -437,6 +517,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedGiftsIOfferRoute: AuthenticatedGiftsIOfferRoute,
   AuthenticatedMyListsRoute: AuthenticatedMyListsRoute,
+  AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedCirclesCircleIdRoute:
     AuthenticatedCirclesCircleIdRouteWithChildren,
   AuthenticatedCirclesIndexRoute: AuthenticatedCirclesIndexRoute,
@@ -449,11 +531,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  DiscoverRoute: DiscoverRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StatusRoute: StatusRoute,
   LegalCguRoute: LegalCguRoute,
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
+  PUsernameRoute: PUsernameRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicHooksPurgeStorageRoute: ApiPublicHooksPurgeStorageRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

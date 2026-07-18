@@ -8,7 +8,15 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Gift, Home, Package, ListChecks, LogOut, User as UserIcon } from "lucide-react";
+import {
+  Gift,
+  Package,
+  ListChecks,
+  LogOut,
+  UserRoundSearch,
+  Users,
+  UserCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +40,7 @@ function AuthLayout() {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const pathname = useLocation({ select: (l) => l.pathname });
-  const topLevel = new Set(["/circles", "/my-lists", "/gifts-i-offer", "/account"]);
+  const topLevel = new Set(["/people", "/my-lists", "/gifts-i-offer", "/circles", "/profile"]);
   const showBack = !topLevel.has(pathname);
 
   useEffect(() => {
@@ -76,7 +84,7 @@ function AuthLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-background/90 backdrop-blur px-4 py-3">
-        <Link to="/circles" className="flex items-center gap-2 font-bold">
+        <Link to="/people" className="flex items-center gap-2 font-bold">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Gift className="h-4 w-4" />
           </div>
@@ -96,18 +104,19 @@ function AuthLayout() {
       <main className="flex-1 pb-24">
         {showBack && (
           <div className="mx-auto max-w-md px-4 pt-4">
-            <BackButton fallback="/circles" />
+            <BackButton fallback="/people" />
           </div>
         )}
         <Outlet />
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur">
-        <div className="mx-auto grid max-w-md grid-cols-4">
-          <NavItem to="/circles" icon={<Home className="h-5 w-5" />} label="Cercles" />
+        <div className="mx-auto grid max-w-md grid-cols-5">
+          <NavItem to="/people" icon={<UserRoundSearch className="h-5 w-5" />} label="Profils" />
           <NavItem to="/my-lists" icon={<ListChecks className="h-5 w-5" />} label="Mes listes" />
           <NavItem to="/gifts-i-offer" icon={<Package className="h-5 w-5" />} label="J'offre" />
-          <NavItem to="/account" icon={<UserIcon className="h-5 w-5" />} label="Compte" />
+          <NavItem to="/circles" icon={<Users className="h-5 w-5" />} label="Cercles" />
+          <NavItem to="/profile" icon={<UserCircle className="h-5 w-5" />} label="Profil" />
         </div>
       </nav>
     </div>

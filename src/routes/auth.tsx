@@ -47,7 +47,7 @@ function AuthPage() {
       if (redirectToResetPasswordIfNeeded()) return;
       if (data.session) {
         ensureProfile(data.session.user).catch(() => {});
-        navigate({ to: "/circles", replace: true });
+        navigate({ to: "/people", replace: true });
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
@@ -59,7 +59,7 @@ function AuthPage() {
       if (event === "SIGNED_IN" && redirectToResetPasswordIfNeeded()) return;
       if (event === "SIGNED_IN" && session) {
         ensureProfile(session.user).catch(() => {});
-        navigate({ to: "/circles", replace: true });
+        navigate({ to: "/people", replace: true });
       }
     });
     return () => sub.subscription.unsubscribe();

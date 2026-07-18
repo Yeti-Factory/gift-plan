@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -46,7 +47,14 @@ export const Route = createFileRoute("/_authenticated/my-lists")({
 });
 
 type Circle = { id: string; name: string };
-type List = { id: string; title: string; occasion: string | null; circle_id: string };
+type List = {
+  id: string;
+  title: string;
+  occasion: string | null;
+  circle_id: string | null;
+  visibility: "public" | "circles";
+  circle_ids: string[];
+};
 type Gift = {
   id: string;
   list_id: string;
@@ -78,12 +86,24 @@ function MyLists() {
 
     const { data: ls } = await supabase
       .from("lists")
-      .select("id, title, occasion, circle_id")
+      .select("id, title, occasion, circle_id, visibility")
       .eq("owner_id", user.user.id)
       .order("created_at", { ascending: false });
-    setLists(ls ?? []);
-
     const listIds = (ls ?? []).map((l) => l.id);
+    const { data: accessRows } = listIds.length
+      ? await supabase
+          .from("list_circle_access")
+          .select("list_id, circle_id")
+          .in("list_id", listIds)
+      : { data: [] };
+    setLists(
+      (ls ?? []).map((list) => ({
+        ...list,
+        circle_ids: (accessRows ?? [])
+          .filter((row) => row.list_id === list.id)
+          .map((row) => row.circle_id),
+      })),
+    );
     if (listIds.length === 0) {
       setGifts([]);
       setLoading(false);
@@ -112,7 +132,9 @@ function MyLists() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Mes listes</h1>
-          <p className="text-sm text-muted-foreground">Vos envies, par cercle et occasion.</p>
+          <p className="text-sm text-muted-foreground">
+            Vos envies, publiques ou partagées avec vos cercles.
+          </p>
         </div>
         <NewListDialog circles={circles} onCreated={load} />
       </div>
@@ -124,13 +146,7 @@ function MyLists() {
         </div>
       )}
 
-      {!loading && circles.length === 0 && (
-        <Card className="p-6 text-center text-sm text-muted-foreground">
-          Rejoignez ou créez un cercle avant de commencer une liste.
-        </Card>
-      )}
-
-      {!loading && lists.length === 0 && circles.length > 0 && (
+      {!loading && lists.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
           Aucune liste pour l'instant. Créez-en une !
         </Card>
@@ -139,14 +155,16 @@ function MyLists() {
       {!loading &&
         lists.map((list) => {
           const items = gifts.filter((g) => g.list_id === list.id);
-          const circle = circles.find((c) => c.id === list.circle_id);
+          const circleNames = circles
+            .filter((circle) => list.circle_ids.includes(circle.id))
+            .map((circle) => circle.name);
           return (
             <section key={list.id} className="space-y-3">
               <div className="flex items-end justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="font-semibold text-lg leading-tight">{list.title}</h2>
                   <p className="text-xs text-muted-foreground">
-                    {circle?.name}
+                    {list.visibility === "public" ? "Tout le monde" : circleNames.join(", ")}
                     {list.occasion ? ` · ${list.occasion}` : ""}
                   </p>
                 </div>
@@ -253,27 +271,42 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [occasion, setOccasion] = useState("");
-  const [circleId, setCircleId] = useState<string>("");
+  const [visibility, setVisibility] = useState<"public" | "circles">("public");
+  const [circleIds, setCircleIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   async function create() {
-    if (!title.trim() || !circleId) return;
+    if (!title.trim() || (visibility === "circles" && circleIds.length === 0)) return;
     setBusy(true);
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) return;
-    const { error } = await supabase.from("lists").insert({
-      title: title.trim(),
-      occasion: occasion.trim() || null,
-      circle_id: circleId,
-      owner_id: user.user.id,
-    });
+    const { data: created, error } = await supabase
+      .from("lists")
+      .insert({
+        title: title.trim(),
+        occasion: occasion.trim() || null,
+        circle_id: visibility === "circles" ? circleIds[0] : null,
+        visibility,
+        owner_id: user.user.id,
+      })
+      .select("id")
+      .single();
+    const { error: accessError } =
+      created && !error
+        ? await supabase.rpc("update_list_access", {
+            _list_id: created.id,
+            _visibility: visibility,
+            _circle_ids: circleIds,
+          })
+        : { error: null };
     setBusy(false);
-    if (error) toast.error(error.message);
+    if (error || accessError) toast.error((error ?? accessError)?.message ?? "Création impossible");
     else {
       toast.success("Liste créée !");
       setTitle("");
       setOccasion("");
-      setCircleId("");
+      setVisibility("public");
+      setCircleIds([]);
       setOpen(false);
       onCreated();
     }
@@ -282,7 +315,7 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="rounded-xl" disabled={circles.length === 0}>
+        <Button size="sm" className="rounded-xl">
           <Plus className="h-4 w-4 mr-1" /> Liste
         </Button>
       </DialogTrigger>
@@ -308,23 +341,51 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
             />
           </div>
           <div>
-            <Label>Cercle</Label>
-            <Select value={circleId} onValueChange={setCircleId}>
+            <Label>Qui peut consulter cette liste ?</Label>
+            <Select
+              value={visibility}
+              onValueChange={(value) => setVisibility(value as "public" | "circles")}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Choisir un cercle" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {circles.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="public">Tout le monde</SelectItem>
+                <SelectItem value="circles">Un ou plusieurs cercles</SelectItem>
               </SelectContent>
             </Select>
+            {visibility === "circles" && (
+              <div className="mt-2 space-y-2">
+                {circles.map((circle) => (
+                  <label
+                    key={circle.id}
+                    className="flex items-center gap-2 rounded-lg border p-2 text-sm"
+                  >
+                    <Checkbox
+                      checked={circleIds.includes(circle.id)}
+                      onCheckedChange={(checked) =>
+                        setCircleIds((current) =>
+                          checked
+                            ? [...current, circle.id]
+                            : current.filter((id) => id !== circle.id),
+                        )
+                      }
+                    />
+                    {circle.name}
+                  </label>
+                ))}
+                {circles.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Créez d'abord un cercle.</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={create} disabled={busy || !title.trim() || !circleId}>
+          <Button
+            onClick={create}
+            disabled={busy || !title.trim() || (visibility === "circles" && circleIds.length === 0)}
+          >
             Créer
           </Button>
         </DialogFooter>
@@ -596,29 +657,38 @@ function EditListDialog({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(list.title);
   const [occasion, setOccasion] = useState(list.occasion ?? "");
-  const [circleId, setCircleId] = useState(list.circle_id);
+  const [visibility, setVisibility] = useState<"public" | "circles">(list.visibility);
+  const [circleIds, setCircleIds] = useState<string[]>(list.circle_ids);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setTitle(list.title);
     setOccasion(list.occasion ?? "");
-    setCircleId(list.circle_id);
+    setVisibility(list.visibility);
+    setCircleIds(list.circle_ids);
   }, [open, list]);
 
   async function save() {
-    if (!title.trim() || !circleId) return;
+    if (!title.trim() || (visibility === "circles" && circleIds.length === 0)) return;
     setBusy(true);
     const { error } = await supabase
       .from("lists")
       .update({
         title: title.trim(),
         occasion: occasion.trim() || null,
-        circle_id: circleId,
       })
       .eq("id", list.id);
+    const { error: accessError } = !error
+      ? await supabase.rpc("update_list_access", {
+          _list_id: list.id,
+          _visibility: visibility,
+          _circle_ids: circleIds,
+        })
+      : { error: null };
     setBusy(false);
-    if (error) toast.error(error.message);
+    if (error || accessError)
+      toast.error((error ?? accessError)?.message ?? "Modification impossible");
     else {
       toast.success("Liste modifiée");
       setOpen(false);
@@ -647,23 +717,48 @@ function EditListDialog({
             <Input value={occasion} onChange={(e) => setOccasion(e.target.value)} />
           </div>
           <div>
-            <Label>Cercle</Label>
-            <Select value={circleId} onValueChange={setCircleId}>
+            <Label>Qui peut consulter cette liste ?</Label>
+            <Select
+              value={visibility}
+              onValueChange={(value) => setVisibility(value as "public" | "circles")}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {circles.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="public">Tout le monde</SelectItem>
+                <SelectItem value="circles">Un ou plusieurs cercles</SelectItem>
               </SelectContent>
             </Select>
+            {visibility === "circles" && (
+              <div className="mt-2 space-y-2">
+                {circles.map((circle) => (
+                  <label
+                    key={circle.id}
+                    className="flex items-center gap-2 rounded-lg border p-2 text-sm"
+                  >
+                    <Checkbox
+                      checked={circleIds.includes(circle.id)}
+                      onCheckedChange={(checked) =>
+                        setCircleIds((current) =>
+                          checked
+                            ? [...current, circle.id]
+                            : current.filter((id) => id !== circle.id),
+                        )
+                      }
+                    />
+                    {circle.name}
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={save} disabled={busy || !title.trim() || !circleId}>
+          <Button
+            onClick={save}
+            disabled={busy || !title.trim() || (visibility === "circles" && circleIds.length === 0)}
+          >
             Enregistrer
           </Button>
         </DialogFooter>

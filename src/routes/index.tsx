@@ -19,8 +19,8 @@ function Index() {
     supabase.auth.getSession().then(({ data }) => {
       if (!alive) return;
       if (redirectToResetPasswordIfNeeded()) return;
-      if (data.session) navigate({ to: "/circles", replace: true });
-      else navigate({ to: "/auth", replace: true });
+      if (data.session) navigate({ to: "/people", replace: true });
+      else navigate({ to: "/discover", replace: true });
       setChecking(false);
     });
     return () => {
