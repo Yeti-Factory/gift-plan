@@ -1,10 +1,10 @@
 import * as React from 'react'
 import {
-  createAuthEmailHandler,
   type AuthEmailActionType,
   type AuthEmailDefinitions,
   type AuthEmailHookData,
 } from '@lovable.dev/email-js'
+import { verifyWebhookRequest, WebhookError } from '@lovable.dev/webhooks-js'
 import { createFileRoute } from '@tanstack/react-router'
 import { SignupEmail } from '@/lib/email-templates/signup'
 import { InviteEmail } from '@/lib/email-templates/invite'
@@ -42,22 +42,6 @@ function webhookRateLimited(ip: string): boolean {
   hits.push(now)
   webhookHits.set(ip, hits)
   return false
-}
-
-function timingSafeStringEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  let out = 0
-  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return out === 0
-}
-
-function verifyWebhookAuth(request: Request): { ok: boolean; reason?: string } {
-  const secret = process.env.AUTH_EMAIL_WEBHOOK_SECRET
-  if (!secret) return { ok: false, reason: 'missing_secret' }
-  const provided = request.headers.get('x-webhook-secret')
-  if (!provided) return { ok: false, reason: 'missing_header' }
-  if (!timingSafeStringEqual(provided, secret)) return { ok: false, reason: 'bad_secret' }
-  return { ok: true }
 }
 
 function clientIp(request: Request): string {
@@ -215,22 +199,11 @@ function parseAuthPayload(body: unknown): { run_id?: string; data: AuthEmailHook
   }
 }
 
-async function sendAuthEmailWithResend(request: Request) {
-  if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'POST' } })
-  }
-
+async function sendAuthEmailWithResend(body: unknown) {
   const resendKey = getResendApiKey()
   if (!resendKey) {
     console.error('[auth-email] Neither RESEND_API_KEY_GIFT_PLAN nor RESEND_API_KEY is configured')
     return Response.json({ error: 'Email sender is not configured for this deployment' }, { status: 503 })
-  }
-
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
-    return Response.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
   const event = parseAuthPayload(body)
@@ -279,24 +252,6 @@ async function sendAuthEmailWithResend(request: Request) {
   return Response.json({ success: true, sent: true })
 }
 
-function createConfiguredHandler() {
-  const apiKey = process.env.LOVABLE_API_KEY
-
-  if (!apiKey) {
-    return null
-  }
-
-  // The SDK handler owns verification, dispatch, and retry semantics; this file
-  // owns only the email decisions: subjects, templates, and per-type props.
-  return createAuthEmailHandler({
-    apiKey,
-    from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-    senderDomain: SENDER_DOMAIN,
-    sendUrl: process.env.LOVABLE_SEND_URL,
-    emails: authEmails,
-  })
-}
-
 export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
@@ -310,25 +265,36 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           return new Response('Too Many Requests', { status: 429 })
         }
 
-        // 2. Signature/shared-secret verification
-        const auth = verifyWebhookAuth(request)
-        if (!auth.ok) {
-          console.warn(`[auth-email:${requestId}] rejected reason=${auth.reason} ip=${ip}`)
-          return new Response('Unauthorized', { status: 401 })
-        }
-
-        if (getResendApiKey()) {
-          return sendAuthEmailWithResend(request)
-        }
-
-        const handler = createConfiguredHandler()
-
-        if (!handler) {
-          return sendAuthEmailWithResend(request)
-        }
-
-        return handler(request)
+        return handleAuthWebhook(request, requestId, ip)
       },
     },
   },
 })
+
+async function handleAuthWebhook(request: Request, requestId: string, ip: string): Promise<Response> {
+  const apiKey = process.env.LOVABLE_API_KEY
+  const fallbackSecret = process.env.AUTH_EMAIL_WEBHOOK_SECRET
+  const secrets = [apiKey, fallbackSecret].filter((v): v is string => Boolean(v))
+
+  if (secrets.length === 0) {
+    console.error(`[auth-email:${requestId}] no signing secret configured (LOVABLE_API_KEY or AUTH_EMAIL_WEBHOOK_SECRET)`)
+    return new Response('Server misconfigured', { status: 503 })
+  }
+
+  // HMAC-SHA256 verification against x-lovable-signature (raw body + timestamp).
+  let payload: unknown
+  try {
+    const result = await verifyWebhookRequest({
+      req: request,
+      secret: secrets[0],
+      secrets: secrets.slice(1),
+    })
+    payload = result.payload
+  } catch (e) {
+    const code = e instanceof WebhookError ? e.code : 'unknown'
+    console.warn(`[auth-email:${requestId}] hmac rejected reason=${code} ip=${ip}`)
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  return sendAuthEmailWithResend(payload)
+}
