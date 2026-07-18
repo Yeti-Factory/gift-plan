@@ -65,6 +65,8 @@ function MyLists() {
   const [circles, setCircles] = useState<Circle[]>([]);
   const [lists, setLists] = useState<List[]>([]);
   const [gifts, setGifts] = useState<Gift[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteGift, setDeleteGift] = useState<Gift | null>(null);
 
   const load = useCallback(async () => {
     const { data: user } = await supabase.auth.getUser();
@@ -84,6 +86,7 @@ function MyLists() {
     const listIds = (ls ?? []).map((l) => l.id);
     if (listIds.length === 0) {
       setGifts([]);
+      setLoading(false);
       return;
     }
     const { data: gs } = await supabase
@@ -94,6 +97,7 @@ function MyLists() {
       .in("list_id", listIds)
       .order("created_at", { ascending: false });
     setGifts((gs as Gift[]) ?? []);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -113,33 +117,41 @@ function MyLists() {
         <NewListDialog circles={circles} onCreated={load} />
       </div>
 
-      {circles.length === 0 && (
+      {loading && (
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+        </div>
+      )}
+
+      {!loading && circles.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
           Rejoignez ou créez un cercle avant de commencer une liste.
         </Card>
       )}
 
-      {lists.length === 0 && circles.length > 0 && (
+      {!loading && lists.length === 0 && circles.length > 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
           Aucune liste pour l'instant. Créez-en une !
         </Card>
       )}
 
-      {lists.map((list) => {
+      {!loading && lists.map((list) => {
         const items = gifts.filter((g) => g.list_id === list.id);
         const circle = circles.find((c) => c.id === list.circle_id);
         return (
           <section key={list.id} className="space-y-3">
             <div className="flex items-end justify-between gap-2">
-              <div>
+              <div className="min-w-0">
                 <h2 className="font-semibold text-lg leading-tight">{list.title}</h2>
                 <p className="text-xs text-muted-foreground">
                   {circle?.name}
                   {list.occasion ? ` · ${list.occasion}` : ""}
                 </p>
               </div>
-              <div className="flex gap-1">
-                <NewGiftDialog listId={list.id} userId={me} onCreated={load} />
+              <div className="flex gap-1 shrink-0">
+                <GiftFormDialog mode="create" listId={list.id} userId={me} onSaved={load} />
+                <EditListDialog list={list} circles={circles} onSaved={load} />
                 <DeleteListButton listId={list.id} onDeleted={load} />
               </div>
             </div>
@@ -173,17 +185,23 @@ function MyLists() {
                         {formatPrice(g.price, g.currency)}
                       </span>
                     )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={async () => {
-                        await supabase.from("gifts").delete().eq("id", g.id);
-                        toast.success("Supprimé");
-                        load();
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1 ml-auto">
+                      <GiftFormDialog
+                        mode="edit"
+                        listId={g.list_id}
+                        userId={me}
+                        gift={g}
+                        onSaved={load}
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Supprimer le cadeau"
+                        onClick={() => setDeleteGift(g)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -191,6 +209,37 @@ function MyLists() {
           </section>
         );
       })}
+
+      <AlertDialog open={!!deleteGift} onOpenChange={(o) => !o && setDeleteGift(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce cadeau ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              « {deleteGift?.title} » sera retiré de la liste. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!deleteGift) return;
+                const id = deleteGift.id;
+                setDeleteGift(null);
+                const { error } = await supabase.from("gifts").delete().eq("id", id);
+                if (error) toast.error(error.message);
+                else {
+                  toast.success("Cadeau supprimé");
+                  load();
+                }
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
