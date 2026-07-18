@@ -214,33 +214,69 @@ export type Database = {
         }
         Relationships: []
       }
-      lists: {
+      list_circle_access: {
         Row: {
           circle_id: string
+          created_at: string
+          list_id: string
+        }
+        Insert: {
+          circle_id: string
+          created_at?: string
+          list_id: string
+        }
+        Update: {
+          circle_id?: string
+          created_at?: string
+          list_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_circle_access_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_circle_access_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lists: {
+        Row: {
+          circle_id: string | null
           created_at: string
           event_date: string | null
           id: string
           occasion: string | null
           owner_id: string
           title: string
+          visibility: Database["public"]["Enums"]["list_visibility"]
         }
         Insert: {
-          circle_id: string
+          circle_id?: string | null
           created_at?: string
           event_date?: string | null
           id?: string
           occasion?: string | null
           owner_id: string
           title: string
+          visibility?: Database["public"]["Enums"]["list_visibility"]
         }
         Update: {
-          circle_id?: string
+          circle_id?: string | null
           created_at?: string
           event_date?: string | null
           id?: string
           occasion?: string | null
           owner_id?: string
           title?: string
+          visibility?: Database["public"]["Enums"]["list_visibility"]
         }
         Relationships: [
           {
@@ -252,24 +288,96 @@ export type Database = {
           },
         ]
       }
+      profile_share_link_lists: {
+        Row: {
+          list_id: string
+          share_link_id: string
+        }
+        Insert: {
+          list_id: string
+          share_link_id: string
+        }
+        Update: {
+          list_id?: string
+          share_link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_share_link_lists_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_share_link_lists_share_link_id_fkey"
+            columns: ["share_link_id"]
+            isOneToOne: false
+            referencedRelation: "profile_share_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_share_links: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          label: string | null
+          owner_id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          owner_id: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          owner_id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
+          email_searchable: boolean
           id: string
+          username: string
+          visibility: Database["public"]["Enums"]["profile_visibility"]
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          email_searchable?: boolean
           id: string
+          username: string
+          visibility?: Database["public"]["Enums"]["profile_visibility"]
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          email_searchable?: boolean
           id?: string
+          username?: string
+          visibility?: Database["public"]["Enums"]["profile_visibility"]
         }
         Relationships: []
       }
@@ -366,8 +474,20 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_profile_share_link: {
+        Args: { _expires_at?: string; _label?: string; _list_ids: string[] }
+        Returns: Json
+      }
       gen_invite_code: { Args: never; Returns: string }
       get_invite_code: { Args: { _circle_id: string }; Returns: string }
+      get_profile_page: {
+        Args: { _share_token?: string; _username: string }
+        Returns: Json
+      }
+      get_public_list_page: {
+        Args: { _list_id: string; _share_token?: string }
+        Returns: Json
+      }
       gift_circle_id: { Args: { _gift_id: string }; Returns: string }
       gift_owner_id: { Args: { _gift_id: string }; Returns: string }
       is_circle_admin: {
@@ -400,20 +520,52 @@ export type Database = {
       join_circle_by_code: { Args: { _code: string }; Returns: string }
       join_circle_v2: { Args: { _code: string }; Returns: Json }
       leave_circle: { Args: { _circle_id: string }; Returns: Json }
+      list_is_visible: {
+        Args: { _list_id: string; _token?: string; _viewer_id?: string }
+        Returns: boolean
+      }
+      list_profile_share_links: { Args: never; Returns: Json }
+      profile_is_visible: {
+        Args: { _owner_id: string; _token?: string; _viewer_id?: string }
+        Returns: boolean
+      }
+      profile_share_is_valid: {
+        Args: { _list_id?: string; _owner_id: string; _token: string }
+        Returns: boolean
+      }
       regenerate_invite_code: { Args: { _circle_id: string }; Returns: string }
       remove_member: {
         Args: { _circle_id: string; _user_id: string }
         Returns: undefined
+      }
+      revoke_profile_share_link: {
+        Args: { _share_id: string }
+        Returns: undefined
+      }
+      search_public_profiles: { Args: { _query: string }; Returns: Json }
+      set_gift_reservation: {
+        Args: { _action: string; _gift_id: string; _share_token?: string }
+        Returns: Json
       }
       set_member_role: {
         Args: { _circle_id: string; _role: string; _user_id: string }
         Returns: undefined
       }
       shares_circle_with: { Args: { _other: string }; Returns: boolean }
+      update_list_access: {
+        Args: {
+          _circle_ids?: string[]
+          _list_id: string
+          _visibility: Database["public"]["Enums"]["list_visibility"]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       circle_role: "admin" | "member"
       gift_priority: "indispensable" | "j_adorerais" | "me_plairait"
+      list_visibility: "public" | "circles"
+      profile_visibility: "public" | "private"
       reservation_status: "reserved" | "purchased"
     }
     CompositeTypes: {
@@ -544,6 +696,8 @@ export const Constants = {
     Enums: {
       circle_role: ["admin", "member"],
       gift_priority: ["indispensable", "j_adorerais", "me_plairait"],
+      list_visibility: ["public", "circles"],
+      profile_visibility: ["public", "private"],
       reservation_status: ["reserved", "purchased"],
     },
   },
