@@ -62,6 +62,8 @@ function CirclesPage() {
     if (error || !c) {
       const msg = error?.message ?? "";
       if (msg.includes("CODE_INVALID")) toast.error("Code invalide");
+      else if (msg.includes("RATE_LIMITED")) toast.error("Trop de tentatives, réessaie dans quelques minutes.");
+      else if (msg.includes("BANNED")) toast.error("Tu as été retiré de ce cercle et ne peux pas y revenir.");
       else if (msg.includes("NOT_AUTHENTICATED")) toast.error("Session expirée, reconnectez-vous.");
       else toast.error(msg || "Erreur");
       return;

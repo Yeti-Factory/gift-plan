@@ -84,6 +84,9 @@ function translateError(msg: string): string {
   if (msg.includes("FORBIDDEN_CREATOR")) return "Le créateur du cercle ne peut pas être modifié";
   if (msg.includes("NOT_MEMBER")) return "Tu ne fais pas partie de ce cercle";
   if (msg.includes("NOT_AUTHENTICATED")) return "Session expirée, reconnecte-toi";
+  if (msg.includes("RATE_LIMITED")) return "Trop de tentatives, réessaie dans quelques minutes";
+  if (msg.includes("BANNED")) return "Tu as été retiré de ce cercle et ne peux pas y revenir";
+  if (msg.includes("CODE_INVALID")) return "Code d'invitation invalide ou expiré";
   return msg || "Erreur";
 }
 
