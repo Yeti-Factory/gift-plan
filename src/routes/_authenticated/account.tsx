@@ -108,13 +108,28 @@ function AccountPage() {
       return;
     }
     setSavingName(true);
-    const { error } = await supabase
+    const { data: updatedProfile, error } = await supabase
       .from("profiles")
       .update({ display_name: trimmed })
-      .eq("id", user.id);
+      .eq("id", user.id)
+      .select("display_name")
+      .single();
     setSavingName(false);
-    if (error) toast.error("Impossible de mettre à jour le nom.");
-    else toast.success("Nom mis à jour.");
+    if (error || !updatedProfile) {
+      toast.error("Impossible de mettre à jour le nom.");
+      return;
+    }
+
+    // Keep recovery metadata aligned. The public profile remains canonical,
+    // so a metadata failure does not roll back a successful profile update.
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: { display_name: trimmed },
+    });
+    if (metadataError) {
+      toast.warning("Nom mis à jour, mais la session n'a pas pu être synchronisée.");
+      return;
+    }
+    toast.success("Nom mis à jour.");
   }
 
   async function saveEmail(e: React.FormEvent) {

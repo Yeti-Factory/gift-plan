@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "start": "node .output/server/index.mjs",
     "test": "vitest run",
     "test:sql": "psql -f tests/sql/p0-permissions.sql",
