@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouter, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Gift, Home, Package, ListChecks, LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureProfile } from "@/lib/gift-box";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/BackButton";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -22,6 +23,9 @@ function AuthLayout() {
   const navigate = useNavigate();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const topLevel = new Set(["/circles", "/my-lists", "/gifts-i-offer"]);
+  const showBack = !topLevel.has(pathname);
 
   useEffect(() => {
     ensureProfile(user).catch(() => {});
@@ -64,12 +68,15 @@ function AuthLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-background/90 backdrop-blur px-4 py-3">
-        <Link to="/circles" className="flex items-center gap-2 font-bold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Gift className="h-4 w-4" />
-          </div>
-          Gift-Plan
-        </Link>
+        <div className="flex items-center gap-2">
+          {showBack && <BackButton />}
+          <Link to="/circles" className="flex items-center gap-2 font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Gift className="h-4 w-4" />
+            </div>
+            Gift-Plan
+          </Link>
+        </div>
         <Button variant="ghost" size="icon" onClick={signOut} disabled={signingOut} aria-label="Se déconnecter">
           <LogOut className="h-5 w-5" />
         </Button>
