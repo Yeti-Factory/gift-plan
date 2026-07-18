@@ -258,7 +258,16 @@ export type Database = {
         }
       }
       join_circle_by_code: { Args: { _code: string }; Returns: string }
+      leave_circle: { Args: { _circle_id: string }; Returns: Json }
       regenerate_invite_code: { Args: { _circle_id: string }; Returns: string }
+      remove_member: {
+        Args: { _circle_id: string; _user_id: string }
+        Returns: undefined
+      }
+      set_member_role: {
+        Args: { _circle_id: string; _role: string; _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       circle_role: "admin" | "member"
