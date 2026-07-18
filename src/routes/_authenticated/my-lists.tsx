@@ -328,27 +328,47 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
   );
 }
 
-function NewGiftDialog({
+function GiftFormDialog({
+  mode,
   listId,
   userId,
-  onCreated,
+  gift,
+  onSaved,
 }: {
+  mode: "create" | "edit";
   listId: string;
   userId: string | null;
-  onCreated: () => void;
+  gift?: Gift;
+  onSaved: () => void;
 }) {
+  const isEdit = mode === "edit";
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [url, setUrl] = useState("");
-  const [price, setPrice] = useState("");
-  const [priority, setPriority] = useState<Priority>("j_adorerais");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imagePath, setImagePath] = useState<string | null>(null);
+  const [title, setTitle] = useState(gift?.title ?? "");
+  const [description, setDescription] = useState(gift?.description ?? "");
+  const [url, setUrl] = useState(gift?.url ?? "");
+  const [price, setPrice] = useState(gift?.price != null ? String(gift.price) : "");
+  const [priority, setPriority] = useState<Priority>(gift?.priority ?? "j_adorerais");
+  const [imageUrl, setImageUrl] = useState<string | null>(gift?.image_url ?? null);
+  const [imagePath, setImagePath] = useState<string | null>(gift?.image_path ?? null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(false);
   const scrape = useServerFn(scrapeGiftUrl);
+
+  // Reset form on open (edit mode: refresh with current gift; create: clear)
+  useEffect(() => {
+    if (!open) return;
+    setTitle(gift?.title ?? "");
+    setDescription(gift?.description ?? "");
+    setUrl(gift?.url ?? "");
+    setPrice(gift?.price != null ? String(gift.price) : "");
+    setPriority(gift?.priority ?? "j_adorerais");
+    setImageUrl(gift?.image_url ?? null);
+    setImagePath(gift?.image_path ?? null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   async function fetchFromUrl() {
     if (!url.trim()) return;
@@ -398,13 +418,11 @@ function NewGiftDialog({
     }
   }
 
-  async function create() {
+  async function save() {
     if (!title.trim() || !userId) return;
     setBusy(true);
     const priceNum = price ? Number(price.replace(",", ".")) : null;
-    const { error } = await supabase.from("gifts").insert({
-      list_id: listId,
-      owner_id: userId,
+    const payload = {
       title: title.trim(),
       description: description.trim() || null,
       url: url.trim() || null,
@@ -413,35 +431,37 @@ function NewGiftDialog({
       priority,
       image_url: imagePath ? null : imageUrl,
       image_path: imagePath,
-    });
+    };
+    const { error } = isEdit && gift
+      ? await supabase.from("gifts").update(payload).eq("id", gift.id)
+      : await supabase.from("gifts").insert({ ...payload, list_id: listId, owner_id: userId });
     setBusy(false);
     if (error) toast.error(error.message);
     else {
-      toast.success("Cadeau ajouté !");
-      setTitle("");
-      setDescription("");
-      setUrl("");
-      setPrice("");
-      setImageUrl(null);
-      setImagePath(null);
+      toast.success(isEdit ? "Cadeau modifié" : "Cadeau ajouté !");
       if (imagePreview) URL.revokeObjectURL(imagePreview);
       setImagePreview(null);
-      setPriority("j_adorerais");
       setOpen(false);
-      onCreated();
+      onSaved();
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="outline" className="rounded-xl">
-          <Plus className="h-4 w-4" />
-        </Button>
+        {isEdit ? (
+          <Button size="icon" variant="ghost" aria-label="Modifier le cadeau">
+            <Pencil className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button size="icon" variant="outline" className="rounded-xl" aria-label="Ajouter un cadeau">
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nouveau cadeau</DialogTitle>
+          <DialogTitle>{isEdit ? "Modifier le cadeau" : "Nouveau cadeau"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -544,8 +564,96 @@ function NewGiftDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={create} disabled={busy || !title.trim()}>
-            Ajouter
+          <Button onClick={save} disabled={busy || !title.trim()}>
+            {isEdit ? "Enregistrer" : "Ajouter"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditListDialog({
+  list,
+  circles,
+  onSaved,
+}: {
+  list: List;
+  circles: Circle[];
+  onSaved: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState(list.title);
+  const [occasion, setOccasion] = useState(list.occasion ?? "");
+  const [circleId, setCircleId] = useState(list.circle_id);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle(list.title);
+    setOccasion(list.occasion ?? "");
+    setCircleId(list.circle_id);
+  }, [open, list]);
+
+  async function save() {
+    if (!title.trim() || !circleId) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("lists")
+      .update({
+        title: title.trim(),
+        occasion: occasion.trim() || null,
+        circle_id: circleId,
+      })
+      .eq("id", list.id);
+    setBusy(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Liste modifiée");
+      setOpen(false);
+      onSaved();
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Modifier la liste">
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Modifier la liste</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Titre</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div>
+            <Label>Occasion (optionnel)</Label>
+            <Input value={occasion} onChange={(e) => setOccasion(e.target.value)} />
+          </div>
+          <div>
+            <Label>Cercle</Label>
+            <Select value={circleId} onValueChange={setCircleId}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {circles.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={save} disabled={busy || !title.trim() || !circleId}>
+            Enregistrer
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -554,24 +662,55 @@ function NewGiftDialog({
 }
 
 function DeleteListButton({ listId, onDeleted }: { listId: string; onDeleted: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function doDelete() {
+    setBusy(true);
+    const { data: gs } = await supabase.from("gifts").select("id").eq("list_id", listId);
+    if (gs && gs.length) await supabase.from("gifts").delete().eq("list_id", listId);
+    const { error } = await supabase.from("lists").delete().eq("id", listId);
+    setBusy(false);
+    setOpen(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Liste supprimée");
+      onDeleted();
+    }
+  }
+
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={async () => {
-        if (!confirm("Supprimer cette liste et tous ses cadeaux ?")) return;
-        // gifts have FK on lists; but no ON DELETE CASCADE assumed — delete gifts first
-        const { data: gs } = await supabase.from("gifts").select("id").eq("list_id", listId);
-        if (gs && gs.length) await supabase.from("gifts").delete().eq("list_id", listId);
-        const { error } = await supabase.from("lists").delete().eq("id", listId);
-        if (error) toast.error(error.message);
-        else {
-          toast.success("Liste supprimée");
-          onDeleted();
-        }
-      }}
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Supprimer la liste"
+        onClick={() => setOpen(true)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer cette liste ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tous les cadeaux et réservations de cette liste seront supprimés. Cette action est
+            irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={busy}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={(e) => {
+              e.preventDefault();
+              doDelete();
+            }}
+          >
+            Supprimer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
