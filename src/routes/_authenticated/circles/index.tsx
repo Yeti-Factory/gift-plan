@@ -64,22 +64,35 @@ function CirclesPage() {
     const invite = code.trim();
     if (!invite) return;
     setBusy(true);
-    const { data: c, error } = await supabase.rpc("join_circle", { _code: invite });
+    // join_circle_v2 returns a structured jsonb result and, crucially, persists
+    // the attempt even on invalid codes (real rate limiting).
+    const { data, error } = await supabase.rpc("join_circle_v2", { _code: invite });
     setBusy(false);
-    if (error || !c) {
-      const msg = error?.message ?? "";
-      if (msg.includes("CODE_INVALID")) toast.error("Code invalide");
-      else if (msg.includes("RATE_LIMITED"))
+    if (error) {
+      toast.error(error.message || "Erreur");
+      return;
+    }
+    const result = data as {
+      ok: boolean;
+      error?: string;
+      circle_id?: string;
+      circle_name?: string;
+    } | null;
+    if (!result || !result.ok) {
+      const code = result?.error ?? "";
+      if (code === "CODE_INVALID") toast.error("Code invalide");
+      else if (code === "RATE_LIMITED")
         toast.error("Trop de tentatives, réessaie dans quelques minutes.");
-      else if (msg.includes("BANNED"))
+      else if (code === "BANNED")
         toast.error("Tu as été retiré de ce cercle et ne peux pas y revenir.");
-      else if (msg.includes("NOT_AUTHENTICATED")) toast.error("Session expirée, reconnectez-vous.");
-      else toast.error(msg || "Erreur");
+      else if (code === "NOT_AUTHENTICATED")
+        toast.error("Session expirée, reconnectez-vous.");
+      else toast.error(code || "Erreur");
       return;
     }
     setCode("");
     setOpenJoin(false);
-    toast.success(`Bienvenue dans "${c.name}" !`);
+    toast.success(`Bienvenue dans "${result.circle_name}" !`);
     load();
   }
 

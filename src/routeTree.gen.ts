@@ -26,6 +26,7 @@ import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksPurgeStorageRouteImport } from './routes/api/public/hooks/purge-storage'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
 
 const StatusRoute = StatusRouteImport.update({
@@ -116,6 +117,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPurgeStorageRoute =
+  ApiPublicHooksPurgeStorageRouteImport.update({
+    id: '/api/public/hooks/purge-storage',
+    path: '/api/public/hooks/purge-storage',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedCirclesCircleIdMembersUserIdRoute =
   AuthenticatedCirclesCircleIdMembersUserIdRouteImport.update({
     id: '/members/$userId',
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/api/public/health': typeof ApiPublicHealthRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
+  '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
@@ -155,6 +163,7 @@ export interface FileRoutesByTo {
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
+  '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdIndexRoute
@@ -176,6 +185,7 @@ export interface FileRoutesById {
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
   '/api/public/health': typeof ApiPublicHealthRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
+  '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/_authenticated/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/circles/$circleId'
     | '/api/public/health'
     | '/circles/'
+    | '/api/public/hooks/purge-storage'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/circles/$circleId/'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/legal/mentions-legales'
     | '/api/public/health'
     | '/circles'
+    | '/api/public/hooks/purge-storage'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/circles/$circleId'
@@ -235,6 +247,7 @@ export interface FileRouteTypes {
     | '/_authenticated/circles/$circleId'
     | '/api/public/health'
     | '/_authenticated/circles/'
+    | '/api/public/hooks/purge-storage'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/_authenticated/circles/$circleId/'
@@ -251,6 +264,7 @@ export interface RootRouteChildren {
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicHooksPurgeStorageRoute: typeof ApiPublicHooksPurgeStorageRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
@@ -376,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/purge-storage': {
+      id: '/api/public/hooks/purge-storage'
+      path: '/api/public/hooks/purge-storage'
+      fullPath: '/api/public/hooks/purge-storage'
+      preLoaderRoute: typeof ApiPublicHooksPurgeStorageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/circles/$circleId/members/$userId': {
       id: '/_authenticated/circles/$circleId/members/$userId'
       path: '/members/$userId'
@@ -434,19 +455,10 @@ const rootRouteChildren: RootRouteChildren = {
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicHooksPurgeStorageRoute: ApiPublicHooksPurgeStorageRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

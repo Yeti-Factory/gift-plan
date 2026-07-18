@@ -307,25 +307,34 @@ export type Database = {
       }
       storage_deletions_queue: {
         Row: {
+          attempt_count: number
           bucket: string
           enqueued_at: string
           id: string
+          last_error: string | null
+          next_attempt_at: string
           object_path: string
           processed_at: string | null
           reason: string | null
         }
         Insert: {
+          attempt_count?: number
           bucket: string
           enqueued_at?: string
           id?: string
+          last_error?: string | null
+          next_attempt_at?: string
           object_path: string
           processed_at?: string | null
           reason?: string | null
         }
         Update: {
+          attempt_count?: number
           bucket?: string
           enqueued_at?: string
           id?: string
+          last_error?: string | null
+          next_attempt_at?: string
           object_path?: string
           processed_at?: string | null
           reason?: string | null
@@ -389,6 +398,7 @@ export type Database = {
         }
       }
       join_circle_by_code: { Args: { _code: string }; Returns: string }
+      join_circle_v2: { Args: { _code: string }; Returns: Json }
       leave_circle: { Args: { _circle_id: string }; Returns: Json }
       regenerate_invite_code: { Args: { _circle_id: string }; Returns: string }
       remove_member: {
