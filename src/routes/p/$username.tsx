@@ -152,7 +152,7 @@ function PublicProfilePage() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {error === "PROFILE_PRIVATE"
-            ? "Demandez à son propriétaire un lien d'invitation ou rejoignez l'un de ses cercles."
+            ? "Demandez une connexion depuis l’annuaire des profils, ou utilisez un lien d’invitation."
             : "Vérifiez l'identifiant ou recherchez la personne depuis Gift-Plan."}
         </p>
         <Button asChild className="mt-5">

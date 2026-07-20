@@ -354,6 +354,36 @@ export type Database = {
           },
         ];
       };
+      profile_access_requests: {
+        Row: {
+          created_at: string;
+          id: string;
+          owner_id: string;
+          requester_id: string;
+          responded_at: string | null;
+          status: Database["public"]["Enums"]["profile_access_status"];
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          owner_id: string;
+          requester_id: string;
+          responded_at?: string | null;
+          status?: Database["public"]["Enums"]["profile_access_status"];
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          owner_id?: string;
+          requester_id?: string;
+          responded_at?: string | null;
+          status?: Database["public"]["Enums"]["profile_access_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profile_share_links: {
         Row: {
           created_at: string;
@@ -520,9 +550,11 @@ export type Database = {
         Args: { _expires_at?: string; _label?: string; _list_ids: string[] };
         Returns: Json;
       };
+      cancel_profile_access: { Args: { _profile_id: string }; Returns: boolean };
       gen_invite_code: { Args: never; Returns: string };
       get_app_status: { Args: never; Returns: Json };
       get_invite_code: { Args: { _circle_id: string }; Returns: string };
+      get_pending_profile_access_count: { Args: never; Returns: number };
       get_profile_page: {
         Args: { _share_token?: string; _username: string };
         Returns: Json;
@@ -568,6 +600,11 @@ export type Database = {
         Args: { _list_id: string; _token?: string; _viewer_id?: string };
         Returns: boolean;
       };
+      list_profile_access_inbox: { Args: never; Returns: Json };
+      list_profile_directory: {
+        Args: { _limit?: number; _offset?: number; _query?: string };
+        Returns: Json;
+      };
       list_profile_share_links: { Args: never; Returns: Json };
       profile_is_visible: {
         Args: { _owner_id: string; _token?: string; _viewer_id?: string };
@@ -586,6 +623,12 @@ export type Database = {
         Args: { _share_id: string };
         Returns: undefined;
       };
+      request_profile_access: { Args: { _profile_id: string }; Returns: Json };
+      respond_profile_access: {
+        Args: { _accept: boolean; _request_id: string };
+        Returns: Json;
+      };
+      revoke_profile_access: { Args: { _requester_id: string }; Returns: boolean };
       search_public_profiles: { Args: { _query: string }; Returns: Json };
       set_gift_reservation: {
         Args: { _action: string; _gift_id: string; _share_token?: string };
@@ -613,6 +656,7 @@ export type Database = {
       circle_role: "admin" | "member";
       gift_priority: "indispensable" | "j_adorerais" | "me_plairait";
       list_visibility: "public" | "circles";
+      profile_access_status: "pending" | "accepted" | "declined";
       profile_visibility: "public" | "private";
       reservation_status: "reserved" | "purchased";
     };
@@ -743,6 +787,7 @@ export const Constants = {
       circle_role: ["admin", "member"],
       gift_priority: ["indispensable", "j_adorerais", "me_plairait"],
       list_visibility: ["public", "circles"],
+      profile_access_status: ["pending", "accepted", "declined"],
       profile_visibility: ["public", "private"],
       reservation_status: ["reserved", "purchased"],
     },
