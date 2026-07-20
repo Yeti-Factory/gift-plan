@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import { Gift, Users, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
@@ -96,9 +96,10 @@ export function shouldShowOnboarding(profile: {
   onboarding_completed_at: string | null;
   onboarding_version: number | null;
 }) {
-  if (profile.onboarding_completed_at) return false;
-  if ((profile.onboarding_version ?? 0) >= ONBOARDING_VERSION) return false;
-  return true;
+  // Version-first: a completed guide from v1 must still surface when v2 ships.
+  // "Passer" and "Terminer" both persist the current version, so once a user
+  // has seen the current version they won't see it again automatically.
+  return (profile.onboarding_version ?? 0) < ONBOARDING_VERSION;
 }
 
 export function OnboardingGuide({ user }: { user: User }) {
@@ -107,6 +108,10 @@ export function OnboardingGuide({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  // Track how the guide was opened. Manual reopens (from the account page)
+  // must not overwrite `onboarding_completed_at`; auto-opens must persist it
+  // on any exit (Skip, Finish, close via X/Esc/outside click).
+  const manualRef = useRef(false);
 
   // Auto-open once per user based on profile state.
   useEffect(() => {
@@ -120,6 +125,7 @@ export function OnboardingGuide({ user }: { user: User }) {
         .maybeSingle();
       if (cancelled || !data) return;
       if (shouldShowOnboarding(data)) {
+        manualRef.current = false;
         setStep(0);
         setOpen(true);
       }
@@ -132,6 +138,7 @@ export function OnboardingGuide({ user }: { user: User }) {
   // Allow manual reopening from anywhere in the app.
   useEffect(() => {
     const onOpen = () => {
+      manualRef.current = true;
       setStep(0);
       setOpen(true);
     };
@@ -164,24 +171,32 @@ export function OnboardingGuide({ user }: { user: User }) {
   );
 
   async function handleSkip() {
-    const ok = await persist({ markCompleted: true });
+    // Manual reopen: don't overwrite the original completion date; just bump
+    // the version so a future v2 auto-open respects the user's prior choice.
+    const ok = await persist({ markCompleted: !manualRef.current });
     if (ok) setOpen(false);
   }
 
   async function handleFinish(target?: "circles-create" | "circles-join") {
-    const ok = await persist({ markCompleted: true });
+    const ok = await persist({ markCompleted: !manualRef.current });
     if (!ok) return;
     setOpen(false);
     if (target) {
-      // The circles index owns the create/join dialogs — leave a hint in
-      // sessionStorage so it can auto-open the right one after navigation.
-      try {
-        sessionStorage.setItem("gp:onboarding-action", target);
-      } catch {
-        /* storage unavailable — silently fall through */
-      }
-      navigate({ to: "/circles" });
+      // Route search params work even when /circles is already mounted:
+      // the search change re-renders the page and triggers its effect.
+      const action = target === "circles-create" ? "create" : "join";
+      navigate({ to: "/circles", search: { onboarding: action } });
     }
+  }
+
+  function handleOpenChange(next: boolean) {
+    if (next) {
+      setOpen(true);
+      return;
+    }
+    // Close via X, Esc, or outside click: same contract as "Passer le guide".
+    if (!manualRef.current) void persist({ markCompleted: true });
+    setOpen(false);
   }
 
   const current = STEPS[step];
@@ -190,11 +205,8 @@ export function OnboardingGuide({ user }: { user: User }) {
   const isLast = step === total - 1;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent
-        className="max-w-md sm:max-w-lg gap-0 overflow-hidden p-0"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md sm:max-w-lg gap-0 p-0 max-h-[90dvh] overflow-y-auto">
         <div className="px-6 pt-6 pb-2">
           <div className="flex items-center justify-between gap-3">
             <div
