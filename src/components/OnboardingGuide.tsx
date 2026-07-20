@@ -173,9 +173,14 @@ export function OnboardingGuide({ user }: { user: User }) {
     if (!ok) return;
     setOpen(false);
     if (target) {
-      // The circles index owns the create/join dialogs — we just deep-link there
-      // and add a hint so it can auto-open the right one.
-      navigate({ to: "/circles", search: { onboarding: target } as never });
+      // The circles index owns the create/join dialogs — leave a hint in
+      // sessionStorage so it can auto-open the right one after navigation.
+      try {
+        sessionStorage.setItem("gp:onboarding-action", target);
+      } catch {
+        /* storage unavailable — silently fall through */
+      }
+      navigate({ to: "/circles" });
     }
   }
 
