@@ -120,8 +120,8 @@ function ManageProfilePage() {
     setBusy(true);
     const { data, error } = await supabase.rpc("create_profile_share_link", {
       _list_ids: selectedLists,
-      _label: linkLabel.trim() || null,
-      _expires_at: null,
+      _label: linkLabel.trim() || undefined,
+      _expires_at: undefined,
     });
     setBusy(false);
     if (error) {

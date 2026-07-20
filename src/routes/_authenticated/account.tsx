@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, Trash2, User as UserIcon, Mail, KeyRound, Download } from "lucide-react";
+import { Eye, EyeOff, Trash2, User as UserIcon, Mail, KeyRound, Download, HelpCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteMyAccount, exportMyData } from "@/lib/account.functions";
+import { openOnboardingGuide } from "@/components/OnboardingGuide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -349,6 +350,19 @@ function AccountPage() {
         </p>
         <Button variant="outline" className="w-full" onClick={handleExport} disabled={exporting}>
           {exporting ? "Préparation..." : "Télécharger mon export (JSON)"}
+        </Button>
+      </Card>
+
+      <Card className="p-5 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <HelpCircle className="h-4 w-4 text-primary" /> Guide de démarrage
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Relancez le guide de démarrage pour revoir comment fonctionnent les cercles, les listes
+          et les réservations sans gâcher la surprise.
+        </p>
+        <Button variant="outline" className="w-full" onClick={openOnboardingGuide}>
+          Revoir le guide de démarrage
         </Button>
       </Card>
 

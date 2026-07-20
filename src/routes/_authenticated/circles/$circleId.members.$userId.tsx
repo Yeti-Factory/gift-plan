@@ -141,7 +141,7 @@ function MemberLists() {
     const { error } = await supabase.rpc("set_gift_reservation", {
       _gift_id: giftId,
       _action: "reserve",
-      _share_token: null,
+      _share_token: undefined,
     });
     if (error) {
       if ((error as { code?: string }).code === "23505") {
@@ -158,7 +158,7 @@ function MemberLists() {
     const { error } = await supabase.rpc("set_gift_reservation", {
       _gift_id: giftId,
       _action: "cancel",
-      _share_token: null,
+      _share_token: undefined,
     });
     if (error) toast.error(error.message);
     else toast.success("Réservation annulée");
@@ -169,7 +169,7 @@ function MemberLists() {
     const { error } = await supabase.rpc("set_gift_reservation", {
       _gift_id: giftId,
       _action: "purchased",
-      _share_token: null,
+      _share_token: undefined,
     });
     if (error) toast.error(error.message);
     else toast.success("Marqué comme acheté 🎁");

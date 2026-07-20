@@ -44,6 +44,18 @@ function CirclesPage() {
     load();
   }, []);
 
+  // Onboarding deep-link: open Create or Join dialog when arriving from the guide.
+  useEffect(() => {
+    try {
+      const action = sessionStorage.getItem("gp:onboarding-action");
+      if (action === "circles-create") setOpenCreate(true);
+      else if (action === "circles-join") setOpenJoin(true);
+      if (action) sessionStorage.removeItem("gp:onboarding-action");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   async function createCircle() {
     if (!name.trim()) return;
     setBusy(true);
