@@ -25,6 +25,7 @@ import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as _harnessOnboardingRouteImport } from './routes/__harness.onboarding'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
@@ -114,6 +115,11 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const _harnessOnboardingRoute = _harnessOnboardingRouteImport.update({
+  id: '/__harness/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCirclesIndexRoute =
   AuthenticatedCirclesIndexRouteImport.update({
     id: '/circles/',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/discover': typeof DiscoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
+  '/onboarding': typeof _harnessOnboardingRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/discover': typeof DiscoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
+  '/onboarding': typeof _harnessOnboardingRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/discover': typeof DiscoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
+  '/__harness/onboarding': typeof _harnessOnboardingRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/reset-password'
     | '/status'
+    | '/onboarding'
     | '/account'
     | '/admin'
     | '/gifts-i-offer'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/reset-password'
     | '/status'
+    | '/onboarding'
     | '/account'
     | '/admin'
     | '/gifts-i-offer'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/reset-password'
     | '/status'
+    | '/__harness/onboarding'
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/gifts-i-offer'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   DiscoverRoute: typeof DiscoverRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StatusRoute: typeof StatusRoute
+  _harnessOnboardingRoute: typeof _harnessOnboardingRoute
   LegalCguRoute: typeof LegalCguRoute
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
@@ -445,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/__harness/onboarding': {
+      id: '/__harness/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof _harnessOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/circles/': {
       id: '/_authenticated/circles/'
       path: '/circles'
@@ -555,6 +575,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscoverRoute: DiscoverRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StatusRoute: StatusRoute,
+  _harnessOnboardingRoute: _harnessOnboardingRoute,
   LegalCguRoute: LegalCguRoute,
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
