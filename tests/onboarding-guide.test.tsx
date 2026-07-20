@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { User } from "@supabase/supabase-js";
 
 // --- Mocks ---------------------------------------------------------------
 
@@ -40,14 +41,19 @@ vi.mock("sonner", () => ({
 }));
 
 // Radix Dialog uses PointerEvent APIs jsdom doesn't fully implement.
-if (!(globalThis as any).PointerEvent) {
-  (globalThis as any).PointerEvent = class PointerEvent extends Event {};
+type PointerEventCtor = typeof PointerEvent;
+const globalWithPointer = globalThis as typeof globalThis & {
+  PointerEvent?: PointerEventCtor;
+};
+if (!globalWithPointer.PointerEvent) {
+  globalWithPointer.PointerEvent = class PointerEvent extends Event {} as unknown as PointerEventCtor;
 }
 Element.prototype.hasPointerCapture = () => false;
 Element.prototype.releasePointerCapture = () => {};
 Element.prototype.setPointerCapture = () => {};
-if (!(HTMLElement.prototype as any).scrollIntoView) {
-  (HTMLElement.prototype as any).scrollIntoView = () => {};
+const htmlProto = HTMLElement.prototype as HTMLElement & { scrollIntoView?: () => void };
+if (!htmlProto.scrollIntoView) {
+  htmlProto.scrollIntoView = () => {};
 }
 
 // --- Import under test (after mocks) --------------------------------------
@@ -58,7 +64,7 @@ import {
   ONBOARDING_VERSION,
 } from "@/components/OnboardingGuide";
 
-const user = { id: "user-1", email: "u@example.com" } as any;
+const user = { id: "user-1", email: "u@example.com" } as unknown as User;
 
 beforeEach(() => {
   navigateMock.mockClear();
