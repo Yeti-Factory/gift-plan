@@ -398,6 +398,8 @@ export type Database = {
           display_name: string | null
           email_searchable: boolean
           id: string
+          onboarding_completed_at: string | null
+          onboarding_version: number
           username: string
           visibility: Database["public"]["Enums"]["profile_visibility"]
         }
@@ -408,6 +410,8 @@ export type Database = {
           display_name?: string | null
           email_searchable?: boolean
           id: string
+          onboarding_completed_at?: string | null
+          onboarding_version?: number
           username: string
           visibility?: Database["public"]["Enums"]["profile_visibility"]
         }
@@ -418,6 +422,8 @@ export type Database = {
           display_name?: string | null
           email_searchable?: boolean
           id?: string
+          onboarding_completed_at?: string | null
+          onboarding_version?: number
           username?: string
           visibility?: Database["public"]["Enums"]["profile_visibility"]
         }
