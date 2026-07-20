@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as HarnessOnboardingRouteImport } from './routes/harness-onboarding'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -43,11 +42,6 @@ const StatusRoute = StatusRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HarnessOnboardingRoute = HarnessOnboardingRouteImport.update({
-  id: '/harness-onboarding',
-  path: '/harness-onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiscoverRoute = DiscoverRouteImport.update({
@@ -170,7 +164,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/discover': typeof DiscoverRoute
-  '/harness-onboarding': typeof HarnessOnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
   '/account': typeof AuthenticatedAccountRoute
@@ -196,7 +189,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/discover': typeof DiscoverRoute
-  '/harness-onboarding': typeof HarnessOnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
   '/account': typeof AuthenticatedAccountRoute
@@ -223,7 +215,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/discover': typeof DiscoverRoute
-  '/harness-onboarding': typeof HarnessOnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
@@ -251,7 +242,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/discover'
-    | '/harness-onboarding'
     | '/reset-password'
     | '/status'
     | '/account'
@@ -277,7 +267,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/discover'
-    | '/harness-onboarding'
     | '/reset-password'
     | '/status'
     | '/account'
@@ -303,7 +292,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/discover'
-    | '/harness-onboarding'
     | '/reset-password'
     | '/status'
     | '/_authenticated/account'
@@ -331,7 +319,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DiscoverRoute: typeof DiscoverRoute
-  HarnessOnboardingRoute: typeof HarnessOnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StatusRoute: typeof StatusRoute
   LegalCguRoute: typeof LegalCguRoute
@@ -358,13 +345,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/harness-onboarding': {
-      id: '/harness-onboarding'
-      path: '/harness-onboarding'
-      fullPath: '/harness-onboarding'
-      preLoaderRoute: typeof HarnessOnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/discover': {
@@ -573,7 +553,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DiscoverRoute: DiscoverRoute,
-  HarnessOnboardingRoute: HarnessOnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StatusRoute: StatusRoute,
   LegalCguRoute: LegalCguRoute,
@@ -588,3 +567,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
