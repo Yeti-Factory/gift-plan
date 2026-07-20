@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, Trash2, User as UserIcon, Mail, KeyRound, Download } from "lucide-react";
+import { Eye, EyeOff, Trash2, User as UserIcon, Mail, KeyRound, Download, HelpCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteMyAccount, exportMyData } from "@/lib/account.functions";
+import { openOnboardingGuide } from "@/components/OnboardingGuide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
