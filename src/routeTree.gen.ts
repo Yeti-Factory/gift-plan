@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as HarnessOnboardingRouteImport } from './routes/harness-onboarding'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -25,7 +26,6 @@ import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
-import { Route as _harnessOnboardingRouteImport } from './routes/__harness.onboarding'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
@@ -43,6 +43,11 @@ const StatusRoute = StatusRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HarnessOnboardingRoute = HarnessOnboardingRouteImport.update({
+  id: '/harness-onboarding',
+  path: '/harness-onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiscoverRoute = DiscoverRouteImport.update({
@@ -115,11 +120,6 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const _harnessOnboardingRoute = _harnessOnboardingRouteImport.update({
-  id: '/__harness/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedCirclesIndexRoute =
   AuthenticatedCirclesIndexRouteImport.update({
     id: '/circles/',
@@ -170,9 +170,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/discover': typeof DiscoverRoute
+  '/harness-onboarding': typeof HarnessOnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
-  '/onboarding': typeof _harnessOnboardingRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
@@ -196,9 +196,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/discover': typeof DiscoverRoute
+  '/harness-onboarding': typeof HarnessOnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
-  '/onboarding': typeof _harnessOnboardingRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
@@ -223,9 +223,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/discover': typeof DiscoverRoute
+  '/harness-onboarding': typeof HarnessOnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/status': typeof StatusRoute
-  '/__harness/onboarding': typeof _harnessOnboardingRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
@@ -251,9 +251,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/discover'
+    | '/harness-onboarding'
     | '/reset-password'
     | '/status'
-    | '/onboarding'
     | '/account'
     | '/admin'
     | '/gifts-i-offer'
@@ -277,9 +277,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/discover'
+    | '/harness-onboarding'
     | '/reset-password'
     | '/status'
-    | '/onboarding'
     | '/account'
     | '/admin'
     | '/gifts-i-offer'
@@ -303,9 +303,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/discover'
+    | '/harness-onboarding'
     | '/reset-password'
     | '/status'
-    | '/__harness/onboarding'
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/gifts-i-offer'
@@ -331,9 +331,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DiscoverRoute: typeof DiscoverRoute
+  HarnessOnboardingRoute: typeof HarnessOnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StatusRoute: typeof StatusRoute
-  _harnessOnboardingRoute: typeof _harnessOnboardingRoute
   LegalCguRoute: typeof LegalCguRoute
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
@@ -358,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/harness-onboarding': {
+      id: '/harness-onboarding'
+      path: '/harness-onboarding'
+      fullPath: '/harness-onboarding'
+      preLoaderRoute: typeof HarnessOnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/discover': {
@@ -457,13 +464,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/account'
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/__harness/onboarding': {
-      id: '/__harness/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof _harnessOnboardingRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/circles/': {
       id: '/_authenticated/circles/'
@@ -573,9 +573,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DiscoverRoute: DiscoverRoute,
+  HarnessOnboardingRoute: HarnessOnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StatusRoute: StatusRoute,
-  _harnessOnboardingRoute: _harnessOnboardingRoute,
   LegalCguRoute: LegalCguRoute,
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,

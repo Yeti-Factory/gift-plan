@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import type { User } from "@supabase/supabase-js";
 import { OnboardingGuide, openOnboardingGuide } from "@/components/OnboardingGuide";
 
-export const Route = createFileRoute("/__harness/onboarding")({
+export const Route = createFileRoute("/harness-onboarding")({
   ssr: false,
   component: HarnessOnboarding,
 });
