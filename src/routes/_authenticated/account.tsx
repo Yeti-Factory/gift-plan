@@ -1,7 +1,16 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, Trash2, User as UserIcon, Mail, KeyRound, Download, HelpCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Trash2,
+  User as UserIcon,
+  Mail,
+  KeyRound,
+  Download,
+  HelpCircle,
+} from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -358,8 +367,8 @@ function AccountPage() {
           <HelpCircle className="h-4 w-4 text-primary" /> Guide de démarrage
         </div>
         <p className="text-sm text-muted-foreground">
-          Relancez le guide de démarrage pour revoir comment fonctionnent les cercles, les listes
-          et les réservations sans gâcher la surprise.
+          Relancez le guide de démarrage pour revoir comment fonctionnent les cercles, les listes et
+          les réservations sans gâcher la surprise.
         </p>
         <Button variant="outline" className="w-full" onClick={openOnboardingGuide}>
           Revoir le guide de démarrage

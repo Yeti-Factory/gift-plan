@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Plus, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -18,12 +18,23 @@ import {
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/circles/")({
+  // Search-param based deep-link from the onboarding guide's final CTAs.
+  // A validated param works even when this page is already mounted (the
+  // effect below re-runs whenever `onboarding` changes), which sessionStorage
+  // cannot do reliably.
+  validateSearch: (search: Record<string, unknown>): { onboarding?: "create" | "join" } => {
+    const v = search.onboarding;
+    if (v === "create" || v === "join") return { onboarding: v };
+    return {};
+  },
   component: CirclesPage,
 });
 
 type Circle = { id: string; name: string; created_at: string };
 
 function CirclesPage() {
+  const { onboarding } = Route.useSearch();
+  const navigate = useNavigate();
   const [circles, setCircles] = useState<Circle[] | null>(null);
   const [openCreate, setOpenCreate] = useState(false);
   const [openJoin, setOpenJoin] = useState(false);
@@ -44,17 +55,15 @@ function CirclesPage() {
     load();
   }, []);
 
-  // Onboarding deep-link: open Create or Join dialog when arriving from the guide.
+  // Onboarding deep-link: open Create or Join when the search param is set.
+  // Strip the param afterwards so a reload / back navigation doesn't reopen it.
   useEffect(() => {
-    try {
-      const action = sessionStorage.getItem("gp:onboarding-action");
-      if (action === "circles-create") setOpenCreate(true);
-      else if (action === "circles-join") setOpenJoin(true);
-      if (action) sessionStorage.removeItem("gp:onboarding-action");
-    } catch {
-      /* ignore */
+    if (onboarding === "create") setOpenCreate(true);
+    else if (onboarding === "join") setOpenJoin(true);
+    if (onboarding) {
+      navigate({ to: "/circles", search: {}, replace: true });
     }
-  }, []);
+  }, [onboarding, navigate]);
 
   async function createCircle() {
     if (!name.trim()) return;
