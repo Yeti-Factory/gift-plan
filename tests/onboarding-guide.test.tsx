@@ -105,20 +105,20 @@ describe("<OnboardingGuide />", () => {
     await renderAutoOpen();
     const u = userEvent.setup();
 
-    expect(screen.getByText(/Étape 1 sur 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Étape 1 sur 5/)).toBeTruthy();
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
-    expect(screen.getByText(/Étape 2 sur 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Étape 2 sur 5/)).toBeTruthy();
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
-    expect(screen.getByText(/Étape 5 sur 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Étape 5 sur 5/)).toBeTruthy();
 
     // Final step swaps Suivant for two CTAs.
     expect(screen.queryByRole("button", { name: /^Suivant$/i })).toBeNull();
-    expect(screen.getByRole("button", { name: /Créer un cercle/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Créer un cercle/i })).toBeTruthy();
 
     await u.click(screen.getByRole("button", { name: /Précédent/i }));
-    expect(screen.getByText(/Étape 4 sur 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Étape 4 sur 5/)).toBeTruthy();
   });
 
   it("persists version + completed_at when the user clicks Passer", async () => {
