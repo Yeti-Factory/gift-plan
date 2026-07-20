@@ -353,6 +353,19 @@ function AccountPage() {
         </Button>
       </Card>
 
+      <Card className="p-5 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <HelpCircle className="h-4 w-4 text-primary" /> Guide de démarrage
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Relancez le guide de démarrage pour revoir comment fonctionnent les cercles, les listes
+          et les réservations sans gâcher la surprise.
+        </p>
+        <Button variant="outline" className="w-full" onClick={openOnboardingGuide}>
+          Revoir le guide de démarrage
+        </Button>
+      </Card>
+
       <Card className="p-5 space-y-3 border-destructive/40">
         <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
           <Trash2 className="h-4 w-4" /> Zone de danger
