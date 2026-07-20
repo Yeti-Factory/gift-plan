@@ -4,9 +4,9 @@ import { shouldShowOnboarding, ONBOARDING_VERSION } from "../src/components/Onbo
 
 describe("shouldShowOnboarding (version-first policy)", () => {
   it("shows the guide to a brand-new user", () => {
-    expect(
-      shouldShowOnboarding({ onboarding_completed_at: null, onboarding_version: 0 }),
-    ).toBe(true);
+    expect(shouldShowOnboarding({ onboarding_completed_at: null, onboarding_version: 0 })).toBe(
+      true,
+    );
   });
 
   it("hides the guide once the stored version matches the current one", () => {

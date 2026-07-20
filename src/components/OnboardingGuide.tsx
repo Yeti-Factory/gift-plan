@@ -219,7 +219,11 @@ export function OnboardingGuide({ user }: { user: User }) {
               Étape {step + 1} sur {total}
             </span>
           </div>
-          <Progress value={progress} className="mt-3 h-1.5" aria-label={`Étape ${step + 1} sur ${total}`} />
+          <Progress
+            value={progress}
+            className="mt-3 h-1.5"
+            aria-label={`Étape ${step + 1} sur ${total}`}
+          />
           <DialogHeader className="mt-4 text-left space-y-2">
             <DialogTitle className="text-xl">{current.title}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
@@ -230,7 +234,10 @@ export function OnboardingGuide({ user }: { user: User }) {
             <ul className="mt-4 space-y-2 text-sm text-foreground/90">
               {current.bullets.map((b) => (
                 <li key={b} className="flex gap-2">
-                  <span aria-hidden="true" className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                  <span
+                    aria-hidden="true"
+                    className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                  />
                   <span>{b}</span>
                 </li>
               ))}
@@ -259,10 +266,7 @@ export function OnboardingGuide({ user }: { user: User }) {
               </Button>
             )}
             {!isLast && (
-              <Button
-                onClick={() => setStep((s) => Math.min(total - 1, s + 1))}
-                disabled={saving}
-              >
+              <Button onClick={() => setStep((s) => Math.min(total - 1, s + 1))} disabled={saving}>
                 Suivant
               </Button>
             )}

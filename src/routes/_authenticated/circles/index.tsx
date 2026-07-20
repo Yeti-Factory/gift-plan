@@ -22,9 +22,7 @@ export const Route = createFileRoute("/_authenticated/circles/")({
   // A validated param works even when this page is already mounted (the
   // effect below re-runs whenever `onboarding` changes), which sessionStorage
   // cannot do reliably.
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { onboarding?: "create" | "join" } => {
+  validateSearch: (search: Record<string, unknown>): { onboarding?: "create" | "join" } => {
     const v = search.onboarding;
     if (v === "create" || v === "join") return { onboarding: v };
     return {};
