@@ -206,7 +206,8 @@ function ManageProfilePage() {
             <div>
               <Label htmlFor="profile-public">Profil public</Label>
               <p className="text-xs text-muted-foreground">
-                Apparaît dans la recherche et peut être consulté par tous.
+                Public : vos listes publiques sont consultables immédiatement. Privé : vous validez
+                chaque demande de connexion.
               </p>
             </div>
             <Switch id="profile-public" checked={isPublic} onCheckedChange={setIsPublic} />

@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { BrandMark } from "@/components/BrandMark";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { PROFILE_ACCESS_CHANGED_EVENT } from "@/lib/profile-directory";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -42,6 +43,7 @@ function AuthLayout() {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [pendingProfileAccess, setPendingProfileAccess] = useState(0);
   const pathname = useLocation({ select: (l) => l.pathname });
   const topLevel = new Set([
     "/people",
@@ -59,6 +61,21 @@ function AuthLayout() {
       setIsSuperadmin(data === true);
     });
   }, [user]);
+
+  useEffect(() => {
+    async function loadPendingProfileAccess() {
+      const { data, error } = await supabase.rpc("get_pending_profile_access_count");
+      if (!error && typeof data === "number") setPendingProfileAccess(data);
+    }
+
+    loadPendingProfileAccess();
+    const interval = window.setInterval(loadPendingProfileAccess, 30_000);
+    window.addEventListener(PROFILE_ACCESS_CHANGED_EVENT, loadPendingProfileAccess);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener(PROFILE_ACCESS_CHANGED_EVENT, loadPendingProfileAccess);
+    };
+  }, [user.id]);
 
   useEffect(() => {
     const channel = supabase
@@ -135,7 +152,12 @@ function AuthLayout() {
 
       <nav className="fixed bottom-3 inset-x-3 z-40 mx-auto max-w-md rounded-[1.4rem] border border-white/80 bg-background/90 shadow-xl backdrop-blur-xl">
         <div className="grid grid-cols-5 px-1">
-          <NavItem to="/people" icon={<UserRoundSearch className="h-5 w-5" />} label="Profils" />
+          <NavItem
+            to="/people"
+            icon={<UserRoundSearch className="h-5 w-5" />}
+            label="Profils"
+            badge={pendingProfileAccess}
+          />
           <NavItem to="/my-lists" icon={<ListChecks className="h-5 w-5" />} label="Mes listes" />
           <NavItem to="/gifts-i-offer" icon={<Package className="h-5 w-5" />} label="J'offre" />
           <NavItem to="/circles" icon={<Users className="h-5 w-5" />} label="Cercles" />
@@ -146,14 +168,31 @@ function AuthLayout() {
   );
 }
 
-function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+function NavItem({
+  to,
+  icon,
+  label,
+  badge = 0,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  badge?: number;
+}) {
   return (
     <Link
       to={to}
       className="flex flex-col items-center justify-center gap-1 rounded-2xl py-2.5 text-[11px] text-muted-foreground transition data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
       activeProps={{ className: "text-primary font-medium" }}
     >
-      {icon}
+      <span className="relative">
+        {icon}
+        {badge > 0 && (
+          <span className="absolute -right-2.5 -top-2 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
+      </span>
       {label}
     </Link>
   );
