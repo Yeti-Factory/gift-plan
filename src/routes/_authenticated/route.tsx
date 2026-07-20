@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { BrandMark } from "@/components/BrandMark";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 import { PROFILE_ACCESS_CHANGED_EVENT } from "@/lib/profile-directory";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -146,6 +147,9 @@ function AuthLayout() {
           </div>
         )}
         <Outlet />
+        <div className="mx-auto flex max-w-md justify-center px-4 pt-8">
+          <PoweredByYetiLab />
+        </div>
       </main>
 
       <OnboardingGuide user={user} />

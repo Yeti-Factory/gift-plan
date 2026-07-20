@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 
 import { PublicHeader } from "@/components/PublicHeader";
+import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -261,7 +262,10 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
       </main>
 
       <footer className="relative z-10 mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <span>© {new Date().getFullYear()} Gift-Plan · Imaginé avec soin.</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span>© {new Date().getFullYear()} Gift-Plan · Imaginé avec soin.</span>
+          <PoweredByYetiLab />
+        </div>
         <nav className="flex gap-4">
           <Link to="/legal/mentions-legales" className="hover:text-primary">
             Mentions légales

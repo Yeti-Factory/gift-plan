@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Gift } from "lucide-react";
 import { BackButton } from "@/components/BackButton";
+import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 
 export function LegalLayout({
   title,
@@ -42,6 +43,9 @@ export function LegalLayout({
               CGU
             </Link>
           </nav>
+          <div className="mt-6 flex justify-center">
+            <PoweredByYetiLab />
+          </div>
         </div>
       </main>
     </div>

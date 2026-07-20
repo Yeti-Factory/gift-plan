@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 import { BrandMark } from "@/components/BrandMark";
+import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 
 const RESET_PASSWORD_REDIRECT_URL = "https://gift-plan.yeti-lab.fr/reset-password";
 
@@ -349,6 +350,7 @@ function AuthPage() {
           CGU
         </Link>
       </nav>
+      <PoweredByYetiLab className="relative z-10 mt-4" />
     </div>
   );
 }
