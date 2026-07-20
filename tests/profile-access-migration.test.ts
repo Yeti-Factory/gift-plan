@@ -35,6 +35,9 @@ describe("profile access migration contract", () => {
   });
 
   it("keeps mutations behind authenticated RPCs", () => {
+    expect(migration).toContain(
+      "REVOKE ALL ON public.profile_access_requests FROM PUBLIC, anon, authenticated",
+    );
     expect(migration).toContain("CREATE OR REPLACE FUNCTION public.request_profile_access");
     expect(migration).toContain("CREATE OR REPLACE FUNCTION public.respond_profile_access");
     expect(migration).toContain("REVOKE ALL ON FUNCTION public.request_profile_access(uuid)");

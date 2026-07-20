@@ -23,6 +23,9 @@ CREATE INDEX IF NOT EXISTS profile_access_requests_owner_status_idx
 CREATE INDEX IF NOT EXISTS profile_access_requests_requester_status_idx
   ON public.profile_access_requests(requester_id, status, created_at DESC);
 
+-- Lovable/Supabase projects may define permissive default table privileges.
+-- Remove them explicitly so every mutation must pass through the guarded RPCs.
+REVOKE ALL ON public.profile_access_requests FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.profile_access_requests TO authenticated;
 GRANT ALL ON public.profile_access_requests TO service_role;
 ALTER TABLE public.profile_access_requests ENABLE ROW LEVEL SECURITY;
