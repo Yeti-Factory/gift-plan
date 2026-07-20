@@ -65,14 +65,14 @@ function validatePublicGiftIds(input: {
   username: unknown;
   shareToken?: unknown;
   giftIds: unknown;
-}): { username: string; shareToken: string | null; giftIds: string[] } {
+}): { username: string; shareToken: string | undefined; giftIds: string[] } {
   if (typeof input?.username !== "string" || !/^[a-z0-9][a-z0-9-]{2,39}$/i.test(input.username)) {
     throw new Error("Invalid username");
   }
   const shareToken =
     typeof input.shareToken === "string" && /^[0-9a-f-]{36}$/i.test(input.shareToken)
       ? input.shareToken
-      : null;
+      : undefined;
   return { username: input.username, shareToken, ...validateGiftIds({ giftIds: input.giftIds }) };
 }
 
