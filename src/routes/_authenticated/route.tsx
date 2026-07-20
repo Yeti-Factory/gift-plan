@@ -155,13 +155,13 @@ function AuthLayout() {
           <NavItem
             to="/people"
             icon={<UserRoundSearch className="h-5 w-5" />}
-            label="Profils"
+            label="Communauté"
             badge={pendingProfileAccess}
           />
           <NavItem to="/my-lists" icon={<ListChecks className="h-5 w-5" />} label="Mes listes" />
           <NavItem to="/gifts-i-offer" icon={<Package className="h-5 w-5" />} label="J'offre" />
           <NavItem to="/circles" icon={<Users className="h-5 w-5" />} label="Cercles" />
-          <NavItem to="/profile" icon={<UserCircle className="h-5 w-5" />} label="Profil" />
+          <NavItem to="/profile" icon={<UserCircle className="h-5 w-5" />} label="Mon profil" />
         </div>
       </nav>
     </div>
