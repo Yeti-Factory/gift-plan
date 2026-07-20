@@ -24,6 +24,7 @@ import { ensureProfile } from "@/lib/gift-box";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { BrandMark } from "@/components/BrandMark";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -129,6 +130,8 @@ function AuthLayout() {
         )}
         <Outlet />
       </main>
+
+      <OnboardingGuide user={user} />
 
       <nav className="fixed bottom-3 inset-x-3 z-40 mx-auto max-w-md rounded-[1.4rem] border border-white/80 bg-background/90 shadow-xl backdrop-blur-xl">
         <div className="grid grid-cols-5 px-1">
