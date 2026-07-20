@@ -46,7 +46,8 @@ const globalWithPointer = globalThis as typeof globalThis & {
   PointerEvent?: PointerEventCtor;
 };
 if (!globalWithPointer.PointerEvent) {
-  globalWithPointer.PointerEvent = class PointerEvent extends Event {} as unknown as PointerEventCtor;
+  globalWithPointer.PointerEvent =
+    class PointerEvent extends Event {} as unknown as PointerEventCtor;
 }
 Element.prototype.hasPointerCapture = () => false;
 Element.prototype.releasePointerCapture = () => {};
