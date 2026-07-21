@@ -204,11 +204,11 @@ function PublicProfilePage() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" className="rounded-full bg-white/80" onClick={shareProfile}>
+              <Button variant="outline" className="rounded-lg bg-white/80" onClick={shareProfile}>
                 <Share2 className="h-4 w-4" /> Partager
               </Button>
               {profile.is_owner && (
-                <Button asChild className="rounded-full">
+                <Button asChild className="rounded-lg">
                   <Link to="/profile">Gérer mon profil</Link>
                 </Button>
               )}
@@ -290,7 +290,7 @@ function PublicProfilePage() {
                         {PRIORITY_LABEL[gift.priority]}
                       </Badge>
                       {reserved && !profile.is_owner && (
-                        <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold shadow-sm backdrop-blur">
+                        <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium shadow-sm backdrop-blur">
                           <CircleCheck className="h-3.5 w-3.5 text-accent" />
                           {purchased ? "Acheté" : "Réservé"}
                         </span>
@@ -315,7 +315,7 @@ function PublicProfilePage() {
                       )}
                       <div className="mt-5 flex items-center gap-2">
                         {gift.url && (
-                          <Button asChild size="sm" variant="outline" className="rounded-full">
+                          <Button asChild size="sm" variant="outline" className="rounded-lg">
                             <a href={gift.url} target="_blank" rel="noreferrer noopener">
                               Voir <ExternalLink className="h-3 w-3" />
                             </a>
@@ -324,7 +324,7 @@ function PublicProfilePage() {
                         {!profile.is_owner && !reserved && (
                           <Button
                             size="sm"
-                            className="ml-auto rounded-full"
+                            className="ml-auto rounded-lg"
                             disabled={busyGift === gift.id}
                             onClick={() => reservationAction(gift.id, "reserve")}
                           >
@@ -341,7 +341,7 @@ function PublicProfilePage() {
                             {!purchased && (
                               <Button
                                 size="sm"
-                                className="rounded-full"
+                                className="rounded-lg"
                                 onClick={() => reservationAction(gift.id, "purchased")}
                               >
                                 <ShoppingBag className="h-4 w-4" /> Acheté
@@ -350,7 +350,7 @@ function PublicProfilePage() {
                             <Button
                               size="icon"
                               variant="outline"
-                              className="rounded-full"
+                              className="rounded-lg"
                               aria-label="Annuler la réservation"
                               onClick={() => reservationAction(gift.id, "cancel")}
                             >

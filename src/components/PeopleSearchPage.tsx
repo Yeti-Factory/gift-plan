@@ -54,21 +54,21 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
   const searchForm = (
     <form className="flex gap-2" onSubmit={search}>
       <div className="relative min-w-0 flex-1">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Nom, @identifiant ou email"
           aria-label="Nom, @identifiant ou email"
           autoComplete="off"
-          className="h-12 rounded-2xl border-white/80 bg-white/80 pl-11 shadow-sm focus-visible:ring-2"
+          className="h-10 rounded-xl border-white/80 bg-white/80 pl-10 shadow-sm focus-visible:ring-2"
         />
       </div>
       <Button
         type="submit"
         disabled={busy}
         aria-label="Rechercher"
-        className="h-12 rounded-2xl px-4 shadow-lg sm:px-6"
+        className="h-10 rounded-xl px-3 shadow-sm sm:px-4"
       >
         <Search className="h-4 w-4" />
         <span className="hidden sm:inline">Rechercher</span>
@@ -79,7 +79,7 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
   const resultList = (
     <div aria-live="polite" className="space-y-3">
       {results?.length === 0 && (
-        <Card className="rounded-[1.5rem] border-dashed bg-white/70 p-7 text-center text-sm text-muted-foreground shadow-sm">
+        <Card className="rounded-2xl border-dashed bg-white/70 p-5 text-center text-sm text-muted-foreground shadow-sm">
           <UserRoundSearch className="mx-auto mb-3 h-8 w-8 text-primary" />
           Aucun profil public ne correspond à cette recherche.
         </Card>
@@ -94,8 +94,8 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
             params={{ username: profile.username }}
             search={{ invite: undefined }}
           >
-            <Card className="gp-card-lift group flex items-center gap-4 rounded-[1.5rem] border-white/80 bg-white/85 p-4 shadow-sm">
-              <Avatar className="h-12 w-12 border-2 border-white shadow-md">
+            <Card className="gp-card-lift group flex items-center gap-3 rounded-2xl border-white/80 bg-white/85 p-3 shadow-sm">
+              <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
                 {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
                 <AvatarFallback className="bg-secondary font-bold text-primary">
                   {initials(name)}
@@ -144,7 +144,7 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
       <main className="relative z-10">
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-9 sm:px-6 sm:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-28">
           <div className="gp-fade-up">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/70 px-3 py-1.5 text-xs font-bold text-primary shadow-sm backdrop-blur">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" /> Offrir juste, sans gâcher la surprise
             </div>
             <h1 className="mt-6 max-w-2xl font-display text-5xl font-bold leading-[0.97] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
@@ -156,8 +156,8 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
               jamais découvrir qui vous prépare quoi.
             </p>
 
-            <div className="gp-glass mt-8 max-w-xl rounded-[1.75rem] p-3 sm:p-4">
-              <p className="mb-3 px-1 text-sm font-semibold">Qui voulez-vous gâter ?</p>
+            <div className="gp-glass mt-8 max-w-xl rounded-2xl p-2.5 sm:p-3">
+              <p className="mb-2.5 px-1 text-sm font-medium">Qui voulez-vous gâter ?</p>
               {searchForm}
             </div>
 
@@ -230,7 +230,7 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
           </div>
         </section>
 
-        <section className="border-y border-white/70 bg-white/45 py-16 backdrop-blur-sm">
+        <section className="border-y border-white/70 bg-white/45 py-12 backdrop-blur-sm">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
@@ -240,7 +240,7 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
                 Trois étapes. Zéro cadeau en double.
               </h2>
             </div>
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <div className="mt-8 grid gap-3 md:grid-cols-3">
               <FeatureCard
                 number="01"
                 title="Créez"
@@ -303,7 +303,9 @@ function PreviewGift({
       <p className="mt-3 text-sm font-bold">{title}</p>
       <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
         <span>{price}</span>
-        {reserved && <span className="rounded-full bg-secondary px-2 py-1">Réservé</span>}
+        {reserved && (
+          <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px]">Réservé</span>
+        )}
       </div>
     </div>
   );
@@ -311,9 +313,9 @@ function PreviewGift({
 
 function FeatureCard({ number, title, text }: { number: string; title: string; text: string }) {
   return (
-    <Card className="gp-card-lift rounded-[1.75rem] border-white/80 bg-white/75 p-6 shadow-sm">
-      <span className="font-display text-3xl font-bold text-primary/35">{number}</span>
-      <h3 className="mt-5 font-display text-2xl font-bold">{title}</h3>
+    <Card className="gp-card-lift rounded-2xl border-white/80 bg-white/75 p-5 shadow-sm">
+      <span className="font-display text-2xl font-bold text-primary/35">{number}</span>
+      <h3 className="mt-3 font-display text-xl font-bold">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
     </Card>
   );

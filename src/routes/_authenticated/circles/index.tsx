@@ -128,8 +128,8 @@ function CirclesPage() {
       <div className="grid grid-cols-2 gap-3">
         <Dialog open={openCreate} onOpenChange={setOpenCreate}>
           <DialogTrigger asChild>
-            <Button className="h-14 rounded-2xl">
-              <Plus className="mr-2 h-5 w-5" /> Créer
+            <Button className="h-11 rounded-xl">
+              <Plus className="h-4 w-4" /> Créer
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -155,8 +155,8 @@ function CirclesPage() {
 
         <Dialog open={openJoin} onOpenChange={setOpenJoin}>
           <DialogTrigger asChild>
-            <Button variant="outline" className="h-14 rounded-2xl">
-              <Users className="mr-2 h-5 w-5" /> Rejoindre
+            <Button variant="outline" className="h-11 rounded-xl">
+              <Users className="h-4 w-4" /> Rejoindre
             </Button>
           </DialogTrigger>
           <DialogContent>
