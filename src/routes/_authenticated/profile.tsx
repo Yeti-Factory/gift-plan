@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { Copy, Eye, Link2, Lock, Plus, Settings, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Camera, Copy, Eye, Link2, Lock, Plus, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,11 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { initials } from "@/lib/gift-box";
+import { removeUncommittedProfileAvatar, uploadProfileAvatar } from "@/lib/profile-avatar";
 
 export const Route = createFileRoute("/_authenticated/profile")({ component: ManageProfilePage });
 
 type OwnProfile = {
   id: string;
+  avatar_path: string | null;
+  avatar_url: string | null;
   username: string;
   display_name: string | null;
   bio: string | null;
@@ -47,12 +52,18 @@ function ManageProfilePage() {
   const [selectedLists, setSelectedLists] = useState<string[]>([]);
   const [linkLabel, setLinkLabel] = useState("");
   const [busy, setBusy] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const [{ data: p }, { data: ownLists }, { data: shareLinks }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, username, display_name, bio, visibility, email_searchable")
+        .select(
+          "id, username, display_name, avatar_url, avatar_path, bio, visibility, email_searchable",
+        )
         .eq("id", user.id)
         .single(),
       supabase
@@ -69,6 +80,8 @@ function ManageProfilePage() {
       setBio(p.bio ?? "");
       setIsPublic(p.visibility === "public");
       setEmailSearchable(p.email_searchable);
+      setAvatarPath(p.avatar_path);
+      setAvatarUrl(p.avatar_url);
     }
     setLists(ownLists ?? []);
     setLinks((shareLinks as ShareLink[]) ?? []);
@@ -110,6 +123,62 @@ function ManageProfilePage() {
     await supabase.auth.updateUser({ data: { display_name: displayName.trim() } });
     toast.success("Profil enregistré");
     load();
+  }
+
+  async function changeAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+
+    setAvatarBusy(true);
+    let uploadedPath: string | null = null;
+    try {
+      const uploaded = await uploadProfileAvatar(user.id, file);
+      uploadedPath = uploaded.path;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: uploaded.publicUrl, avatar_path: uploaded.path })
+        .eq("id", user.id);
+      if (error) throw error;
+
+      setAvatarPath(uploaded.path);
+      setAvatarUrl(uploaded.publicUrl);
+      setProfile((current) =>
+        current
+          ? { ...current, avatar_path: uploaded.path, avatar_url: uploaded.publicUrl }
+          : current,
+      );
+      toast.success(avatarPath ? "Photo remplacée" : "Photo ajoutée");
+    } catch (error) {
+      if (uploadedPath) {
+        await removeUncommittedProfileAvatar(user.id, uploadedPath).catch(() => {});
+      }
+      toast.error(error instanceof Error ? error.message : "Impossible d'ajouter cette photo.");
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setAvatarBusy(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: null, avatar_path: null })
+      .eq("id", user.id);
+    setAvatarBusy(false);
+
+    if (error) {
+      toast.error("Impossible de supprimer cette photo.");
+      return;
+    }
+
+    setAvatarPath(null);
+    setAvatarUrl(null);
+    setProfile((current) =>
+      current ? { ...current, avatar_path: null, avatar_url: null } : current,
+    );
+    toast.success("Photo supprimée");
   }
 
   async function createShareLink() {
@@ -173,6 +242,58 @@ function ManageProfilePage() {
 
       <Card className="p-5">
         <form className="space-y-4" onSubmit={saveProfile}>
+          <div className="flex items-center gap-4 rounded-2xl border bg-muted/30 p-4">
+            <Avatar className="h-20 w-20 border-2 border-background shadow-sm">
+              {avatarUrl && (
+                <AvatarImage
+                  src={avatarUrl}
+                  alt={`Photo de ${displayName || profile.username}`}
+                  className="object-cover"
+                />
+              )}
+              <AvatarFallback className="text-xl font-bold text-primary">
+                {initials(displayName || profile.username)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <p className="font-semibold">Photo de profil</p>
+                <p className="text-xs text-muted-foreground">JPEG, PNG ou WebP · 5 Mo maximum</p>
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                aria-label="Choisir une photo de profil"
+                className="sr-only"
+                onChange={changeAvatar}
+                disabled={avatarBusy}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={avatarBusy}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  <Camera className="h-4 w-4" />
+                  {avatarBusy ? "Envoi…" : avatarUrl ? "Remplacer" : "Ajouter"}
+                </Button>
+                {avatarUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={avatarBusy}
+                    onClick={removeAvatar}
+                  >
+                    <Trash2 className="h-4 w-4" /> Supprimer
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="profile-name">Nom affiché</Label>
             <Input

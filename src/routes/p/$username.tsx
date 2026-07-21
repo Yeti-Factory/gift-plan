@@ -50,7 +50,7 @@ function PublicProfilePage() {
       supabase.auth.getUser(),
       supabase.rpc("get_profile_page", {
         _username: username,
-        _share_token: invite ?? null,
+        _share_token: invite ?? undefined,
       }),
     ]);
     setMe(auth.user?.id ?? null);
@@ -96,7 +96,7 @@ function PublicProfilePage() {
     const { error: actionError } = await supabase.rpc("set_gift_reservation", {
       _gift_id: giftId,
       _action: action,
-      _share_token: invite ?? null,
+      _share_token: invite ?? undefined,
     });
     setBusyGift(null);
     if (actionError) {
