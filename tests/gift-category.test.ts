@@ -16,13 +16,19 @@ describe("gift categories", () => {
     expect(values).toEqual(
       expect.arrayContaining([
         "culture",
+        "musique",
         "tech_geek",
         "informatique",
         "beaute_bien_etre",
         "mode",
         "sport",
+        "loisirs",
       ]),
     );
+    expect(getGiftCategoryOption("jeux_loisirs").label).toBe("Jeux");
+    expect(getGiftCategoryOption("loisirs").label).toBe("Loisirs");
+    expect(getGiftCategoryOption("musique").label).toBe("Musique");
+    expect(getGiftCategoryOption("loisirs").iconClass).toContain("text-");
   });
 
   it("falls back safely to the other category", () => {

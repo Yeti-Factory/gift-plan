@@ -41,11 +41,12 @@ export function GiftCategoryFilter({
             </span>
           </SelectItem>
           {GIFT_CATEGORY_OPTIONS.map((option) => {
-            const CategoryIcon = getGiftCategoryOption(option.value).icon;
+            const category = getGiftCategoryOption(option.value);
+            const CategoryIcon = category.icon;
             return (
               <SelectItem key={option.value} value={option.value}>
                 <span className="flex items-center gap-2">
-                  <CategoryIcon className="h-3.5 w-3.5" /> {option.label}
+                  <CategoryIcon className={`h-3.5 w-3.5 ${category.iconClass}`} /> {option.label}
                 </span>
               </SelectItem>
             );

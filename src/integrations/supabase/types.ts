@@ -662,6 +662,7 @@ export type Database = {
       circle_role: "admin" | "member";
       gift_category:
         | "culture"
+        | "musique"
         | "tech_geek"
         | "informatique"
         | "beaute_bien_etre"
@@ -669,6 +670,7 @@ export type Database = {
         | "sport"
         | "maison_deco"
         | "jeux_loisirs"
+        | "loisirs"
         | "gastronomie"
         | "voyages_experiences"
         | "enfants"
@@ -806,6 +808,7 @@ export const Constants = {
       circle_role: ["admin", "member"],
       gift_category: [
         "culture",
+        "musique",
         "tech_geek",
         "informatique",
         "beaute_bien_etre",
@@ -813,6 +816,7 @@ export const Constants = {
         "sport",
         "maison_deco",
         "jeux_loisirs",
+        "loisirs",
         "gastronomie",
         "voyages_experiences",
         "enfants",

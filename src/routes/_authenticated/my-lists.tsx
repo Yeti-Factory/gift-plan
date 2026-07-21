@@ -218,7 +218,7 @@ function MyLists() {
                         className={`h-16 w-16 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
                         title={category.label}
                       >
-                        <CategoryIcon className="h-6 w-6" />
+                        <CategoryIcon className={`h-6 w-6 ${category.iconClass}`} />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
@@ -229,7 +229,7 @@ function MyLists() {
                               className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
                               title={category.label}
                             >
-                              <CategoryIcon className="h-2.5 w-2.5" />
+                              <CategoryIcon className={`h-2.5 w-2.5 ${category.iconClass}`} />
                               <span className="sr-only">{category.label}</span>
                             </span>
                           )}
@@ -474,7 +474,7 @@ function GiftFormDialog({
   const [url, setUrl] = useState(gift?.url ?? "");
   const [price, setPrice] = useState(gift?.price != null ? String(gift.price) : "");
   const [priority, setPriority] = useState<Priority>(gift?.priority ?? "j_adorerais");
-  const [category, setCategory] = useState<GiftCategory>(gift?.category ?? "autre");
+  const [category, setCategory] = useState<GiftCategory | "">(gift?.category ?? "");
   const [imageUrl, setImageUrl] = useState<string | null>(gift?.image_url ?? null);
   const [imagePath, setImagePath] = useState<string | null>(gift?.image_path ?? null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -490,7 +490,7 @@ function GiftFormDialog({
     setUrl(gift?.url ?? "");
     setPrice(gift?.price != null ? String(gift.price) : "");
     setPriority(gift?.priority ?? "j_adorerais");
-    setCategory(gift?.category ?? "autre");
+    setCategory(gift?.category ?? "");
     setImageUrl(gift?.image_url ?? null);
     setImagePath(gift?.image_path ?? null);
     if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -547,7 +547,7 @@ function GiftFormDialog({
   }
 
   async function save() {
-    if (!title.trim() || !userId) return;
+    if (!category || !title.trim() || !userId) return;
     setBusy(true);
     const priceNum = price ? Number(price.replace(",", ".")) : null;
     const payload = {
@@ -600,6 +600,27 @@ function GiftFormDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div>
+            <Label>Catégorie (obligatoire)</Label>
+            <Select value={category} onValueChange={(value) => setCategory(value as GiftCategory)}>
+              <SelectTrigger aria-label="Catégorie du cadeau" aria-required="true">
+                <SelectValue placeholder="Choisir une catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                {GIFT_CATEGORY_OPTIONS.map((option) => {
+                  const CategoryIcon = option.icon;
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      <span className="flex items-center gap-2">
+                        <CategoryIcon className={`h-3.5 w-3.5 ${option.iconClass}`} />{" "}
+                        {option.label}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label>Nom</Label>
             <Input
               value={title}
@@ -641,29 +662,6 @@ function GiftFormDialog({
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <Label>Catégorie</Label>
-              <Select
-                value={category}
-                onValueChange={(value) => setCategory(value as GiftCategory)}
-              >
-                <SelectTrigger aria-label="Catégorie du cadeau">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {GIFT_CATEGORY_OPTIONS.map((option) => {
-                    const CategoryIcon = option.icon;
-                    return (
-                      <SelectItem key={option.value} value={option.value}>
-                        <span className="flex items-center gap-2">
-                          <CategoryIcon className="h-3.5 w-3.5" /> {option.label}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
             <div>
               <Label>Prix (€)</Label>
               <Input
@@ -722,7 +720,7 @@ function GiftFormDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={save} disabled={busy || !title.trim()}>
+          <Button onClick={save} disabled={busy || !category || !title.trim()}>
             {isEdit ? "Enregistrer" : "Ajouter"}
           </Button>
         </DialogFooter>
