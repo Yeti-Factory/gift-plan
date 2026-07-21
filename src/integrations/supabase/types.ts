@@ -184,6 +184,7 @@ export type Database = {
       };
       gifts: {
         Row: {
+          category: Database["public"]["Enums"]["gift_category"];
           created_at: string;
           currency: string;
           description: string | null;
@@ -198,6 +199,7 @@ export type Database = {
           url: string | null;
         };
         Insert: {
+          category?: Database["public"]["Enums"]["gift_category"];
           created_at?: string;
           currency?: string;
           description?: string | null;
@@ -212,6 +214,7 @@ export type Database = {
           url?: string | null;
         };
         Update: {
+          category?: Database["public"]["Enums"]["gift_category"];
           created_at?: string;
           currency?: string;
           description?: string | null;
@@ -657,6 +660,19 @@ export type Database = {
     };
     Enums: {
       circle_role: "admin" | "member";
+      gift_category:
+        | "culture"
+        | "tech_geek"
+        | "informatique"
+        | "beaute_bien_etre"
+        | "mode"
+        | "sport"
+        | "maison_deco"
+        | "jeux_loisirs"
+        | "gastronomie"
+        | "voyages_experiences"
+        | "enfants"
+        | "autre";
       gift_priority: "indispensable" | "j_adorerais" | "me_plairait";
       list_visibility: "public" | "circles";
       profile_access_status: "pending" | "accepted" | "declined";
@@ -788,6 +804,20 @@ export const Constants = {
   public: {
     Enums: {
       circle_role: ["admin", "member"],
+      gift_category: [
+        "culture",
+        "tech_geek",
+        "informatique",
+        "beaute_bien_etre",
+        "mode",
+        "sport",
+        "maison_deco",
+        "jeux_loisirs",
+        "gastronomie",
+        "voyages_experiences",
+        "enfants",
+        "autre",
+      ],
       gift_priority: ["indispensable", "j_adorerais", "me_plairait"],
       list_visibility: ["public", "circles"],
       profile_access_status: ["pending", "accepted", "declined"],

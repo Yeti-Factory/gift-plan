@@ -1,9 +1,11 @@
 import type { Priority } from "@/lib/gift-box";
+import type { GiftCategory } from "@/lib/gift-category";
 
 export type ProfileVisibility = "public" | "private";
 export type ListVisibility = "public" | "circles";
 
 export type ProfilePageGift = {
+  category: GiftCategory;
   id: string;
   title: string;
   description: string | null;

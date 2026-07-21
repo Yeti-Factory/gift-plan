@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, ImagePlus, Gift as GiftIcon, Sparkles, Pencil } from "lucide-react";
+import { Plus, Trash2, ImagePlus, Sparkles, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { scrapeGiftUrl } from "@/lib/gift-scrape.functions";
@@ -41,6 +41,14 @@ import {
 } from "@/components/ui/select";
 import { PRIORITY_LABEL, PRIORITY_COLOR, formatPrice, type Priority } from "@/lib/gift-box";
 import { uploadGiftImageChecked, useGiftImageUrls } from "@/lib/gift-image";
+import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
+import {
+  GIFT_CATEGORY_OPTIONS,
+  filterGiftsByCategory,
+  getGiftCategoryOption,
+  type GiftCategory,
+  type GiftCategoryFilterValue,
+} from "@/lib/gift-category";
 
 export const Route = createFileRoute("/_authenticated/my-lists")({
   component: MyLists,
@@ -56,6 +64,7 @@ type List = {
   circle_ids: string[];
 };
 type Gift = {
+  category: GiftCategory;
   id: string;
   list_id: string;
   title: string;
@@ -75,6 +84,8 @@ function MyLists() {
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteGift, setDeleteGift] = useState<Gift | null>(null);
+  const [deletingGift, setDeletingGift] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<GiftCategoryFilterValue>("all");
 
   const load = useCallback(async () => {
     const { data: user } = await supabase.auth.getUser();
@@ -112,7 +123,7 @@ function MyLists() {
     const { data: gs } = await supabase
       .from("gifts")
       .select(
-        "id, list_id, title, description, url, image_url, image_path, price, currency, priority",
+        "id, list_id, title, description, url, image_url, image_path, price, currency, priority, category",
       )
       .in("list_id", listIds)
       .order("created_at", { ascending: false });
@@ -139,6 +150,10 @@ function MyLists() {
         <NewListDialog circles={circles} onCreated={load} />
       </div>
 
+      {!loading && gifts.length > 0 && (
+        <GiftCategoryFilter value={categoryFilter} onValueChange={setCategoryFilter} />
+      )}
+
       {loading && (
         <div className="space-y-4">
           <Skeleton className="h-24 w-full rounded-xl" />
@@ -154,7 +169,8 @@ function MyLists() {
 
       {!loading &&
         lists.map((list) => {
-          const items = gifts.filter((g) => g.list_id === list.id);
+          const allItems = gifts.filter((g) => g.list_id === list.id);
+          const items = filterGiftsByCategory(allItems, categoryFilter);
           const circleNames = circles
             .filter((circle) => list.circle_ids.includes(circle.id))
             .map((circle) => circle.name);
@@ -175,65 +191,90 @@ function MyLists() {
                 </div>
               </div>
 
-              {items.length === 0 && (
+              {allItems.length === 0 && (
                 <p className="text-sm text-muted-foreground px-1">Ajoutez votre premier cadeau.</p>
               )}
 
-              {items.map((g) => (
-                <Card key={g.id} className="p-3 flex gap-3">
-                  {(() => {
-                    const src = g.image_path ? signedUrls?.[g.id] : g.image_url;
-                    return src ? (
+              {allItems.length > 0 && items.length === 0 && (
+                <p className="text-sm text-muted-foreground px-1">
+                  Aucun cadeau dans cette catégorie.
+                </p>
+              )}
+
+              {items.map((g) => {
+                const category = getGiftCategoryOption(g.category);
+                const CategoryIcon = category.icon;
+                const imageSrc = g.image_path ? signedUrls?.[g.id] : g.image_url;
+                return (
+                  <Card key={g.id} className="p-3 flex gap-3">
+                    {imageSrc ? (
                       <img
-                        src={src}
+                        src={imageSrc}
                         alt=""
                         className="h-16 w-16 rounded-xl object-cover bg-muted"
                       />
                     ) : (
-                      <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center">
-                        <GiftIcon className="h-6 w-6 text-muted-foreground" />
+                      <div
+                        className={`h-16 w-16 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
+                        title={category.label}
+                      >
+                        <CategoryIcon className="h-6 w-6" />
                       </div>
-                    );
-                  })()}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium leading-tight">{g.title}</p>
-                      <Badge className={PRIORITY_COLOR[g.priority]}>
-                        {PRIORITY_LABEL[g.priority]}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      {g.price != null && (
-                        <span className="text-sm font-semibold">
-                          {formatPrice(g.price, g.currency)}
-                        </span>
-                      )}
-                      <div className="flex gap-1 ml-auto">
-                        <GiftFormDialog
-                          mode="edit"
-                          listId={g.list_id}
-                          userId={me}
-                          gift={g}
-                          onSaved={load}
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          aria-label="Supprimer le cadeau"
-                          onClick={() => setDeleteGift(g)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="flex items-center gap-1.5 font-medium leading-tight">
+                          {imageSrc && (
+                            <span
+                              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
+                              title={category.label}
+                            >
+                              <CategoryIcon className="h-2.5 w-2.5" />
+                              <span className="sr-only">{category.label}</span>
+                            </span>
+                          )}
+                          <span>{g.title}</span>
+                        </p>
+                        <Badge className={PRIORITY_COLOR[g.priority]}>
+                          {PRIORITY_LABEL[g.priority]}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        {g.price != null && (
+                          <span className="text-sm font-semibold">
+                            {formatPrice(g.price, g.currency)}
+                          </span>
+                        )}
+                        <div className="flex gap-1 ml-auto">
+                          <GiftFormDialog
+                            mode="edit"
+                            listId={g.list_id}
+                            userId={me}
+                            gift={g}
+                            onSaved={load}
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Supprimer le cadeau"
+                            onClick={() => setDeleteGift(g)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </section>
           );
         })}
 
-      <AlertDialog open={!!deleteGift} onOpenChange={(o) => !o && setDeleteGift(null)}>
+      <AlertDialog
+        open={!!deleteGift}
+        onOpenChange={(open) => !open && !deletingGift && setDeleteGift(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce cadeau ?</AlertDialogTitle>
@@ -242,23 +283,42 @@ function MyLists() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deletingGift}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingGift}
               onClick={async (e) => {
                 e.preventDefault();
                 if (!deleteGift) return;
                 const id = deleteGift.id;
-                setDeleteGift(null);
-                const { error } = await supabase.from("gifts").delete().eq("id", id);
-                if (error) toast.error(error.message);
-                else {
-                  toast.success("Cadeau supprimé");
-                  load();
+                setDeletingGift(true);
+                try {
+                  const { data: deletedGift, error } = await supabase
+                    .from("gifts")
+                    .delete()
+                    .eq("id", id)
+                    .select("id")
+                    .maybeSingle();
+
+                  if (error) {
+                    toast.error(error.message);
+                  } else if (!deletedGift) {
+                    toast.error("La suppression a été refusée. Rechargez la page et réessayez.");
+                  } else {
+                    setGifts((current) => current.filter((gift) => gift.id !== id));
+                    setDeleteGift(null);
+                    toast.success("Cadeau supprimé");
+                    await load();
+                  }
+                } catch {
+                  toast.error("La suppression a échoué. Réessayez dans un instant.");
+                } finally {
+                  setDeletingGift(false);
                 }
               }}
             >
-              Supprimer
+              {deletingGift && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {deletingGift ? "Suppression…" : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -414,6 +474,7 @@ function GiftFormDialog({
   const [url, setUrl] = useState(gift?.url ?? "");
   const [price, setPrice] = useState(gift?.price != null ? String(gift.price) : "");
   const [priority, setPriority] = useState<Priority>(gift?.priority ?? "j_adorerais");
+  const [category, setCategory] = useState<GiftCategory>(gift?.category ?? "autre");
   const [imageUrl, setImageUrl] = useState<string | null>(gift?.image_url ?? null);
   const [imagePath, setImagePath] = useState<string | null>(gift?.image_path ?? null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -429,6 +490,7 @@ function GiftFormDialog({
     setUrl(gift?.url ?? "");
     setPrice(gift?.price != null ? String(gift.price) : "");
     setPriority(gift?.priority ?? "j_adorerais");
+    setCategory(gift?.category ?? "autre");
     setImageUrl(gift?.image_url ?? null);
     setImagePath(gift?.image_path ?? null);
     if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -495,6 +557,7 @@ function GiftFormDialog({
       price: priceNum,
       currency: "EUR",
       priority,
+      category,
       image_url: imagePath ? null : imageUrl,
       image_path: imagePath,
     };
@@ -578,6 +641,29 @@ function GiftFormDialog({
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label>Catégorie</Label>
+              <Select
+                value={category}
+                onValueChange={(value) => setCategory(value as GiftCategory)}
+              >
+                <SelectTrigger aria-label="Catégorie du cadeau">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GIFT_CATEGORY_OPTIONS.map((option) => {
+                    const CategoryIcon = option.icon;
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex items-center gap-2">
+                          <CategoryIcon className="h-3.5 w-3.5" /> {option.label}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Prix (€)</Label>
               <Input

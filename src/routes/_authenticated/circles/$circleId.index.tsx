@@ -343,12 +343,12 @@ function CircleDetail() {
                       {name} {isMe && <span className="text-xs text-muted-foreground">(vous)</span>}
                     </p>
                     {memberIsCreator ? (
-                      <Badge variant="default" className="gap-1">
-                        <Crown className="h-3 w-3" /> Créateur
+                      <Badge variant="default" className="gap-0.5">
+                        <Crown className="h-2.5 w-2.5" /> Créateur
                       </Badge>
                     ) : memberIsAdmin ? (
-                      <Badge variant="secondary" className="gap-1">
-                        <Shield className="h-3 w-3" /> Admin
+                      <Badge variant="secondary" className="gap-0.5">
+                        <Shield className="h-2.5 w-2.5" /> Admin
                       </Badge>
                     ) : null}
                   </div>
