@@ -387,7 +387,7 @@ function CircleDetail() {
                 <span className="text-xs text-muted-foreground">
                   {isMe ? "Gérer ma liste" : "Voir les cadeaux de ce membre"}
                 </span>
-                <Button asChild size="sm" className="shrink-0 rounded-full">
+                <Button asChild size="sm" className="shrink-0 rounded-lg">
                   <Link
                     to={isMe ? "/my-lists" : "/p/$username"}
                     params={

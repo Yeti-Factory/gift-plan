@@ -157,7 +157,7 @@ function AuthPage() {
       <div className="gp-dots pointer-events-none absolute inset-0 opacity-50" />
       <div className="relative z-10 flex flex-col items-center gap-3 mb-8">
         <BrandMark />
-        <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm">
           <Sparkles className="h-3.5 w-3.5" /> La surprise commence ici
         </div>
         <h1 className="mt-2 max-w-sm text-center font-display text-4xl font-bold tracking-[-0.04em]">

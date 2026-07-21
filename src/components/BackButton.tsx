@@ -29,11 +29,11 @@ export function BackButton({
       aria-label="Retour"
       className={
         variant === "text"
-          ? "h-10 px-2 text-sm font-medium text-muted-foreground hover:text-foreground -ml-2"
-          : "h-10 w-10"
+          ? "h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground -ml-2"
+          : "h-8 w-8"
       }
     >
-      <ArrowLeft className={variant === "text" ? "h-4 w-4 mr-1" : "h-5 w-5"} />
+      <ArrowLeft className={variant === "text" ? "h-3.5 w-3.5" : "h-4 w-4"} />
       {variant === "text" && "Retour"}
     </Button>
   );
