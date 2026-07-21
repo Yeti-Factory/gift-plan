@@ -152,8 +152,9 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
               <span className="block text-primary">La surprise intacte.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Créez vos listes, partagez-les avec les bonnes personnes et évitez les doublons — sans
-              jamais découvrir qui vous prépare quoi.
+              Vous ne savez pas quoi offrir à votre ami, votre neveu ou votre sœur ? Cherchez une
+              idée dans sa liste d'envies. Créez la vôtre et partagez-la avec les personnes de votre
+              choix — sans jamais savoir qui vous offre quoi.
             </p>
 
             <div className="gp-glass mt-8 max-w-xl rounded-[1.75rem] p-3 sm:p-4">
