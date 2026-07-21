@@ -416,6 +416,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          avatar_path: string | null;
           avatar_url: string | null;
           bio: string | null;
           created_at: string;
@@ -428,6 +429,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["profile_visibility"];
         };
         Insert: {
+          avatar_path?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string;
@@ -440,6 +442,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["profile_visibility"];
         };
         Update: {
+          avatar_path?: string | null;
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string;
