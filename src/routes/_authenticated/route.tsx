@@ -114,7 +114,7 @@ function AuthLayout() {
 
   return (
     <div className="gp-mesh min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-white/70 bg-background/75 px-4 py-3 shadow-sm backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/70 bg-background/75 px-4 py-2.5 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <Link to="/people" aria-label="Accueil Gift-Plan">
             <BrandMark />
@@ -140,7 +140,7 @@ function AuthLayout() {
         </div>
       </header>
 
-      <main className="flex-1 pb-24">
+      <main className="flex-1 pb-20">
         {showBack && (
           <div className="mx-auto max-w-md px-4 pt-4">
             <BackButton fallback="/people" />
@@ -154,18 +154,18 @@ function AuthLayout() {
 
       <OnboardingGuide user={user} />
 
-      <nav className="fixed bottom-3 inset-x-3 z-40 mx-auto max-w-md rounded-[1.4rem] border border-white/80 bg-background/90 shadow-xl backdrop-blur-xl">
+      <nav className="fixed bottom-2 inset-x-2 z-40 mx-auto max-w-md rounded-2xl border border-white/80 bg-background/90 shadow-lg backdrop-blur-xl">
         <div className="grid grid-cols-5 px-1">
           <NavItem
             to="/people"
-            icon={<UserRoundSearch className="h-5 w-5" />}
+            icon={<UserRoundSearch className="h-4 w-4" />}
             label="Communauté"
             badge={pendingProfileAccess}
           />
-          <NavItem to="/my-lists" icon={<ListChecks className="h-5 w-5" />} label="Mes listes" />
-          <NavItem to="/gifts-i-offer" icon={<Package className="h-5 w-5" />} label="J'offre" />
-          <NavItem to="/circles" icon={<Users className="h-5 w-5" />} label="Cercles" />
-          <NavItem to="/profile" icon={<UserCircle className="h-5 w-5" />} label="Mon profil" />
+          <NavItem to="/my-lists" icon={<ListChecks className="h-4 w-4" />} label="Mes listes" />
+          <NavItem to="/gifts-i-offer" icon={<Package className="h-4 w-4" />} label="J'offre" />
+          <NavItem to="/circles" icon={<Users className="h-4 w-4" />} label="Cercles" />
+          <NavItem to="/profile" icon={<UserCircle className="h-4 w-4" />} label="Mon profil" />
         </div>
       </nav>
     </div>
@@ -186,13 +186,13 @@ function NavItem({
   return (
     <Link
       to={to}
-      className="flex flex-col items-center justify-center gap-1 rounded-2xl py-2.5 text-[11px] text-muted-foreground transition data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
+      className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 text-[10px] text-muted-foreground transition data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
       activeProps={{ className: "text-primary font-medium" }}
     >
       <span className="relative">
         {icon}
         {badge > 0 && (
-          <span className="absolute -right-2.5 -top-2 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground">
+          <span className="absolute -right-2 -top-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[8px] font-bold leading-3.5 text-primary-foreground">
             {badge > 99 ? "99+" : badge}
           </span>
         )}

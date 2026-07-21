@@ -30,7 +30,7 @@ export function MaintenanceScreen({ message }: { message: string }) {
         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
           {message}
         </p>
-        <Button variant="ghost" className="mt-8 rounded-full" onClick={openAdminLogin}>
+        <Button variant="ghost" className="mt-8 rounded-lg" onClick={openAdminLogin}>
           Accès concepteur <ArrowRight className="h-4 w-4" />
         </Button>
       </section>
