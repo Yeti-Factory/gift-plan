@@ -145,7 +145,7 @@ export function InstallPrompt() {
   return (
     <>
       <div className="fixed bottom-24 left-3 right-3 z-50 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:left-auto sm:right-5 sm:w-[22rem]">
-        <div className="flex items-center gap-2.5 rounded-2xl border border-white/80 bg-card/90 p-2.5 shadow-xl backdrop-blur-xl">
+        <div className="flex items-center gap-2.5 rounded-xl border border-white/80 bg-card/90 p-2.5 shadow-lg backdrop-blur-xl">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Download className="h-4 w-4" />
           </div>

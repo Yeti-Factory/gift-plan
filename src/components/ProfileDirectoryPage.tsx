@@ -247,17 +247,17 @@ export function ProfileDirectoryPage() {
 
           <form className="flex gap-2" onSubmit={searchProfiles}>
             <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Rechercher par nom ou @identifiant"
                 aria-label="Rechercher un profil"
                 autoComplete="off"
-                className="h-12 rounded-2xl border-white/80 bg-white/80 pl-11 shadow-sm"
+                className="h-10 rounded-xl border-white/80 bg-white/80 pl-10 shadow-sm"
               />
             </div>
-            <Button type="submit" disabled={loading} className="h-12 rounded-2xl px-5">
+            <Button type="submit" disabled={loading} className="h-10 rounded-xl px-3.5">
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -310,7 +310,7 @@ export function ProfileDirectoryPage() {
           {hasMore && (
             <Button
               variant="outline"
-              className="w-full rounded-2xl bg-white/70"
+              className="w-full rounded-xl bg-white/70"
               disabled={loadingMore}
               onClick={loadMore}
             >
@@ -351,7 +351,7 @@ function DirectoryProfileCard({
   else if (profile.can_view) description = "Ce profil est accessible via un cercle partagé.";
 
   return (
-    <Card className="gp-card-lift flex h-full flex-col rounded-[1.5rem] border-white/80 bg-white/85 p-4 shadow-sm">
+    <Card className="gp-card-lift flex h-full flex-col rounded-2xl border-white/80 bg-white/85 p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
           {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
@@ -388,7 +388,7 @@ function DirectoryProfileCard({
 
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
         {canOpen && (
-          <Button asChild size="sm" className="rounded-full">
+          <Button asChild size="sm" className="rounded-lg">
             <Link
               to={profile.is_self ? "/profile" : "/p/$username"}
               params={profile.is_self ? undefined : { username: profile.username }}
