@@ -368,9 +368,9 @@ function DirectoryProfileCard({
         </div>
         <Badge variant="outline" className="shrink-0 rounded-full bg-white/70">
           {profile.visibility === "public" ? (
-            <Globe2 className="h-3 w-3" />
+            <Globe2 className="h-2.5 w-2.5" />
           ) : (
-            <Lock className="h-3 w-3" />
+            <Lock className="h-2.5 w-2.5" />
           )}
           {profile.visibility === "public" ? "Public" : "Privé"}
         </Badge>
@@ -429,7 +429,7 @@ function DirectoryProfileCard({
         {connected && (
           <>
             <Badge className="rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-              <ShieldCheck className="h-3 w-3" /> Connecté
+              <ShieldCheck className="h-2.5 w-2.5" /> Connecté
             </Badge>
             <Button
               size="icon"

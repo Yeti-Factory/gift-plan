@@ -24,6 +24,12 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { formatPrice, initials, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/gift-box";
 import { useGiftImageUrls, usePublicGiftImageUrls } from "@/lib/gift-image";
 import { isProfilePageData, type ProfilePageData } from "@/lib/profile-page";
+import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
+import {
+  filterGiftsByCategory,
+  getGiftCategoryOption,
+  type GiftCategoryFilterValue,
+} from "@/lib/gift-category";
 
 export const Route = createFileRoute("/p/$username")({
   ssr: false,
@@ -44,6 +50,7 @@ function PublicProfilePage() {
   const [error, setError] = useState<"PROFILE_NOT_FOUND" | "PROFILE_PRIVATE" | null>(null);
   const [me, setMe] = useState<string | null>(null);
   const [busyGift, setBusyGift] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<GiftCategoryFilterValue>("all");
 
   const load = useCallback(async () => {
     const [{ data: auth }, { data, error: rpcError }] = await Promise.all([
@@ -226,146 +233,177 @@ function PublicProfilePage() {
           </Card>
         )}
 
-        {lists.map((list) => (
-          <section key={list.id} className="space-y-5">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-display text-3xl font-bold tracking-[-0.035em] sm:text-4xl">
-                    {list.title}
-                  </h2>
-                  <Badge variant="outline" className="rounded-full bg-white/60">
-                    {list.visibility === "public" ? "Publique" : "Cercles"}
-                  </Badge>
+        {giftCount > 0 && (
+          <GiftCategoryFilter
+            value={categoryFilter}
+            onValueChange={setCategoryFilter}
+            className="justify-end"
+          />
+        )}
+
+        {lists.map((list) => {
+          const visibleGifts = filterGiftsByCategory(list.gifts, categoryFilter);
+          return (
+            <section key={list.id} className="space-y-5">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-3xl font-bold tracking-[-0.035em] sm:text-4xl">
+                      {list.title}
+                    </h2>
+                    <Badge variant="outline" className="rounded-full bg-white/60">
+                      {list.visibility === "public" ? "Publique" : "Cercles"}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    {list.occasion && <span>{list.occasion}</span>}
+                    {list.event_date && (
+                      <span className="flex items-center gap-1.5">
+                        <CalendarDays className="h-4 w-4" />
+                        {new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(
+                          new Date(`${list.event_date}T12:00:00`),
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {list.occasion && <span>{list.occasion}</span>}
-                  {list.event_date && (
-                    <span className="flex items-center gap-1.5">
-                      <CalendarDays className="h-4 w-4" />
-                      {new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(
-                        new Date(`${list.event_date}T12:00:00`),
-                      )}
-                    </span>
-                  )}
-                </div>
+                <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Sparkles className="h-4 w-4 text-primary" /> Les réservations restent secrètes
+                </p>
               </div>
-              <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <Sparkles className="h-4 w-4 text-primary" /> Les réservations restent secrètes
-              </p>
-            </div>
 
-            {list.gifts.length === 0 && (
-              <p className="rounded-2xl border border-dashed bg-white/50 p-6 text-sm text-muted-foreground">
-                Cette liste est encore vide.
-              </p>
-            )}
+              {list.gifts.length === 0 && (
+                <p className="rounded-2xl border border-dashed bg-white/50 p-6 text-sm text-muted-foreground">
+                  Cette liste est encore vide.
+                </p>
+              )}
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {list.gifts.map((gift) => {
-                const reserved = !!gift.reservation;
-                const mine = gift.reservation?.reserved_by_me ?? false;
-                const purchased = gift.reservation?.status === "purchased";
-                const imageSrc = gift.image_path ? signedUrls?.[gift.id] : gift.image_url;
-                return (
-                  <Card
-                    key={gift.id}
-                    className={`gp-card-lift group overflow-hidden rounded-[1.75rem] border-white/80 bg-white/85 shadow-sm ${reserved ? "saturate-[0.72]" : ""}`}
-                  >
-                    <div className="relative aspect-[16/10] overflow-hidden bg-secondary/60">
-                      {imageSrc ? (
-                        <img
-                          src={imageSrc}
-                          alt=""
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,oklch(0.96_0.08_75),transparent_55%),linear-gradient(135deg,oklch(0.94_0.045_40),oklch(0.92_0.055_80))]">
-                          <GiftIcon className="h-12 w-12 text-primary/45" />
-                        </div>
-                      )}
-                      <Badge
-                        className={`absolute left-3 top-3 rounded-full ${PRIORITY_COLOR[gift.priority]}`}
-                      >
-                        {PRIORITY_LABEL[gift.priority]}
-                      </Badge>
-                      {reserved && !profile.is_owner && (
-                        <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium shadow-sm backdrop-blur">
-                          <CircleCheck className="h-3.5 w-3.5 text-accent" />
-                          {purchased ? "Acheté" : "Réservé"}
-                        </span>
-                      )}
-                    </div>
+              {list.gifts.length > 0 && visibleGifts.length === 0 && (
+                <p className="rounded-xl border border-dashed bg-white/50 p-4 text-sm text-muted-foreground">
+                  Aucun cadeau dans cette catégorie.
+                </p>
+              )}
 
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-display text-xl font-bold leading-tight">
-                          {gift.title}
-                        </h3>
-                        {gift.price != null && (
-                          <p className="shrink-0 font-bold text-primary">
-                            {formatPrice(gift.price, gift.currency)}
-                          </p>
-                        )}
-                      </div>
-                      {gift.description && (
-                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                          {gift.description}
-                        </p>
-                      )}
-                      <div className="mt-5 flex items-center gap-2">
-                        {gift.url && (
-                          <Button asChild size="sm" variant="outline" className="rounded-lg">
-                            <a href={gift.url} target="_blank" rel="noreferrer noopener">
-                              Voir <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </Button>
-                        )}
-                        {!profile.is_owner && !reserved && (
-                          <Button
-                            size="sm"
-                            className="ml-auto rounded-lg"
-                            disabled={busyGift === gift.id}
-                            onClick={() => reservationAction(gift.id, "reserve")}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {visibleGifts.map((gift) => {
+                  const reserved = !!gift.reservation;
+                  const mine = gift.reservation?.reserved_by_me ?? false;
+                  const purchased = gift.reservation?.status === "purchased";
+                  const imageSrc = gift.image_path ? signedUrls?.[gift.id] : gift.image_url;
+                  const category = getGiftCategoryOption(gift.category);
+                  const CategoryIcon = category.icon;
+                  return (
+                    <Card
+                      key={gift.id}
+                      className={`gp-card-lift group overflow-hidden rounded-[1.75rem] border-white/80 bg-white/85 shadow-sm ${reserved ? "saturate-[0.72]" : ""}`}
+                    >
+                      <div className="relative aspect-[16/10] overflow-hidden bg-secondary/60">
+                        {imageSrc ? (
+                          <img
+                            src={imageSrc}
+                            alt=""
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <div
+                            className={`flex h-full items-center justify-center ${category.surfaceClass}`}
+                            title={category.label}
                           >
-                            <Check className="h-4 w-4" /> Je l’offre
-                          </Button>
-                        )}
-                        {!profile.is_owner && reserved && !mine && (
-                          <span className="ml-auto text-xs font-medium text-muted-foreground">
-                            Quelqu’un s’en occupe ✨
-                          </span>
-                        )}
-                        {!profile.is_owner && mine && (
-                          <div className="ml-auto flex gap-1">
-                            {!purchased && (
-                              <Button
-                                size="sm"
-                                className="rounded-lg"
-                                onClick={() => reservationAction(gift.id, "purchased")}
-                              >
-                                <ShoppingBag className="h-4 w-4" /> Acheté
-                              </Button>
-                            )}
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="rounded-lg"
-                              aria-label="Annuler la réservation"
-                              onClick={() => reservationAction(gift.id, "cancel")}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                            <CategoryIcon className="h-12 w-12 opacity-60" />
                           </div>
                         )}
+                        <Badge
+                          className={`absolute left-3 top-3 rounded-full ${PRIORITY_COLOR[gift.priority]}`}
+                        >
+                          {PRIORITY_LABEL[gift.priority]}
+                        </Badge>
+                        {reserved && !profile.is_owner && (
+                          <span className="absolute right-3 top-3 flex items-center gap-0.5 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-medium leading-3.5 shadow-sm backdrop-blur">
+                            <CircleCheck className="h-3 w-3 text-accent" />
+                            {purchased ? "Acheté" : "Réservé"}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+
+                      <div className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="flex items-center gap-1.5 font-display text-xl font-bold leading-tight">
+                            {imageSrc && (
+                              <span
+                                className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${category.surfaceClass}`}
+                                title={category.label}
+                              >
+                                <CategoryIcon className="h-3 w-3" />
+                                <span className="sr-only">{category.label}</span>
+                              </span>
+                            )}
+                            <span>{gift.title}</span>
+                          </h3>
+                          {gift.price != null && (
+                            <p className="shrink-0 font-bold text-primary">
+                              {formatPrice(gift.price, gift.currency)}
+                            </p>
+                          )}
+                        </div>
+                        {gift.description && (
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            {gift.description}
+                          </p>
+                        )}
+                        <div className="mt-5 flex items-center gap-2">
+                          {gift.url && (
+                            <Button asChild size="sm" variant="outline" className="rounded-lg">
+                              <a href={gift.url} target="_blank" rel="noreferrer noopener">
+                                Voir <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
+                          {!profile.is_owner && !reserved && (
+                            <Button
+                              size="sm"
+                              className="ml-auto rounded-lg"
+                              disabled={busyGift === gift.id}
+                              onClick={() => reservationAction(gift.id, "reserve")}
+                            >
+                              <Check className="h-4 w-4" /> Je l’offre
+                            </Button>
+                          )}
+                          {!profile.is_owner && reserved && !mine && (
+                            <span className="ml-auto text-xs font-medium text-muted-foreground">
+                              Quelqu’un s’en occupe ✨
+                            </span>
+                          )}
+                          {!profile.is_owner && mine && (
+                            <div className="ml-auto flex gap-1">
+                              {!purchased && (
+                                <Button
+                                  size="sm"
+                                  className="rounded-lg"
+                                  onClick={() => reservationAction(gift.id, "purchased")}
+                                >
+                                  <ShoppingBag className="h-4 w-4" /> Acheté
+                                </Button>
+                              )}
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                className="rounded-lg"
+                                aria-label="Annuler la réservation"
+                                onClick={() => reservationAction(gift.id, "cancel")}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </main>
     </div>
   );

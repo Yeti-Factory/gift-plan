@@ -144,8 +144,8 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
       <main className="relative z-10">
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-9 sm:px-6 sm:pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-28">
           <div className="gp-fade-up">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" /> Offrir juste, sans gâcher la surprise
+            <div className="inline-flex items-center gap-1 rounded-full border border-primary/15 bg-white/70 px-2 py-0.5 text-[10px] font-medium text-primary shadow-sm backdrop-blur">
+              <Sparkles className="h-3 w-3" /> Offrir juste, sans gâcher la surprise
             </div>
             <h1 className="mt-6 max-w-2xl font-display text-5xl font-bold leading-[0.97] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
               Les cadeaux justes.
@@ -305,7 +305,9 @@ function PreviewGift({
       <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
         <span>{price}</span>
         {reserved && (
-          <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px]">Réservé</span>
+          <span className="rounded-full bg-secondary px-1.5 py-0 text-[9px] leading-3.5">
+            Réservé
+          </span>
         )}
       </div>
     </div>

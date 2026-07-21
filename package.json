@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "start": "node .output/server/index.mjs",
     "test": "vitest run",
-    "test:sql": "psql -f tests/sql/p0-permissions.sql && psql -f tests/sql/profile-model.sql && psql -f tests/sql/onboarding-rls.sql && psql -f tests/sql/profile-access.sql && psql -f tests/sql/profile-avatars.sql",
+    "test:sql": "psql -f tests/sql/p0-permissions.sql && psql -f tests/sql/profile-model.sql && psql -f tests/sql/onboarding-rls.sql && psql -f tests/sql/profile-access.sql && psql -f tests/sql/profile-avatars.sql && psql -f tests/sql/gift-categories.sql",
     "check": "bun run lint && bun run typecheck && bun run format:check && bun run test"
   },
   "dependencies": {

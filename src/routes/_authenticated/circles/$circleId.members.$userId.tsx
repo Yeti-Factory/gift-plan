@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Gift as GiftIcon, ExternalLink, Check, X, ShoppingBag } from "lucide-react";
+import { ExternalLink, Check, X, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -16,12 +16,20 @@ import {
   type Priority,
 } from "@/lib/gift-box";
 import { useGiftImageUrls } from "@/lib/gift-image";
+import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
+import {
+  filterGiftsByCategory,
+  getGiftCategoryOption,
+  type GiftCategory,
+  type GiftCategoryFilterValue,
+} from "@/lib/gift-category";
 
 export const Route = createFileRoute("/_authenticated/circles/$circleId/members/$userId")({
   component: MemberLists,
 });
 
 type Gift = {
+  category: GiftCategory;
   id: string;
   title: string;
   description: string | null;
@@ -50,6 +58,7 @@ function MemberLists() {
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [buyers, setBuyers] = useState<Record<string, BuyerProfile>>({});
+  const [categoryFilter, setCategoryFilter] = useState<GiftCategoryFilterValue>("all");
 
   const isOwn = me === userId;
 
@@ -197,6 +206,10 @@ function MemberLists() {
         </div>
       </div>
 
+      {gifts.length > 0 && (
+        <GiftCategoryFilter value={categoryFilter} onValueChange={setCategoryFilter} />
+      )}
+
       {lists.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
           {isOwn
@@ -206,15 +219,21 @@ function MemberLists() {
       )}
 
       {lists.map((list) => {
-        const listGifts = gifts.filter((g) => g.list_id === list.id);
+        const allListGifts = gifts.filter((g) => g.list_id === list.id);
+        const listGifts = filterGiftsByCategory(allListGifts, categoryFilter);
         return (
           <section key={list.id} className="space-y-3">
             <div>
               <h2 className="font-semibold text-lg">{list.title}</h2>
               {list.occasion && <p className="text-xs text-muted-foreground">{list.occasion}</p>}
             </div>
-            {listGifts.length === 0 && (
+            {allListGifts.length === 0 && (
               <p className="text-sm text-muted-foreground px-1">Aucun cadeau dans cette liste.</p>
+            )}
+            {allListGifts.length > 0 && listGifts.length === 0 && (
+              <p className="text-sm text-muted-foreground px-1">
+                Aucun cadeau dans cette catégorie.
+              </p>
             )}
             {listGifts.map((g) => {
               const res = reservations.find((r) => r.gift_id === g.id);
@@ -222,28 +241,42 @@ function MemberLists() {
               const purchased = res?.status === "purchased";
               const dimmed = !isOwn && !!res;
               const buyerName = res ? (buyers[res.buyer_id]?.display_name ?? "Quelqu'un") : null;
+              const category = getGiftCategoryOption(g.category);
+              const CategoryIcon = category.icon;
+              const imageSrc = g.image_path ? signedUrls?.[g.id] : g.image_url;
               return (
                 <Card
                   key={g.id}
                   className={`p-3 flex gap-3 transition-opacity ${dimmed ? "opacity-60" : ""}`}
                 >
-                  {(() => {
-                    const src = g.image_path ? signedUrls?.[g.id] : g.image_url;
-                    return src ? (
-                      <img
-                        src={src}
-                        alt=""
-                        className="h-20 w-20 rounded-xl object-cover bg-muted"
-                      />
-                    ) : (
-                      <div className="h-20 w-20 rounded-xl bg-secondary flex items-center justify-center">
-                        <GiftIcon className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                    );
-                  })()}
+                  {imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt=""
+                      className="h-20 w-20 rounded-xl object-cover bg-muted"
+                    />
+                  ) : (
+                    <div
+                      className={`h-20 w-20 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
+                      title={category.label}
+                    >
+                      <CategoryIcon className="h-8 w-8 opacity-70" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium leading-tight">{g.title}</p>
+                      <p className="flex items-center gap-1.5 font-medium leading-tight">
+                        {imageSrc && (
+                          <span
+                            className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
+                            title={category.label}
+                          >
+                            <CategoryIcon className="h-2.5 w-2.5" />
+                            <span className="sr-only">{category.label}</span>
+                          </span>
+                        )}
+                        <span>{g.title}</span>
+                      </p>
                       <Badge className={PRIORITY_COLOR[g.priority]}>
                         {PRIORITY_LABEL[g.priority]}
                       </Badge>

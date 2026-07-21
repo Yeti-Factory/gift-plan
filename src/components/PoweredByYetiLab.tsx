@@ -5,7 +5,7 @@ export function PoweredByYetiLab({ className }: { className?: string }) {
     <span
       aria-label="Powered by YetiLab"
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500 shadow-sm",
+        "inline-flex items-center gap-1 rounded-full border border-black/10 bg-white px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-500 shadow-sm",
         className,
       )}
     >
@@ -18,7 +18,7 @@ export function PoweredByYetiLab({ className }: { className?: string }) {
         height="1507"
         loading="lazy"
         decoding="async"
-        className="h-[18px] w-auto"
+        className="h-3.5 w-auto"
       />
     </span>
   );
