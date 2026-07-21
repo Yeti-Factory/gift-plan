@@ -29,8 +29,32 @@ BEGIN
    WHERE n.nspname = 'public'
      AND t.typname = 'gift_category';
 
-  IF category_count <> 12 THEN
-    RAISE EXCEPTION 'expected 12 gift categories, got %', category_count;
+  IF category_count <> 14 THEN
+    RAISE EXCEPTION 'expected 14 gift categories, got %', category_count;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+      FROM pg_enum e
+      JOIN pg_type t ON t.oid = e.enumtypid
+      JOIN pg_namespace n ON n.oid = t.typnamespace
+     WHERE n.nspname = 'public'
+       AND t.typname = 'gift_category'
+       AND e.enumlabel = 'loisirs'
+  ) THEN
+    RAISE EXCEPTION 'gift category loisirs is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+      FROM pg_enum e
+      JOIN pg_type t ON t.oid = e.enumtypid
+      JOIN pg_namespace n ON n.oid = t.typnamespace
+     WHERE n.nspname = 'public'
+       AND t.typname = 'gift_category'
+       AND e.enumlabel = 'musique'
+  ) THEN
+    RAISE EXCEPTION 'gift category musique is missing';
   END IF;
 END $$;
 

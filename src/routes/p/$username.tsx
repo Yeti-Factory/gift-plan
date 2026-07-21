@@ -309,7 +309,9 @@ function PublicProfilePage() {
                             className={`flex h-full items-center justify-center ${category.surfaceClass}`}
                             title={category.label}
                           >
-                            <CategoryIcon className="h-12 w-12 opacity-60" />
+                            <CategoryIcon
+                              className={`h-12 w-12 opacity-60 ${category.iconClass}`}
+                            />
                           </div>
                         )}
                         <Badge
@@ -333,7 +335,7 @@ function PublicProfilePage() {
                                 className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${category.surfaceClass}`}
                                 title={category.label}
                               >
-                                <CategoryIcon className="h-3 w-3" />
+                                <CategoryIcon className={`h-3 w-3 ${category.iconClass}`} />
                                 <span className="sr-only">{category.label}</span>
                               </span>
                             )}

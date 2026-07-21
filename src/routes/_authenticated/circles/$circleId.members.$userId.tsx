@@ -260,7 +260,7 @@ function MemberLists() {
                       className={`h-20 w-20 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
                       title={category.label}
                     >
-                      <CategoryIcon className="h-8 w-8 opacity-70" />
+                      <CategoryIcon className={`h-8 w-8 opacity-70 ${category.iconClass}`} />
                     </div>
                   )}
                   <div className="flex-1 min-w-0 space-y-1">
@@ -271,7 +271,7 @@ function MemberLists() {
                             className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
                             title={category.label}
                           >
-                            <CategoryIcon className="h-2.5 w-2.5" />
+                            <CategoryIcon className={`h-2.5 w-2.5 ${category.iconClass}`} />
                             <span className="sr-only">{category.label}</span>
                           </span>
                         )}

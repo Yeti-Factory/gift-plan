@@ -174,7 +174,7 @@ function GiftsIOffer() {
                     className={`h-14 w-14 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
                     title={category.label}
                   >
-                    <CategoryIcon className="h-6 w-6" />
+                    <CategoryIcon className={`h-6 w-6 ${category.iconClass}`} />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -184,7 +184,7 @@ function GiftsIOffer() {
                         className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
                         title={category.label}
                       >
-                        <CategoryIcon className="h-2.5 w-2.5" />
+                        <CategoryIcon className={`h-2.5 w-2.5 ${category.iconClass}`} />
                         <span className="sr-only">{category.label}</span>
                       </span>
                     )}
