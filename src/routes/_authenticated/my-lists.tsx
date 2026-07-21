@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, ImagePlus, Sparkles, Pencil } from "lucide-react";
+import { Plus, Trash2, ImagePlus, Sparkles, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { scrapeGiftUrl } from "@/lib/gift-scrape.functions";
@@ -84,6 +84,7 @@ function MyLists() {
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteGift, setDeleteGift] = useState<Gift | null>(null);
+  const [deletingGift, setDeletingGift] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<GiftCategoryFilterValue>("all");
 
   const load = useCallback(async () => {
@@ -270,7 +271,10 @@ function MyLists() {
           );
         })}
 
-      <AlertDialog open={!!deleteGift} onOpenChange={(o) => !o && setDeleteGift(null)}>
+      <AlertDialog
+        open={!!deleteGift}
+        onOpenChange={(open) => !open && !deletingGift && setDeleteGift(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce cadeau ?</AlertDialogTitle>
@@ -279,23 +283,42 @@ function MyLists() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deletingGift}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingGift}
               onClick={async (e) => {
                 e.preventDefault();
                 if (!deleteGift) return;
                 const id = deleteGift.id;
-                setDeleteGift(null);
-                const { error } = await supabase.from("gifts").delete().eq("id", id);
-                if (error) toast.error(error.message);
-                else {
-                  toast.success("Cadeau supprimé");
-                  load();
+                setDeletingGift(true);
+                try {
+                  const { data: deletedGift, error } = await supabase
+                    .from("gifts")
+                    .delete()
+                    .eq("id", id)
+                    .select("id")
+                    .maybeSingle();
+
+                  if (error) {
+                    toast.error(error.message);
+                  } else if (!deletedGift) {
+                    toast.error("La suppression a été refusée. Rechargez la page et réessayez.");
+                  } else {
+                    setGifts((current) => current.filter((gift) => gift.id !== id));
+                    setDeleteGift(null);
+                    toast.success("Cadeau supprimé");
+                    await load();
+                  }
+                } catch {
+                  toast.error("La suppression a échoué. Réessayez dans un instant.");
+                } finally {
+                  setDeletingGift(false);
                 }
               }}
             >
-              Supprimer
+              {deletingGift && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {deletingGift ? "Suppression…" : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
