@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExpandableGiftList, ExpandableGiftRow } from "@/components/ExpandableGiftList";
 import {
   Dialog,
   DialogContent,
@@ -39,13 +39,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PRIORITY_LABEL, PRIORITY_COLOR, formatPrice, type Priority } from "@/lib/gift-box";
+import { PRIORITY_LABEL, type Priority } from "@/lib/gift-box";
 import { uploadGiftImageChecked, useGiftImageUrls } from "@/lib/gift-image";
 import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
 import {
   GIFT_CATEGORY_OPTIONS,
   filterGiftsByCategory,
-  getGiftCategoryOption,
   type GiftCategory,
   type GiftCategoryFilterValue,
 } from "@/lib/gift-category";
@@ -201,51 +200,21 @@ function MyLists() {
                 </p>
               )}
 
-              {items.map((g) => {
-                const category = getGiftCategoryOption(g.category);
-                const CategoryIcon = category.icon;
-                const imageSrc = g.image_path ? signedUrls?.[g.id] : g.image_url;
-                return (
-                  <Card key={g.id} className="p-3 flex gap-3">
-                    {imageSrc ? (
-                      <img
-                        src={imageSrc}
-                        alt=""
-                        className="h-16 w-16 rounded-xl object-cover bg-muted"
-                      />
-                    ) : (
-                      <div
-                        className={`h-16 w-16 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
-                        title={category.label}
-                      >
-                        <CategoryIcon className={`h-6 w-6 ${category.iconClass}`} />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="flex items-center gap-1.5 font-medium leading-tight">
-                          {imageSrc && (
-                            <span
-                              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
-                              title={category.label}
-                            >
-                              <CategoryIcon className={`h-2.5 w-2.5 ${category.iconClass}`} />
-                              <span className="sr-only">{category.label}</span>
-                            </span>
-                          )}
-                          <span>{g.title}</span>
-                        </p>
-                        <Badge className={PRIORITY_COLOR[g.priority]}>
-                          {PRIORITY_LABEL[g.priority]}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        {g.price != null && (
-                          <span className="text-sm font-semibold">
-                            {formatPrice(g.price, g.currency)}
-                          </span>
-                        )}
-                        <div className="flex gap-1 ml-auto">
+              {items.length > 0 && (
+                <ExpandableGiftList label={`Cadeaux de ${list.title}`}>
+                  {items.map((g) => (
+                    <ExpandableGiftRow
+                      key={g.id}
+                      title={g.title}
+                      category={g.category}
+                      imageSrc={g.image_path ? signedUrls?.[g.id] : g.image_url}
+                      price={g.price}
+                      currency={g.currency}
+                      priority={g.priority}
+                      description={g.description}
+                      url={g.url}
+                      actions={
+                        <>
                           <GiftFormDialog
                             mode="edit"
                             listId={g.list_id}
@@ -256,17 +225,18 @@ function MyLists() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="h-8 w-8"
                             aria-label="Supprimer le cadeau"
                             onClick={() => setDeleteGift(g)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
+                        </>
+                      }
+                    />
+                  ))}
+                </ExpandableGiftList>
+              )}
             </section>
           );
         })}

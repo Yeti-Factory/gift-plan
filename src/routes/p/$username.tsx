@@ -4,7 +4,6 @@ import {
   CalendarDays,
   Check,
   CircleCheck,
-  ExternalLink,
   Gift as GiftIcon,
   Lock,
   Share2,
@@ -21,15 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PublicHeader } from "@/components/PublicHeader";
-import { formatPrice, initials, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/gift-box";
+import { ExpandableGiftList, ExpandableGiftRow } from "@/components/ExpandableGiftList";
+import { initials } from "@/lib/gift-box";
 import { useGiftImageUrls, usePublicGiftImageUrls } from "@/lib/gift-image";
 import { isProfilePageData, type ProfilePageData } from "@/lib/profile-page";
 import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
-import {
-  filterGiftsByCategory,
-  getGiftCategoryOption,
-  type GiftCategoryFilterValue,
-} from "@/lib/gift-category";
+import { filterGiftsByCategory, type GiftCategoryFilterValue } from "@/lib/gift-category";
 
 export const Route = createFileRoute("/p/$username")({
   ssr: false,
@@ -284,125 +280,81 @@ function PublicProfilePage() {
                 </p>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visibleGifts.map((gift) => {
-                  const reserved = !!gift.reservation;
-                  const mine = gift.reservation?.reserved_by_me ?? false;
-                  const purchased = gift.reservation?.status === "purchased";
-                  const imageSrc = gift.image_path ? signedUrls?.[gift.id] : gift.image_url;
-                  const category = getGiftCategoryOption(gift.category);
-                  const CategoryIcon = category.icon;
-                  return (
-                    <Card
-                      key={gift.id}
-                      className={`gp-card-lift group overflow-hidden rounded-[1.75rem] border-white/80 bg-white/85 shadow-sm ${reserved ? "saturate-[0.72]" : ""}`}
-                    >
-                      <div className="relative aspect-[16/10] overflow-hidden bg-secondary/60">
-                        {imageSrc ? (
-                          <img
-                            src={imageSrc}
-                            alt=""
-                            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                          />
-                        ) : (
-                          <div
-                            className={`flex h-full items-center justify-center ${category.surfaceClass}`}
-                            title={category.label}
-                          >
-                            <CategoryIcon
-                              className={`h-12 w-12 opacity-60 ${category.iconClass}`}
-                            />
-                          </div>
-                        )}
-                        <Badge
-                          className={`absolute left-3 top-3 rounded-full ${PRIORITY_COLOR[gift.priority]}`}
-                        >
-                          {PRIORITY_LABEL[gift.priority]}
-                        </Badge>
-                        {reserved && !profile.is_owner && (
-                          <span className="absolute right-3 top-3 flex items-center gap-0.5 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-medium leading-3.5 shadow-sm backdrop-blur">
-                            <CircleCheck className="h-3 w-3 text-accent" />
-                            {purchased ? "Acheté" : "Réservé"}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <h3 className="flex items-center gap-1.5 font-display text-xl font-bold leading-tight">
-                            {imageSrc && (
-                              <span
-                                className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${category.surfaceClass}`}
-                                title={category.label}
-                              >
-                                <CategoryIcon className={`h-3 w-3 ${category.iconClass}`} />
-                                <span className="sr-only">{category.label}</span>
-                              </span>
-                            )}
-                            <span>{gift.title}</span>
-                          </h3>
-                          {gift.price != null && (
-                            <p className="shrink-0 font-bold text-primary">
-                              {formatPrice(gift.price, gift.currency)}
-                            </p>
-                          )}
-                        </div>
-                        {gift.description && (
-                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                            {gift.description}
-                          </p>
-                        )}
-                        <div className="mt-5 flex items-center gap-2">
-                          {gift.url && (
-                            <Button asChild size="sm" variant="outline" className="rounded-lg">
-                              <a href={gift.url} target="_blank" rel="noreferrer noopener">
-                                Voir <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </Button>
-                          )}
-                          {!profile.is_owner && !reserved && (
-                            <Button
-                              size="sm"
-                              className="ml-auto rounded-lg"
-                              disabled={busyGift === gift.id}
-                              onClick={() => reservationAction(gift.id, "reserve")}
-                            >
-                              <Check className="h-4 w-4" /> Je l’offre
-                            </Button>
-                          )}
-                          {!profile.is_owner && reserved && !mine && (
-                            <span className="ml-auto text-xs font-medium text-muted-foreground">
-                              Quelqu’un s’en occupe ✨
+              {visibleGifts.length > 0 && (
+                <ExpandableGiftList label={`Cadeaux de ${list.title}`}>
+                  {visibleGifts.map((gift) => {
+                    const reserved = !!gift.reservation;
+                    const mine = gift.reservation?.reserved_by_me ?? false;
+                    const purchased = gift.reservation?.status === "purchased";
+                    const imageSrc = gift.image_path ? signedUrls?.[gift.id] : gift.image_url;
+                    return (
+                      <ExpandableGiftRow
+                        key={gift.id}
+                        title={gift.title}
+                        category={gift.category}
+                        imageSrc={imageSrc}
+                        price={gift.price}
+                        currency={gift.currency}
+                        priority={gift.priority}
+                        description={gift.description}
+                        url={gift.url}
+                        className={reserved ? "opacity-70" : undefined}
+                        status={
+                          reserved && !profile.is_owner ? (
+                            <span className="flex items-center gap-0.5 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-medium leading-3.5 shadow-sm">
+                              <CircleCheck className="h-3 w-3 text-accent" />
+                              {purchased ? "Acheté" : "Réservé"}
                             </span>
-                          )}
-                          {!profile.is_owner && mine && (
-                            <div className="ml-auto flex gap-1">
-                              {!purchased && (
+                          ) : undefined
+                        }
+                        actions={
+                          !profile.is_owner ? (
+                            <>
+                              {!profile.is_owner && !reserved && (
                                 <Button
                                   size="sm"
-                                  className="rounded-lg"
-                                  onClick={() => reservationAction(gift.id, "purchased")}
+                                  className="h-8 rounded-lg"
+                                  disabled={busyGift === gift.id}
+                                  onClick={() => reservationAction(gift.id, "reserve")}
                                 >
-                                  <ShoppingBag className="h-4 w-4" /> Acheté
+                                  <Check className="h-4 w-4" /> Je l’offre
                                 </Button>
                               )}
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                className="rounded-lg"
-                                aria-label="Annuler la réservation"
-                                onClick={() => reservationAction(gift.id, "cancel")}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
+                              {!profile.is_owner && reserved && !mine && (
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  Quelqu’un s’en occupe ✨
+                                </span>
+                              )}
+                              {!profile.is_owner && mine && (
+                                <div className="flex gap-1">
+                                  {!purchased && (
+                                    <Button
+                                      size="sm"
+                                      className="h-8 rounded-lg"
+                                      onClick={() => reservationAction(gift.id, "purchased")}
+                                    >
+                                      <ShoppingBag className="h-4 w-4" /> Acheté
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-8 w-8 rounded-lg"
+                                    aria-label="Annuler la réservation"
+                                    onClick={() => reservationAction(gift.id, "cancel")}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </>
+                          ) : undefined
+                        }
+                      />
+                    );
+                  })}
+                </ExpandableGiftList>
+              )}
             </section>
           );
         })}
