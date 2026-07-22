@@ -39,6 +39,8 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
   const [showSigninPwd, setShowSigninPwd] = useState(false);
   const [showSignupPwd, setShowSignupPwd] = useState(false);
 
@@ -93,7 +95,13 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) toast.error(translateError(error.message));
+    if (error) {
+      toast.error(translateError(error.message));
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        setConfirmationEmail(email);
+        setConfirmationOpen(true);
+      }
+    }
   }
 
   async function handleSignUp(e: React.FormEvent) {
@@ -117,8 +125,42 @@ function AuthPage() {
       return;
     }
     if (!data.session) {
-      toast.success("Vérifie ta boîte mail pour confirmer ton inscription ✉️");
+      setConfirmationEmail(email);
+      toast.success(
+        "Vérifie ta boîte mail pour confirmer ton inscription. Pense aussi aux spams ✉️",
+        { duration: 8000 },
+      );
     }
+  }
+
+  async function handleResendConfirmation(e: React.FormEvent) {
+    e.preventDefault();
+    const targetEmail = confirmationEmail.trim();
+    if (!targetEmail) return;
+
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: targetEmail,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setLoading(false);
+
+    if (error) {
+      const message = error.message.toLowerCase();
+      toast.error(
+        message.includes("rate") || message.includes("too many")
+          ? "Trop de demandes rapprochées. Attends quelques minutes avant de réessayer."
+          : "L’email n’a pas pu être renvoyé. Vérifie l’adresse et réessaie dans un instant.",
+      );
+      return;
+    }
+
+    toast.success(
+      "Si ce compte attend une confirmation, un nouveau lien vient d’être envoyé. Vérifie aussi les spams.",
+      { duration: 8000 },
+    );
+    setConfirmationOpen(false);
   }
 
   async function handleForgot(e: React.FormEvent) {
@@ -195,6 +237,39 @@ function AuthPage() {
               Retour
             </Button>
           </form>
+        ) : confirmationOpen ? (
+          <form onSubmit={handleResendConfirmation} className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="font-display text-xl font-bold">Renvoyer l’email de confirmation</h2>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Saisis l’adresse utilisée lors de l’inscription. Seul le lien le plus récent doit
+                être utilisé.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmation-email">Email</Label>
+              <Input
+                id="confirmation-email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="vous@exemple.fr"
+                value={confirmationEmail}
+                onChange={(e) => setConfirmationEmail(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Envoi..." : "Renvoyer le lien"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setConfirmationOpen(false)}
+            >
+              Retour
+            </Button>
+          </form>
         ) : (
           <>
             <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
@@ -259,6 +334,16 @@ function AuthPage() {
                 >
                   Mot de passe oublié ?
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmationEmail(email);
+                    setConfirmationOpen(true);
+                  }}
+                  className="w-full text-center text-sm text-muted-foreground underline hover:text-primary"
+                >
+                  Email de confirmation non reçu ?
+                </button>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-3 mt-4">
@@ -321,6 +406,16 @@ function AuthPage() {
                     {loading ? "Création..." : "Créer mon compte"}
                   </Button>
                 </form>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmationEmail(email);
+                    setConfirmationOpen(true);
+                  }}
+                  className="w-full text-center text-sm text-muted-foreground underline hover:text-primary"
+                >
+                  Déjà inscrit mais aucun email reçu ?
+                </button>
               </TabsContent>
             </Tabs>
 

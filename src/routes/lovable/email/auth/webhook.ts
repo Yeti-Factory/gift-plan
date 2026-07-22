@@ -164,6 +164,10 @@ function isExpectedRecoveryUrl(value: string) {
   }
 }
 
+export function isAuthEmailActionAllowed(actionType: AuthEmailActionType, url: string) {
+  return actionType !== "recovery" || isExpectedRecoveryUrl(url);
+}
+
 function getResendApiKey() {
   return process.env.RESEND_API_KEY_GIFT_PLAN || process.env.RESEND_API_KEY || null;
 }
@@ -225,8 +229,8 @@ async function sendAuthEmailWithResend(body: unknown, requestId: string) {
       { status: 400 },
     );
   }
-  if (event.data.action_type !== "recovery" || !isExpectedRecoveryUrl(event.data.url)) {
-    log.warn("unsupported recovery url", { action_type: event.data.action_type });
+  if (!isAuthEmailActionAllowed(event.data.action_type, event.data.url)) {
+    log.warn("unsupported auth email url", { action_type: event.data.action_type });
     return Response.json({ error: "Unsupported auth email action" }, { status: 400 });
   }
 
