@@ -11,7 +11,19 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({
+    children,
+    to,
+    "aria-label": ariaLabel,
+  }: {
+    children: ReactNode;
+    to: string;
+    "aria-label"?: string;
+  }) => (
+    <a href={to} aria-label={ariaLabel}>
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock("sonner", () => ({
@@ -80,10 +92,14 @@ describe("profile directory page", () => {
 
     expect(await screen.findByText("Alice")).toBeTruthy();
     expect(screen.getByText("Bruno")).toBeTruthy();
+    expect(screen.getByRole("list", { name: "Liste des profils" })).toBeTruthy();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getAllByText("Public")).toHaveLength(1);
     expect(screen.getAllByText("Privé")).toHaveLength(1);
     expect(screen.getByRole("link", { name: /Voir les listes/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Se connecter/i })).toBeTruthy();
+    expect(screen.queryByText("Profil public")).toBeNull();
+    expect(screen.queryByText("Ses listes publiques sont accessibles.")).toBeNull();
   });
 
   it("sends a connection request for a private profile", async () => {

@@ -292,20 +292,27 @@ export function ProfileDirectoryPage() {
             </Card>
           )}
 
-          <div aria-live="polite" className="grid gap-3 sm:grid-cols-2">
-            {profiles.map((profile) => (
-              <DirectoryProfileCard
-                key={profile.id}
-                profile={profile}
-                busy={busyAction?.endsWith(`:${profile.id}`) ?? false}
-                hasPendingRequest={
-                  !!profile.incoming_request_id && pendingIds.has(profile.incoming_request_id)
-                }
-                onRequest={() => requestAccess(profile.id)}
-                onCancel={() => cancelAccess(profile.id)}
-              />
-            ))}
-          </div>
+          {profiles.length > 0 && (
+            <Card
+              role="list"
+              aria-label="Liste des profils"
+              aria-live="polite"
+              className="divide-y divide-border/60 overflow-hidden rounded-2xl border-white/80 bg-white/85 p-0 shadow-sm"
+            >
+              {profiles.map((profile) => (
+                <DirectoryProfileRow
+                  key={profile.id}
+                  profile={profile}
+                  busy={busyAction?.endsWith(`:${profile.id}`) ?? false}
+                  hasPendingRequest={
+                    !!profile.incoming_request_id && pendingIds.has(profile.incoming_request_id)
+                  }
+                  onRequest={() => requestAccess(profile.id)}
+                  onCancel={() => cancelAccess(profile.id)}
+                />
+              ))}
+            </Card>
+          )}
 
           {hasMore && (
             <Button
@@ -324,7 +331,7 @@ export function ProfileDirectoryPage() {
   );
 }
 
-function DirectoryProfileCard({
+function DirectoryProfileRow({
   profile,
   busy,
   hasPendingRequest,
@@ -343,81 +350,91 @@ function DirectoryProfileCard({
   const canOpen = profile.can_view || profile.is_self;
   const canRequest = !profile.is_self && profile.visibility === "private" && !connected && !pending;
 
-  let description = "Demandez une connexion pour consulter ses listes.";
-  if (profile.is_self) description = "C’est votre profil.";
-  else if (connected) description = "Connexion acceptée · toutes les listes sont accessibles.";
-  else if (pending) description = "Votre demande est en attente de réponse.";
-  else if (profile.visibility === "public") description = "Ses listes publiques sont accessibles.";
-  else if (profile.can_view) description = "Ce profil est accessible via un cercle partagé.";
-
   return (
-    <Card className="gp-card-lift flex h-full flex-col rounded-2xl border-white/80 bg-white/85 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-          {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
-          <AvatarFallback className="bg-secondary font-bold text-primary">
-            {initials(name)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <p className="truncate font-bold">{name}</p>
-            {profile.is_self && <Badge variant="secondary">Vous</Badge>}
-          </div>
-          <p className="truncate text-xs text-muted-foreground">@{profile.username}</p>
+    <div role="listitem" className="flex min-h-16 items-center gap-2.5 px-3 py-2.5 sm:px-4">
+      <Avatar className="h-10 w-10 shrink-0 border border-white shadow-sm">
+        {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
+        <AvatarFallback className="bg-secondary text-sm font-bold text-primary">
+          {initials(name)}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p className="truncate text-sm font-bold leading-tight">{name}</p>
+          {profile.is_self && (
+            <Badge variant="secondary" className="h-4 shrink-0 rounded-full px-1.5 text-[9px]">
+              Vous
+            </Badge>
+          )}
+          {hasPendingRequest && (
+            <Inbox
+              className="h-3.5 w-3.5 shrink-0 text-primary"
+              aria-label="Demande reçue de cette personne"
+            />
+          )}
         </div>
-        <Badge variant="outline" className="shrink-0 rounded-full bg-white/70">
+        <p className="truncate text-[11px] leading-4 text-muted-foreground">@{profile.username}</p>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1.5">
+        <Badge
+          variant="outline"
+          aria-label={profile.visibility === "public" ? "Profil public" : "Profil privé"}
+          className="h-5 rounded-full bg-white/70 px-1.5 text-[9px] font-medium"
+        >
           {profile.visibility === "public" ? (
             <Globe2 className="h-2.5 w-2.5" />
           ) : (
             <Lock className="h-2.5 w-2.5" />
           )}
-          {profile.visibility === "public" ? "Public" : "Privé"}
+          <span className="hidden sm:inline">
+            {profile.visibility === "public" ? "Public" : "Privé"}
+          </span>
         </Badge>
-      </div>
 
-      {profile.bio && (
-        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{profile.bio}</p>
-      )}
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
-      {hasPendingRequest && (
-        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-primary">
-          <Inbox className="h-3.5 w-3.5" /> Cette personne vous a aussi envoyé une demande.
-        </p>
-      )}
-
-      <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
         {canOpen && (
-          <Button asChild size="sm" className="rounded-lg">
+          <Button asChild size="icon" variant="ghost" className="h-8 w-8 rounded-lg">
             <Link
               to={profile.is_self ? "/profile" : "/p/$username"}
               params={profile.is_self ? undefined : { username: profile.username }}
               search={profile.is_self ? undefined : { invite: undefined }}
+              aria-label={profile.is_self ? "Ouvrir mon profil" : `Voir les listes de ${name}`}
             >
-              {profile.is_self ? "Mon profil" : "Voir les listes"}
-              {!profile.is_self && <ArrowUpRight className="h-3.5 w-3.5" />}
+              <ArrowUpRight className="h-4 w-4" />
             </Link>
           </Button>
         )}
         {canRequest && (
           <Button
             size="sm"
-            variant={canOpen ? "outline" : "default"}
+            variant="outline"
+            className="h-8 rounded-lg px-2 text-[11px]"
             disabled={busy}
+            aria-label={
+              profile.outgoing_status === "declined"
+                ? `Redemander l’accès à ${name}`
+                : `Se connecter à ${name}`
+            }
             onClick={onRequest}
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-            {profile.outgoing_status === "declined" ? "Redemander" : "Se connecter"}
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <UserPlus className="h-3.5 w-3.5" />
+            )}
+            {profile.outgoing_status === "declined" ? "Redemander" : "Connexion"}
           </Button>
         )}
         {pending && (
           <>
-            <Badge variant="secondary" className="rounded-full">
+            <Badge variant="secondary" className="h-5 rounded-full px-1.5 text-[9px]">
               En attente
             </Badge>
             <Button
               size="icon"
               variant="ghost"
+              className="h-8 w-8"
               disabled={busy}
               aria-label={`Annuler la demande envoyée à ${name}`}
               onClick={onCancel}
@@ -428,12 +445,13 @@ function DirectoryProfileCard({
         )}
         {connected && (
           <>
-            <Badge className="rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+            <Badge className="h-5 rounded-full bg-emerald-100 px-1.5 text-[9px] text-emerald-800 hover:bg-emerald-100">
               <ShieldCheck className="h-2.5 w-2.5" /> Connecté
             </Badge>
             <Button
               size="icon"
               variant="ghost"
+              className="h-8 w-8"
               disabled={busy}
               aria-label={`Renoncer à l’accès au profil de ${name}`}
               onClick={onCancel}
@@ -447,7 +465,7 @@ function DirectoryProfileCard({
           </>
         )}
       </div>
-    </Card>
+    </div>
   );
 }
 
