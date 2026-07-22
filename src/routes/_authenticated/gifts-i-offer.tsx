@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { ExpandableGiftList, ExpandableGiftRow } from "@/components/ExpandableGiftList";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +23,6 @@ import { useGiftImageUrls } from "@/lib/gift-image";
 import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
 import {
   filterGiftsByCategory,
-  getGiftCategoryOption,
   type GiftCategory,
   type GiftCategoryFilterValue,
 } from "@/lib/gift-category";
@@ -161,51 +161,32 @@ function GiftsIOffer() {
             </Card>
           )}
 
-          {filteredRows.map((r) => {
-            const category = getGiftCategoryOption(r.category);
-            const CategoryIcon = category.icon;
-            const imageSrc = r.image_path ? signedUrls?.[r.gift_id] : r.image_url;
-            return (
-              <Card key={r.reservation_id} className="p-3 flex gap-3 items-center">
-                {imageSrc ? (
-                  <img src={imageSrc} alt="" className="h-14 w-14 rounded-xl object-cover" />
-                ) : (
-                  <div
-                    className={`h-14 w-14 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
-                    title={category.label}
-                  >
-                    <CategoryIcon className={`h-6 w-6 ${category.iconClass}`} />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="flex items-center gap-1.5 font-medium">
-                    {imageSrc && (
-                      <span
-                        className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
-                        title={category.label}
-                      >
-                        <CategoryIcon className={`h-2.5 w-2.5 ${category.iconClass}`} />
-                        <span className="sr-only">{category.label}</span>
-                      </span>
-                    )}
-                    <span className="truncate">{r.title}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">Pour {r.recipient}</p>
-                  {r.price != null && (
-                    <p className="text-sm font-semibold">{formatPrice(r.price, r.currency)}</p>
-                  )}
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Annuler la réservation"
-                  onClick={() => setToCancel(r)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </Card>
-            );
-          })}
+          {filteredRows.length > 0 && (
+            <ExpandableGiftList label="Cadeaux que j'offre">
+              {filteredRows.map((r) => (
+                <ExpandableGiftRow
+                  key={r.reservation_id}
+                  title={r.title}
+                  category={r.category}
+                  imageSrc={r.image_path ? signedUrls?.[r.gift_id] : r.image_url}
+                  price={r.price}
+                  currency={r.currency}
+                  meta={`Pour ${r.recipient}`}
+                  actions={
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 rounded-lg"
+                      aria-label={`Annuler la réservation de ${r.title}`}
+                      onClick={() => setToCancel(r)}
+                    >
+                      <X className="h-4 w-4" /> Annuler la réservation
+                    </Button>
+                  }
+                />
+              ))}
+            </ExpandableGiftList>
+          )}
         </>
       )}
 

@@ -1,25 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { ExternalLink, Check, X, ShoppingBag } from "lucide-react";
+import { Check, X, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { ExpandableGiftList, ExpandableGiftRow } from "@/components/ExpandableGiftList";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  PRIORITY_LABEL,
-  PRIORITY_COLOR,
-  formatPrice,
-  initials,
-  type Priority,
-} from "@/lib/gift-box";
+import { initials, type Priority } from "@/lib/gift-box";
 import { useGiftImageUrls } from "@/lib/gift-image";
 import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
 import {
   filterGiftsByCategory,
-  getGiftCategoryOption,
   type GiftCategory,
   type GiftCategoryFilterValue,
 } from "@/lib/gift-category";
@@ -235,124 +229,86 @@ function MemberLists() {
                 Aucun cadeau dans cette catégorie.
               </p>
             )}
-            {listGifts.map((g) => {
-              const res = reservations.find((r) => r.gift_id === g.id);
-              const reservedByMe = res?.buyer_id === me;
-              const purchased = res?.status === "purchased";
-              const dimmed = !isOwn && !!res;
-              const buyerName = res ? (buyers[res.buyer_id]?.display_name ?? "Quelqu'un") : null;
-              const category = getGiftCategoryOption(g.category);
-              const CategoryIcon = category.icon;
-              const imageSrc = g.image_path ? signedUrls?.[g.id] : g.image_url;
-              return (
-                <Card
-                  key={g.id}
-                  className={`p-3 flex gap-3 transition-opacity ${dimmed ? "opacity-60" : ""}`}
-                >
-                  {imageSrc ? (
-                    <img
-                      src={imageSrc}
-                      alt=""
-                      className="h-20 w-20 rounded-xl object-cover bg-muted"
-                    />
-                  ) : (
-                    <div
-                      className={`h-20 w-20 rounded-xl flex items-center justify-center ${category.surfaceClass}`}
-                      title={category.label}
-                    >
-                      <CategoryIcon className={`h-8 w-8 opacity-70 ${category.iconClass}`} />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="flex items-center gap-1.5 font-medium leading-tight">
-                        {imageSrc && (
-                          <span
-                            className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded ${category.surfaceClass}`}
-                            title={category.label}
+            {listGifts.length > 0 && (
+              <ExpandableGiftList label={`Cadeaux de ${list.title}`}>
+                {listGifts.map((g) => {
+                  const res = reservations.find((r) => r.gift_id === g.id);
+                  const reservedByMe = res?.buyer_id === me;
+                  const purchased = res?.status === "purchased";
+                  const buyerName = res
+                    ? (buyers[res.buyer_id]?.display_name ?? "Quelqu'un")
+                    : null;
+                  return (
+                    <ExpandableGiftRow
+                      key={g.id}
+                      title={g.title}
+                      category={g.category}
+                      imageSrc={g.image_path ? signedUrls?.[g.id] : g.image_url}
+                      price={g.price}
+                      currency={g.currency}
+                      priority={g.priority}
+                      description={g.description}
+                      url={g.url}
+                      className={!isOwn && res ? "opacity-65" : undefined}
+                      status={
+                        !isOwn && res ? (
+                          <Badge
+                            variant="secondary"
+                            className={`h-5 rounded-full px-1.5 text-[9px] ${
+                              purchased ? "bg-green-600 text-white hover:bg-green-600" : ""
+                            }`}
                           >
-                            <CategoryIcon className={`h-2.5 w-2.5 ${category.iconClass}`} />
-                            <span className="sr-only">{category.label}</span>
-                          </span>
-                        )}
-                        <span>{g.title}</span>
-                      </p>
-                      <Badge className={PRIORITY_COLOR[g.priority]}>
-                        {PRIORITY_LABEL[g.priority]}
-                      </Badge>
-                    </div>
-                    {g.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{g.description}</p>
-                    )}
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="flex items-center gap-2">
-                        {g.price != null && (
-                          <span className="text-sm font-semibold">
-                            {formatPrice(g.price, g.currency)}
-                          </span>
-                        )}
-                        {g.url && (
-                          <a
-                            href={g.url}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="text-xs text-primary flex items-center gap-1 hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Voir <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                      {!isOwn && (
-                        <>
-                          {!res && (
-                            <Button size="sm" onClick={() => reserve(g.id)} className="rounded-xl">
-                              <Check className="h-4 w-4 mr-1" /> J'offre
-                            </Button>
-                          )}
-                          {res && reservedByMe && (
-                            <div className="flex gap-1">
-                              {!purchased && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => markPurchased(g.id)}
-                                  className="rounded-xl"
-                                >
-                                  <ShoppingBag className="h-4 w-4 mr-1" /> Acheté
-                                </Button>
-                              )}
-                              {purchased && (
-                                <Badge className="bg-green-600 hover:bg-green-600 text-white">
-                                  ✓ Acheté
-                                </Badge>
-                              )}
+                            {purchased ? "Acheté" : "Réservé"}
+                          </Badge>
+                        ) : undefined
+                      }
+                      actions={
+                        !isOwn ? (
+                          <>
+                            {!res && (
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => unreserve(g.id)}
-                                className="rounded-xl"
+                                onClick={() => reserve(g.id)}
+                                className="h-8 rounded-lg"
                               >
-                                <X className="h-4 w-4" />
+                                <Check className="h-4 w-4" /> J'offre
                               </Button>
-                            </div>
-                          )}
-                          {res && !reservedByMe && (
-                            <Badge
-                              variant="secondary"
-                              className={
-                                purchased ? "bg-green-600 hover:bg-green-600 text-white" : ""
-                              }
-                            >
-                              {purchased ? "✓ Acheté" : "Réservé"} par {buyerName}
-                            </Badge>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
+                            )}
+                            {res && reservedByMe && (
+                              <>
+                                {!purchased && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => markPurchased(g.id)}
+                                    className="h-8 rounded-lg"
+                                  >
+                                    <ShoppingBag className="h-4 w-4" /> Acheté
+                                  </Button>
+                                )}
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={() => unreserve(g.id)}
+                                  className="h-8 w-8 rounded-lg"
+                                  aria-label={`Annuler la réservation de ${g.title}`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            {res && !reservedByMe && (
+                              <span className="text-xs text-muted-foreground">
+                                {purchased ? "Acheté" : "Réservé"} par {buyerName}
+                              </span>
+                            )}
+                          </>
+                        ) : undefined
+                      }
+                    />
+                  );
+                })}
+              </ExpandableGiftList>
+            )}
           </section>
         );
       })}

@@ -351,7 +351,26 @@ function DirectoryProfileRow({
   const canRequest = !profile.is_self && profile.visibility === "private" && !connected && !pending;
 
   return (
-    <div role="listitem" className="flex min-h-16 items-center gap-2.5 px-3 py-2.5 sm:px-4">
+    <div
+      role="listitem"
+      className={`relative flex min-h-16 items-center gap-2.5 px-3 py-2.5 transition-colors sm:px-4 ${
+        canOpen ? "cursor-pointer hover:bg-secondary/35 focus-within:bg-secondary/35" : ""
+      }`}
+    >
+      {canOpen && (
+        <Link
+          to={profile.is_self ? "/profile" : "/p/$username"}
+          params={profile.is_self ? undefined : { username: profile.username }}
+          search={profile.is_self ? undefined : { invite: undefined }}
+          aria-label={profile.is_self ? "Ouvrir mon profil" : `Voir les listes de ${name}`}
+          className="absolute inset-0 z-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        >
+          <span className="sr-only">
+            {profile.is_self ? "Ouvrir mon profil" : `Voir les listes de ${name}`}
+          </span>
+        </Link>
+      )}
+
       <Avatar className="h-10 w-10 shrink-0 border border-white shadow-sm">
         {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
         <AvatarFallback className="bg-secondary text-sm font-bold text-primary">
@@ -377,7 +396,7 @@ function DirectoryProfileRow({
         <p className="truncate text-[11px] leading-4 text-muted-foreground">@{profile.username}</p>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="pointer-events-none relative z-10 flex shrink-0 items-center gap-1.5">
         <Badge
           variant="outline"
           aria-label={profile.visibility === "public" ? "Profil public" : "Profil privé"}
@@ -393,23 +412,12 @@ function DirectoryProfileRow({
           </span>
         </Badge>
 
-        {canOpen && (
-          <Button asChild size="icon" variant="ghost" className="h-8 w-8 rounded-lg">
-            <Link
-              to={profile.is_self ? "/profile" : "/p/$username"}
-              params={profile.is_self ? undefined : { username: profile.username }}
-              search={profile.is_self ? undefined : { invite: undefined }}
-              aria-label={profile.is_self ? "Ouvrir mon profil" : `Voir les listes de ${name}`}
-            >
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        )}
+        {canOpen && <ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
         {canRequest && (
           <Button
             size="sm"
             variant="outline"
-            className="h-8 rounded-lg px-2 text-[11px]"
+            className="pointer-events-auto h-8 rounded-lg px-2 text-[11px]"
             disabled={busy}
             aria-label={
               profile.outgoing_status === "declined"
@@ -434,7 +442,7 @@ function DirectoryProfileRow({
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8"
+              className="pointer-events-auto h-8 w-8"
               disabled={busy}
               aria-label={`Annuler la demande envoyée à ${name}`}
               onClick={onCancel}
@@ -451,7 +459,7 @@ function DirectoryProfileRow({
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8"
+              className="pointer-events-auto h-8 w-8"
               disabled={busy}
               aria-label={`Renoncer à l’accès au profil de ${name}`}
               onClick={onCancel}
