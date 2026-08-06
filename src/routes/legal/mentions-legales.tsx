@@ -59,16 +59,12 @@ function MentionsLegales() {
       <h2 className="text-lg font-semibold mt-6">Sous-traitants techniques</h2>
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>Supabase</strong> (via Lovable Cloud) — base de données, authentification,
-          stockage des images.
+          <strong>OVHcloud</strong> — hébergement de l'application, de la base PostgreSQL et des
+          images en France.
         </li>
         <li>
           <strong>Resend</strong> — envoi des emails transactionnels (confirmation, réinitialisation
           de mot de passe).
-        </li>
-        <li>
-          <strong>Lovable AI</strong> — récupération des aperçus produits (image et titre) à partir
-          des liens ajoutés.
         </li>
       </ul>
 

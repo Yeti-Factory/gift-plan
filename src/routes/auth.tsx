@@ -3,15 +3,12 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
-import { ensureProfile } from "@/lib/gift-box";
+import { authClient } from "@/lib/self-hosted/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 import { BrandMark } from "@/components/BrandMark";
 import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 import {
@@ -19,8 +16,6 @@ import {
   MIN_PASSWORD_LENGTH,
   translateAuthError,
 } from "@/lib/auth-errors";
-
-const RESET_PASSWORD_REDIRECT_URL = "https://gift-plan.yeti-lab.fr/reset-password";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -50,28 +45,9 @@ function AuthPage() {
   const [showSignupPwd, setShowSignupPwd] = useState(false);
 
   useEffect(() => {
-    if (redirectToResetPasswordIfNeeded()) return;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (redirectToResetPasswordIfNeeded()) return;
-      if (data.session) {
-        ensureProfile(data.session.user).catch(() => {});
-        navigate({ to: "/people", replace: true });
-      }
+    authClient.getSession().then(({ data }) => {
+      if (data?.user) navigate({ to: "/people", replace: true });
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        markPasswordRecovery();
-        redirectToResetPasswordIfNeeded();
-        return;
-      }
-      if (event === "SIGNED_IN" && redirectToResetPasswordIfNeeded()) return;
-      if (event === "SIGNED_IN" && session) {
-        ensureProfile(session.user).catch(() => {});
-        navigate({ to: "/people", replace: true });
-      }
-    });
-    return () => sub.subscription.unsubscribe();
   }, [navigate]);
 
   async function handleSignIn(e: React.FormEvent) {
@@ -82,13 +58,16 @@ function AuthPage() {
     const password = String(fd.get("password") ?? "");
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await authClient.signIn.email({ email, password });
       if (error) {
-        toast.error(translateAuthError(error.message));
-        if (error.message.toLowerCase().includes("email not confirmed")) {
+        const message = String(error.message ?? error.code ?? "");
+        toast.error(translateAuthError(message));
+        if (message.toLowerCase().includes("email")) {
           setConfirmationEmail(email);
           setConfirmationOpen(true);
         }
+      } else {
+        navigate({ to: "/people", replace: true });
       }
     } catch {
       toast.error("Connexion impossible pour le moment. Vérifie ta connexion et réessaie.");
@@ -110,18 +89,17 @@ function AuthPage() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await authClient.signUp.email({
         email,
         password,
-        options: {
-          data: { display_name: name || displayName.trim() || email.split("@")[0] },
-          emailRedirectTo: window.location.origin,
-        },
+        name: name || displayName.trim() || email.split("@")[0],
+        callbackURL: "/people",
       });
 
       if (error) {
+        const message = String(error.message ?? error.code ?? "");
         setConfirmationEmail(email);
-        if (isConfirmationEmailDeliveryError(error.message)) {
+        if (isConfirmationEmailDeliveryError(message)) {
           setConfirmationOpen(true);
           toast.error(
             "L’inscription a été enregistrée, mais l’email de confirmation n’a pas pu être envoyé. Tu peux le renvoyer depuis cet écran.",
@@ -131,23 +109,25 @@ function AuthPage() {
         }
 
         if (
-          error.message.toLowerCase().includes("already registered") ||
-          error.message.toLowerCase().includes("already exists") ||
-          error.message.toLowerCase().includes("user already")
+          message.toLowerCase().includes("already registered") ||
+          message.toLowerCase().includes("already exists") ||
+          message.toLowerCase().includes("user already")
         ) {
           setConfirmationOpen(true);
         }
-        toast.error(translateAuthError(error.message));
+        toast.error(translateAuthError(message));
         return;
       }
 
-      if (!data.session) {
+      if (!data?.token) {
         setConfirmationEmail(email);
         setConfirmationOpen(true);
         toast.success(
           "Compte créé. Vérifie ta boîte mail pour confirmer ton inscription, ainsi que les spams ✉️",
           { duration: 8000 },
         );
+      } else {
+        navigate({ to: "/people", replace: true });
       }
     } catch {
       toast.error(
@@ -164,15 +144,14 @@ function AuthPage() {
     if (!targetEmail) return;
 
     setLoading(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
+    const { error } = await authClient.sendVerificationEmail({
       email: targetEmail,
-      options: { emailRedirectTo: window.location.origin },
+      callbackURL: "/people",
     });
     setLoading(false);
 
     if (error) {
-      const message = error.message.toLowerCase();
+      const message = String(error.message ?? error.code ?? "").toLowerCase();
       toast.error(
         message.includes("rate") || message.includes("too many")
           ? "Trop de demandes rapprochées. Attends quelques minutes avant de réessayer."
@@ -193,8 +172,9 @@ function AuthPage() {
     if (!forgotEmail) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: RESET_PASSWORD_REDIRECT_URL,
+      const { error } = await authClient.requestPasswordReset({
+        email: forgotEmail,
+        redirectTo: "/reset-password",
       });
       if (error) throw error;
       toast.success(
@@ -212,8 +192,9 @@ function AuthPage() {
 
   async function signInGoogle() {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const result = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/people",
     });
     setLoading(false);
     if (result.error) toast.error("Connexion Google impossible.");

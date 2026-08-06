@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -118,76 +118,23 @@ function CircleDetail() {
   const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string } | null>(null);
 
   const load = useCallback(async () => {
-    const { data: user } = await supabase.auth.getUser();
-    setMe(user.user?.id ?? null);
-
-    const { data: c } = await supabase
-      .from("circles")
-      .select("name, created_by")
-      .eq("id", circleId)
-      .maybeSingle();
-    setCircle(c);
-
-    const { data: mems } = await supabase
-      .from("circle_members")
-      .select("user_id, role, joined_at")
-      .eq("circle_id", circleId)
-      .order("joined_at", { ascending: true });
-
-    const meId = user.user?.id;
-    const admin = !!(mems ?? []).find((m) => m.user_id === meId && m.role === "admin");
-    setIsAdmin(admin);
-
-    if (admin) {
-      const { data: code } = await supabase.rpc("get_invite_code", { _circle_id: circleId });
-      setInviteCode(code ?? null);
-    } else {
-      setInviteCode(null);
+    try {
+      const data = await apiQuery<{
+        circle: { name: string; created_by: string; invite_code: string | null };
+        members: Member[];
+        activity: ActivityRow[];
+        userId: string;
+        isAdmin: boolean;
+      }>("circle", { circleId });
+      setMe(data.userId);
+      setCircle(data.circle);
+      setMembers(data.members);
+      setActivity(data.activity);
+      setIsAdmin(data.isAdmin);
+      setInviteCode(data.isAdmin ? data.circle.invite_code : null);
+    } catch (error) {
+      toast.error(translateError(error instanceof Error ? error.message : "Erreur"));
     }
-
-    const userIds = (mems ?? []).map((m) => m.user_id);
-    if (userIds.length === 0) {
-      setMembers([]);
-      return;
-    }
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url, username")
-      .in("id", userIds);
-    const { data: accessRows } = await supabase
-      .from("list_circle_access")
-      .select("list_id")
-      .eq("circle_id", circleId);
-    const accessibleListIds = (accessRows ?? []).map((row) => row.list_id);
-    const { data: lists } = accessibleListIds.length
-      ? await supabase.from("lists").select("owner_id").in("id", accessibleListIds)
-      : { data: [] };
-    const listCounts = new Map<string, number>();
-    (lists ?? []).forEach((l) => listCounts.set(l.owner_id, (listCounts.get(l.owner_id) ?? 0) + 1));
-    const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
-
-    setMembers(
-      (mems ?? []).map((m) => ({
-        user_id: m.user_id,
-        role: m.role,
-        profile: profMap.get(m.user_id)
-          ? {
-              display_name: profMap.get(m.user_id)!.display_name,
-              avatar_url: profMap.get(m.user_id)!.avatar_url,
-              username: profMap.get(m.user_id)!.username,
-            }
-          : null,
-        listCount: listCounts.get(m.user_id) ?? 0,
-      })),
-    );
-
-    const { data: acts } = await supabase
-      .from("circle_activity")
-      .select("id, action, actor_name, target_name, created_at")
-      .eq("circle_id", circleId)
-      .order("created_at", { ascending: false })
-      .limit(30);
-    setActivity((acts ?? []) as ActivityRow[]);
   }, [circleId]);
 
   useEffect(() => {
@@ -202,23 +149,30 @@ function CircleDetail() {
 
   async function regenerateCode() {
     setRegenBusy(true);
-    const { data, error } = await supabase.rpc("regenerate_invite_code", { _circle_id: circleId });
+    let data: { code: string } | null = null;
+    let error: Error | null = null;
+    try {
+      data = await apiAction("regenerate-circle-code", { circleId });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Erreur");
+    }
     setRegenBusy(false);
     setRegenOpen(false);
     if (error || !data) {
       toast.error(translateError(error?.message ?? ""));
       return;
     }
-    setInviteCode(data);
+    setInviteCode(data.code);
     toast.success("Nouveau code généré !");
   }
 
   async function setMemberRole(userId: string, role: "admin" | "member") {
-    const { error } = await supabase.rpc("set_member_role", {
-      _circle_id: circleId,
-      _user_id: userId,
-      _role: role,
-    });
+    let error: Error | null = null;
+    try {
+      await apiAction("set-circle-role", { circleId, userId, role });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Erreur");
+    }
     if (error) {
       toast.error(translateError(error.message));
       return;
@@ -230,10 +184,12 @@ function CircleDetail() {
   }
 
   async function removeMember(userId: string) {
-    const { error } = await supabase.rpc("remove_member", {
-      _circle_id: circleId,
-      _user_id: userId,
-    });
+    let error: Error | null = null;
+    try {
+      await apiAction("remove-circle-member", { circleId, userId });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Erreur");
+    }
     if (error) {
       toast.error(translateError(error.message));
       return;
@@ -249,18 +205,24 @@ function CircleDetail() {
 
   async function confirmLeave() {
     setLeaveBusy(true);
-    const { data, error } = await supabase.rpc("leave_circle", { _circle_id: circleId });
+    let data: {
+      circle_deleted?: boolean;
+      new_owner_id?: string;
+      new_owner_name?: string;
+    } | null = null;
+    let error: Error | null = null;
+    try {
+      data = await apiAction("leave-circle", { circleId });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Erreur");
+    }
     setLeaveBusy(false);
     setLeaveOpen(false);
     if (error) {
       toast.error(translateError(error.message));
       return;
     }
-    const result = data as {
-      circle_deleted?: boolean;
-      new_owner_id?: string;
-      new_owner_name?: string;
-    } | null;
+    const result = data;
     const circleName = circle?.name ?? "le cercle";
     navigate({ to: "/circles" });
     if (result?.circle_deleted) {

@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { apiQuery } from "@/lib/self-hosted/api-client";
 import { initials } from "@/lib/gift-box";
 
 type SearchResult = {
@@ -42,13 +42,13 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
       return;
     }
     setBusy(true);
-    const { data, error } = await supabase.rpc("search_public_profiles", { _query: trimmed });
+    const data = await apiQuery<SearchResult[]>("search", { q: trimmed }).catch(() => null);
     setBusy(false);
-    if (error) {
+    if (!data) {
       toast.error("La recherche est temporairement indisponible.");
       return;
     }
-    setResults((data as SearchResult[]) ?? []);
+    setResults(data);
   }
 
   const searchForm = (

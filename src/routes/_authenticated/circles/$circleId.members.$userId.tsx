@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Check, X, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { ExpandableGiftList, ExpandableGiftRow } from "@/components/ExpandableGiftList";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,6 @@ type Gift = {
   currency: string;
   priority: Priority;
   list_id: string;
-  owner_id: string;
 };
 
 type List = { id: string; title: string; occasion: string | null; event_date: string | null };
@@ -57,71 +56,38 @@ function MemberLists() {
   const isOwn = me === userId;
 
   const load = useCallback(async () => {
-    const { data: user } = await supabase.auth.getUser();
-    setMe(user.user?.id ?? null);
-
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("display_name, avatar_url")
-      .eq("id", userId)
-      .maybeSingle();
-    setProfile(p);
-
-    const { data: accessRows } = await supabase
-      .from("list_circle_access")
-      .select("list_id")
-      .eq("circle_id", circleId);
-    const accessibleListIds = (accessRows ?? []).map((row) => row.list_id);
-    const { data: ls } = accessibleListIds.length
-      ? await supabase
-          .from("lists")
-          .select("id, title, occasion, event_date")
-          .in("id", accessibleListIds)
-          .eq("owner_id", userId)
-          .order("created_at", { ascending: false })
-      : { data: [] };
-    setLists(ls ?? []);
-
-    const listIds = (ls ?? []).map((l) => l.id);
-    if (listIds.length === 0) {
-      setGifts([]);
-      setReservations([]);
-      return;
-    }
-    const { data: gs } = await supabase
-      .from("gifts")
-      .select("*")
-      .in("list_id", listIds)
-      .order("created_at", { ascending: false });
-    setGifts((gs as Gift[]) ?? []);
-
-    // RLS ensures we can only see reservations when viewing SOMEONE ELSE's list.
-    // For your own list this returns nothing → surprise preserved.
-    const giftIds = (gs ?? []).map((g) => g.id);
-    if (giftIds.length === 0) {
-      setReservations([]);
-      return;
-    }
-    const { data: rs } = await supabase
-      .from("reservations")
-      .select("gift_id, buyer_id, status")
-      .in("gift_id", giftIds);
-    setReservations(rs ?? []);
-
-    const buyerIds = Array.from(new Set((rs ?? []).map((r) => r.buyer_id)));
-    if (buyerIds.length === 0) {
-      setBuyers({});
-      return;
-    }
-    const { data: bs } = await supabase
-      .from("profiles")
-      .select("id, display_name")
-      .in("id", buyerIds);
-    const map: Record<string, BuyerProfile> = {};
-    (bs ?? []).forEach((b) => {
-      map[b.id] = b;
-    });
-    setBuyers(map);
+    const data = await apiQuery<{
+      profile: { display_name: string | null; avatar_url: string | null };
+      lists: List[];
+      gifts: Array<
+        Gift & {
+          buyer_id: string | null;
+          buyer_name: string | null;
+          reservation_status: string | null;
+        }
+      >;
+      viewerId: string;
+    }>("circle-member", { circleId, userId });
+    setMe(data.viewerId);
+    setProfile(data.profile);
+    setLists(data.lists);
+    setGifts(data.gifts);
+    setReservations(
+      data.gifts.flatMap((gift) =>
+        gift.buyer_id && gift.reservation_status
+          ? [{ gift_id: gift.id, buyer_id: gift.buyer_id, status: gift.reservation_status }]
+          : [],
+      ),
+    );
+    setBuyers(
+      Object.fromEntries(
+        data.gifts.flatMap((gift) =>
+          gift.buyer_id
+            ? [[gift.buyer_id, { id: gift.buyer_id, display_name: gift.buyer_name }]]
+            : [],
+        ),
+      ),
+    );
   }, [circleId, userId]);
 
   useEffect(() => {
@@ -129,53 +95,59 @@ function MemberLists() {
   }, [load]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`member-${userId}-gifts`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "gifts" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => load())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [load, userId]);
+    const interval = window.setInterval(load, 15_000);
+    return () => window.clearInterval(interval);
+  }, [load]);
 
   async function reserve(giftId: string) {
     if (!me) return;
-    const { error } = await supabase.rpc("set_gift_reservation", {
-      _gift_id: giftId,
-      _action: "reserve",
-      _share_token: undefined,
-    });
+    let error: Error | null = null;
+    try {
+      await apiAction("reserve", { giftId, status: "reserved" });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Réservation impossible");
+    }
     if (error) {
-      if ((error as { code?: string }).code === "23505") {
+      if ((error as { code?: string }).code === "ALREADY_RESERVED") {
         toast.error("Trop tard ! Quelqu'un vient de réserver ce cadeau.");
         load();
       } else {
         toast.error(error.message);
       }
-    } else toast.success("Cadeau réservé — c'est votre secret !");
+    } else {
+      toast.success("Cadeau réservé — c'est votre secret !");
+      load();
+    }
   }
 
   async function unreserve(giftId: string) {
     if (!me) return;
-    const { error } = await supabase.rpc("set_gift_reservation", {
-      _gift_id: giftId,
-      _action: "cancel",
-      _share_token: undefined,
-    });
+    let error: Error | null = null;
+    try {
+      await apiAction("reserve", { giftId, status: null });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Annulation impossible");
+    }
     if (error) toast.error(error.message);
-    else toast.success("Réservation annulée");
+    else {
+      toast.success("Réservation annulée");
+      load();
+    }
   }
 
   async function markPurchased(giftId: string) {
     if (!me) return;
-    const { error } = await supabase.rpc("set_gift_reservation", {
-      _gift_id: giftId,
-      _action: "purchased",
-      _share_token: undefined,
-    });
+    let error: Error | null = null;
+    try {
+      await apiAction("reserve", { giftId, status: "purchased" });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Mise à jour impossible");
+    }
     if (error) toast.error(error.message);
-    else toast.success("Marqué comme acheté 🎁");
+    else {
+      toast.success("Marqué comme acheté 🎁");
+      load();
+    }
   }
 
   const name = profile?.display_name ?? "Membre";

@@ -1,24 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const storageMocks = vi.hoisted(() => ({
-  from: vi.fn(),
-  getPublicUrl: vi.fn(),
-  remove: vi.fn(),
-  upload: vi.fn(),
+const { uploadFileMock, apiActionMock } = vi.hoisted(() => ({
+  uploadFileMock: vi.fn(),
+  apiActionMock: vi.fn(),
 }));
 
-vi.mock("@/integrations/supabase/client", () => {
-  storageMocks.from.mockReturnValue({
-    getPublicUrl: storageMocks.getPublicUrl,
-    remove: storageMocks.remove,
-    upload: storageMocks.upload,
-  });
-  return { supabase: { storage: { from: storageMocks.from } } };
-});
+vi.mock("@/lib/self-hosted/api-client", () => ({
+  uploadFile: uploadFileMock,
+  apiAction: apiActionMock,
+}));
 
 import {
   inspectProfileAvatarFile,
-  PROFILE_AVATAR_BUCKET,
   PROFILE_AVATAR_MAX_BYTES,
   removeUncommittedProfileAvatar,
   uploadProfileAvatar,
@@ -81,41 +74,29 @@ describe("profile avatar validation", () => {
 describe("profile avatar storage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    storageMocks.upload.mockResolvedValue({ error: null });
-    storageMocks.remove.mockResolvedValue({ error: null });
-    storageMocks.getPublicUrl.mockReturnValue({
-      data: { publicUrl: "https://example.test/profile-avatars/avatar.png" },
+    uploadFileMock.mockResolvedValue({
+      path: "user-123/00000000-0000-4000-8000-000000000001.png",
+      url: "/api/v1/files/avatars/user-123/00000000-0000-4000-8000-000000000001.png",
     });
   });
 
   it("uploads a validated image in the authenticated user's folder", async () => {
-    const randomUuid = vi
-      .spyOn(globalThis.crypto, "randomUUID")
-      .mockReturnValue("00000000-0000-4000-8000-000000000001");
     const file = imageFile([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], "avatar.bin");
 
     await expect(uploadProfileAvatar("user-123", file)).resolves.toEqual({
       path: "user-123/00000000-0000-4000-8000-000000000001.png",
-      publicUrl: "https://example.test/profile-avatars/avatar.png",
+      publicUrl: "/api/v1/files/avatars/user-123/00000000-0000-4000-8000-000000000001.png",
     });
-    expect(storageMocks.from).toHaveBeenCalledWith(PROFILE_AVATAR_BUCKET);
-    expect(storageMocks.upload).toHaveBeenCalledWith(
-      "user-123/00000000-0000-4000-8000-000000000001.png",
-      file,
-      {
-        cacheControl: "31536000",
-        contentType: "image/png",
-        upsert: false,
-      },
-    );
-    randomUuid.mockRestore();
+    expect(uploadFileMock).toHaveBeenCalledWith("avatar", file);
   });
 
-  it("only removes an uncommitted upload from the current user's folder", async () => {
+  it("queues only the current user's uncommitted file for cleanup", async () => {
     await removeUncommittedProfileAvatar("user-a", "user-b/forbidden.png");
-    expect(storageMocks.from).not.toHaveBeenCalled();
-
     await removeUncommittedProfileAvatar("user-a", "user-a/orphan.png");
-    expect(storageMocks.remove).toHaveBeenCalledWith(["user-a/orphan.png"]);
+    expect(apiActionMock).toHaveBeenCalledOnce();
+    expect(apiActionMock).toHaveBeenCalledWith("discard-upload", {
+      kind: "avatar",
+      path: "user-a/orphan.png",
+    });
   });
 });

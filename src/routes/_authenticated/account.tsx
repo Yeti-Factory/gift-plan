@@ -12,9 +12,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-import { supabase } from "@/integrations/supabase/client";
-import { useServerFn } from "@tanstack/react-start";
-import { deleteMyAccount, exportMyData } from "@/lib/account.functions";
+import { authClient } from "@/lib/self-hosted/auth-client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { openOnboardingGuide } from "@/components/OnboardingGuide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,14 +69,12 @@ function AccountPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deletePwd, setDeletePwd] = useState("");
-  const deleteAccountFn = useServerFn(deleteMyAccount);
-  const exportDataFn = useServerFn(exportMyData);
   const [exporting, setExporting] = useState(false);
 
   async function handleExport() {
     setExporting(true);
     try {
-      const data = await exportDataFn();
+      const data = await apiQuery("account");
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -98,12 +95,8 @@ function AccountPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (!cancelled) setDisplayName(data?.display_name ?? "");
+      const data = await apiQuery<{ profile: { display_name: string | null } }>("account");
+      if (!cancelled) setDisplayName(data.profile.display_name ?? "");
     })();
     return () => {
       cancelled = true;
@@ -118,25 +111,15 @@ function AccountPage() {
       return;
     }
     setSavingName(true);
-    const { data: updatedProfile, error } = await supabase
-      .from("profiles")
-      .update({ display_name: trimmed })
-      .eq("id", user.id)
-      .select("display_name")
-      .single();
-    setSavingName(false);
-    if (error || !updatedProfile) {
-      toast.error("Impossible de mettre à jour le nom.");
-      return;
+    let error: Error | null = null;
+    try {
+      await apiAction("set-display-name", { displayName: trimmed });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Mise à jour impossible");
     }
-
-    // Keep recovery metadata aligned. The public profile remains canonical,
-    // so a metadata failure does not roll back a successful profile update.
-    const { error: metadataError } = await supabase.auth.updateUser({
-      data: { display_name: trimmed },
-    });
-    if (metadataError) {
-      toast.warning("Nom mis à jour, mais la session n'a pas pu être synchronisée.");
+    setSavingName(false);
+    if (error) {
+      toast.error("Impossible de mettre à jour le nom.");
       return;
     }
     toast.success("Nom mis à jour.");
@@ -147,11 +130,11 @@ function AccountPage() {
     const next = email.trim();
     if (!next || next === user.email) return;
     setSavingEmail(true);
-    const { error } = await supabase.auth.updateUser({ email: next });
+    const { error } = await authClient.changeEmail({ newEmail: next, callbackURL: "/account" });
     setSavingEmail(false);
     if (error) {
       toast.error(
-        error.message.includes("already")
+        String(error.message ?? error.code ?? "").includes("already")
           ? "Cet email est déjà utilisé."
           : "Impossible de changer l'email.",
       );
@@ -164,8 +147,8 @@ function AccountPage() {
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (newPwd.length < 6) {
-      toast.error("Le nouveau mot de passe doit faire 6 caractères minimum.");
+    if (newPwd.length < 8) {
+      toast.error("Le nouveau mot de passe doit faire 8 caractères minimum.");
       return;
     }
     if (newPwd !== confirmPwd) {
@@ -177,17 +160,11 @@ function AccountPage() {
       return;
     }
     setSavingPwd(true);
-    // Re-auth: verify current password
-    const { error: reauthErr } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: currentPwd,
+    const { error } = await authClient.changePassword({
+      currentPassword: currentPwd,
+      newPassword: newPwd,
+      revokeOtherSessions: true,
     });
-    if (reauthErr) {
-      setSavingPwd(false);
-      toast.error("Mot de passe actuel incorrect.");
-      return;
-    }
-    const { error } = await supabase.auth.updateUser({ password: newPwd });
     setSavingPwd(false);
     if (error) {
       toast.error("Impossible de changer le mot de passe.");
@@ -202,8 +179,11 @@ function AccountPage() {
   async function handleDelete() {
     setDeleting(true);
     try {
-      await deleteAccountFn({ data: { password: deletePwd || undefined } });
-      await supabase.auth.signOut();
+      const { error } = await authClient.deleteUser({
+        password: deletePwd || undefined,
+        callbackURL: "/auth",
+      });
+      if (error) throw new Error(error.message ?? "Suppression impossible.");
       router.invalidate();
       toast.success("Compte supprimé.");
       navigate({ to: "/auth", replace: true });
@@ -216,7 +196,7 @@ function AccountPage() {
   }
 
   async function reauthViaSignout() {
-    await supabase.auth.signOut();
+    await authClient.signOut();
     router.invalidate();
     navigate({ to: "/auth", replace: true });
   }
@@ -312,7 +292,7 @@ function AccountPage() {
                 id="new-pwd"
                 type={showNew ? "text" : "password"}
                 autoComplete="new-password"
-                minLength={6}
+                minLength={8}
                 value={newPwd}
                 onChange={(e) => setNewPwd(e.target.value)}
                 required
@@ -327,7 +307,7 @@ function AccountPage() {
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">6 caractères minimum.</p>
+            <p className="text-xs text-muted-foreground">8 caractères minimum.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm-pwd">Confirmer le nouveau mot de passe</Label>
@@ -335,7 +315,7 @@ function AccountPage() {
               id="confirm-pwd"
               type={showNew ? "text" : "password"}
               autoComplete="new-password"
-              minLength={6}
+              minLength={8}
               value={confirmPwd}
               onChange={(e) => setConfirmPwd(e.target.value)}
               required

@@ -7,7 +7,13 @@ export type ApiErrorCode =
   | "NOT_FOUND"
   | "PROFILE_PRIVATE"
   | "ALREADY_RESERVED"
-  | "CONFLICT";
+  | "CONFLICT"
+  | "NOT_ADMIN"
+  | "NOT_MEMBER"
+  | "FORBIDDEN_CREATOR"
+  | "RATE_LIMITED"
+  | "CODE_INVALID"
+  | "BANNED";
 
 export class ApiError extends Error {
   constructor(

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, Copy, Eye, Link2, Lock, Plus, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,21 +58,15 @@ function ManageProfilePage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
-    const [{ data: p }, { data: ownLists }, { data: shareLinks }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select(
-          "id, username, display_name, avatar_url, avatar_path, bio, visibility, email_searchable",
-        )
-        .eq("id", user.id)
-        .single(),
-      supabase
-        .from("lists")
-        .select("id, title, visibility")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false }),
-      supabase.rpc("list_profile_share_links"),
-    ]);
+    const {
+      profile: p,
+      lists: ownLists,
+      shares: shareLinks,
+    } = await apiQuery<{
+      profile: OwnProfile;
+      lists: OwnList[];
+      shares: ShareLink[];
+    }>("profile");
     if (p) {
       setProfile(p);
       setDisplayName(p.display_name ?? "");
@@ -83,8 +77,8 @@ function ManageProfilePage() {
       setAvatarPath(p.avatar_path);
       setAvatarUrl(p.avatar_url);
     }
-    setLists(ownLists ?? []);
-    setLinks((shareLinks as ShareLink[]) ?? []);
+    setLists(ownLists);
+    setLinks(shareLinks);
   }, [user.id]);
 
   useEffect(() => {
@@ -103,24 +97,27 @@ function ManageProfilePage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        display_name: displayName.trim(),
+    let error: { code?: string } | null = null;
+    try {
+      await apiAction("save-profile", {
+        displayName: displayName.trim(),
         username: normalizedUsername,
         bio: bio.trim() || null,
         visibility: isPublic ? "public" : "private",
-        email_searchable: emailSearchable,
-      })
-      .eq("id", user.id);
+        emailSearchable,
+      });
+    } catch (caught) {
+      error = caught instanceof Error ? { code: caught.message } : {};
+    }
     setBusy(false);
     if (error) {
       toast.error(
-        error.code === "23505" ? "Cet identifiant est déjà utilisé." : "Profil non enregistré.",
+        error.code === "CONFLICT" || error.code === "23505"
+          ? "Cet identifiant est déjà utilisé."
+          : "Profil non enregistré.",
       );
       return;
     }
-    await supabase.auth.updateUser({ data: { display_name: displayName.trim() } });
     toast.success("Profil enregistré");
     load();
   }
@@ -136,11 +133,7 @@ function ManageProfilePage() {
       const uploaded = await uploadProfileAvatar(user.id, file);
       uploadedPath = uploaded.path;
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({ avatar_url: uploaded.publicUrl, avatar_path: uploaded.path })
-        .eq("id", user.id);
-      if (error) throw error;
+      await apiAction("save-avatar", { url: uploaded.publicUrl, path: uploaded.path });
 
       setAvatarPath(uploaded.path);
       setAvatarUrl(uploaded.publicUrl);
@@ -162,10 +155,12 @@ function ManageProfilePage() {
 
   async function removeAvatar() {
     setAvatarBusy(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_url: null, avatar_path: null })
-      .eq("id", user.id);
+    let error: Error | null = null;
+    try {
+      await apiAction("save-avatar", { url: null, path: null });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Suppression impossible");
+    }
     setAvatarBusy(false);
 
     if (error) {
@@ -187,17 +182,23 @@ function ManageProfilePage() {
       return;
     }
     setBusy(true);
-    const { data, error } = await supabase.rpc("create_profile_share_link", {
-      _list_ids: selectedLists,
-      _label: linkLabel.trim() || undefined,
-      _expires_at: undefined,
-    });
+    let data: { token: string } | null = null;
+    let error: Error | null = null;
+    try {
+      data = await apiAction("create-share", {
+        listIds: selectedLists,
+        label: linkLabel.trim() || null,
+      });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Création impossible");
+    }
     setBusy(false);
     if (error) {
       toast.error("Impossible de créer l'invitation.");
       return;
     }
-    const created = data as { token: string };
+    if (!data) return;
+    const created = data;
     setSelectedLists([]);
     setLinkLabel("");
     await copyLink(created.token);
@@ -214,7 +215,12 @@ function ManageProfilePage() {
   }
 
   async function revoke(id: string) {
-    const { error } = await supabase.rpc("revoke_profile_share_link", { _share_id: id });
+    let error: Error | null = null;
+    try {
+      await apiAction("revoke-share", { id });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Révocation impossible");
+    }
     if (error) toast.error("Impossible de révoquer ce lien.");
     else {
       toast.success("Invitation révoquée");

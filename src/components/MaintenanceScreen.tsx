@@ -2,11 +2,11 @@ import { ArrowRight, Sparkles, Wrench } from "lucide-react";
 
 import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/self-hosted/auth-client";
 
 export function MaintenanceScreen({ message }: { message: string }) {
   async function openAdminLogin() {
-    await supabase.auth.signOut();
+    await authClient.signOut();
     window.location.assign("/auth");
   }
 

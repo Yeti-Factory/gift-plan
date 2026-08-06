@@ -17,10 +17,8 @@ import {
   UserCircle,
   ShieldCheck,
 } from "lucide-react";
-import { toast } from "sonner";
-
-import { supabase } from "@/integrations/supabase/client";
-import { ensureProfile } from "@/lib/gift-box";
+import { authClient } from "@/lib/self-hosted/auth-client";
+import { apiQuery } from "@/lib/self-hosted/api-client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { BrandMark } from "@/components/BrandMark";
@@ -31,8 +29,8 @@ import { PROFILE_ACCESS_CHANGED_EVENT } from "@/lib/profile-directory";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    const { data, error } = await authClient.getSession();
+    if (error || !data?.user) throw redirect({ to: "/auth" });
     return { user: data.user };
   },
   component: AuthLayout,
@@ -57,16 +55,15 @@ function AuthLayout() {
   const showBack = !topLevel.has(pathname);
 
   useEffect(() => {
-    ensureProfile(user).catch(() => {});
-    supabase.rpc("is_superadmin").then(({ data }) => {
-      setIsSuperadmin(data === true);
-    });
+    apiQuery<{ is_superadmin: boolean }>("session")
+      .then((data) => setIsSuperadmin(data.is_superadmin))
+      .catch(() => undefined);
   }, [user]);
 
   useEffect(() => {
     async function loadPendingProfileAccess() {
-      const { data, error } = await supabase.rpc("get_pending_profile_access_count");
-      if (!error && typeof data === "number") setPendingProfileAccess(data);
+      const data = await apiQuery<{ pending_profile_access: number }>("session").catch(() => null);
+      if (data) setPendingProfileAccess(data.pending_profile_access);
     }
 
     loadPendingProfileAccess();
@@ -78,36 +75,9 @@ function AuthLayout() {
     };
   }, [user.id]);
 
-  useEffect(() => {
-    const channel = supabase
-      .channel("gifts-notifications")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "gifts" },
-        async (payload) => {
-          const row = payload.new as { owner_id: string; title: string; list_id: string };
-          if (!row || row.owner_id === user.id) return;
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("display_name")
-            .eq("id", row.owner_id)
-            .maybeSingle();
-          const name = profile?.display_name ?? "Un membre";
-          toast(`🎁 ${name} a ajouté un cadeau`, {
-            description: row.title,
-          });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user.id]);
-
   async function signOut() {
     setSigningOut(true);
-    await supabase.auth.signOut();
+    await authClient.signOut();
     router.invalidate();
     navigate({ to: "/auth", replace: true });
   }

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, uploadFile } from "@/lib/self-hosted/api-client";
 import { sniffImageMagicBytes, type SniffedImageKind } from "@/lib/gift-image";
 
 export const PROFILE_AVATAR_BUCKET = "profile-avatars";
@@ -40,22 +40,13 @@ export async function uploadProfileAvatar(
   userId: string,
   file: File,
 ): Promise<{ path: string; publicUrl: string }> {
-  const { extension, contentType } = await inspectProfileAvatarFile(file);
-  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
-
-  const { error } = await supabase.storage.from(PROFILE_AVATAR_BUCKET).upload(path, file, {
-    cacheControl: "31536000",
-    contentType,
-    upsert: false,
-  });
-  if (error) throw error;
-
-  const { data } = supabase.storage.from(PROFILE_AVATAR_BUCKET).getPublicUrl(path);
-  return { path, publicUrl: data.publicUrl };
+  await inspectProfileAvatarFile(file);
+  void userId;
+  const uploaded = await uploadFile("avatar", file);
+  return { path: uploaded.path, publicUrl: uploaded.url };
 }
 
 export async function removeUncommittedProfileAvatar(userId: string, path: string) {
   if (!path.startsWith(`${userId}/`)) return;
-  const { error } = await supabase.storage.from(PROFILE_AVATAR_BUCKET).remove([path]);
-  if (error) throw error;
+  await apiAction("discard-upload", { kind: "avatar", path });
 }

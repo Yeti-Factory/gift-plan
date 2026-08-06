@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export type Priority = "indispensable" | "j_adorerais" | "me_plairait";
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
@@ -31,33 +29,4 @@ export function initials(name: string | null | undefined) {
     .slice(0, 2)
     .map((p) => p[0]!.toUpperCase())
     .join("");
-}
-
-// uploadGiftImage was removed: use uploadGiftImageChecked from "@/lib/gift-image".
-// It sniffs magic bytes, caps size, stores image_path (private), and display URLs
-// are minted on demand via getGiftImageSignedUrls (5 min TTL).
-
-export async function ensureProfile(user: {
-  id: string;
-  email?: string | null;
-  user_metadata?: Record<string, unknown>;
-}) {
-  const meta = user.user_metadata || {};
-  const displayName =
-    (meta.full_name as string) ||
-    (meta.name as string) ||
-    (user.email ? user.email.split("@")[0] : "Ami");
-  const avatarUrl = (meta.avatar_url as string) || null;
-  const username = `profil-${user.id.replaceAll("-", "").slice(0, 12)}`;
-
-  // The profile row is the canonical, user-editable source for display_name.
-  // This helper runs on every sign-in and authenticated layout mount, so an
-  // updating upsert would restore stale auth-provider metadata after a user
-  // changes their name from the account page. Only fill a missing profile.
-  await supabase
-    .from("profiles")
-    .upsert(
-      { id: user.id, display_name: displayName, avatar_url: avatarUrl, username },
-      { onConflict: "id", ignoreDuplicates: true },
-    );
 }

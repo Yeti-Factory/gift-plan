@@ -20,30 +20,14 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-      onAuthStateChange: vi.fn(() => ({
-        data: { subscription: { unsubscribe: vi.fn() } },
-      })),
-      signInWithPassword: mocks.signInWithPassword,
-      signUp: mocks.signUp,
-      resend: mocks.resend,
-      resetPasswordForEmail: mocks.resetPasswordForEmail,
-    },
+vi.mock("@/lib/self-hosted/auth-client", () => ({
+  authClient: {
+    getSession: vi.fn().mockResolvedValue({ data: null }),
+    signIn: { email: mocks.signInWithPassword, social: vi.fn() },
+    signUp: { email: mocks.signUp },
+    sendVerificationEmail: mocks.resend,
+    requestPasswordReset: mocks.resetPasswordForEmail,
   },
-}));
-
-vi.mock("@/integrations/lovable", () => ({
-  lovable: { auth: { signInWithOAuth: vi.fn() } },
-}));
-
-vi.mock("@/lib/gift-box", () => ({ ensureProfile: vi.fn() }));
-
-vi.mock("@/lib/password-recovery", () => ({
-  markPasswordRecovery: vi.fn(),
-  redirectToResetPasswordIfNeeded: vi.fn(() => false),
 }));
 
 vi.mock("sonner", () => ({
@@ -69,7 +53,7 @@ beforeEach(() => {
   mocks.resetPasswordForEmail.mockReset();
   mocks.toastError.mockReset();
   mocks.toastSuccess.mockReset();
-  mocks.signUp.mockResolvedValue({ data: { session: null }, error: null });
+  mocks.signUp.mockResolvedValue({ data: { token: null }, error: null });
 });
 
 afterEach(cleanup);
@@ -112,7 +96,7 @@ describe("account creation form", () => {
     );
   });
 
-  it("blocks only passwords that are actually shorter than six characters", async () => {
+  it("blocks only passwords that are actually shorter than eight characters", async () => {
     const user = await openSignupForm();
     await user.type(screen.getByLabelText("Nom"), "Marie Dupont");
     await user.type(screen.getByLabelText("Email"), "marie@example.com");
@@ -122,13 +106,13 @@ describe("account creation form", () => {
 
     expect(mocks.signUp).not.toHaveBeenCalled();
     expect(mocks.toastError).toHaveBeenCalledWith(
-      "Mot de passe trop court (6 caractères minimum).",
+      "Mot de passe trop court (8 caractères minimum).",
     );
   });
 
   it("shows a weakness warning instead of a false length warning", async () => {
     mocks.signUp.mockResolvedValueOnce({
-      data: { session: null },
+      data: null,
       error: { message: "Password is too weak and easy to guess" },
     });
     const user = await openSignupForm();
@@ -160,7 +144,7 @@ describe("account creation form", () => {
 
   it("does not hide a confirmation-email delivery failure", async () => {
     mocks.signUp.mockResolvedValueOnce({
-      data: { session: null },
+      data: null,
       error: { message: "Error sending confirmation email" },
     });
     const user = await openSignupForm();

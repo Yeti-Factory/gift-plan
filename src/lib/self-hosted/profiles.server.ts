@@ -320,6 +320,7 @@ export async function setGiftReservation(
   viewerId: string,
   giftId: string,
   status: "reserved" | "purchased" | null,
+  shareToken: string | null = null,
   database: Pool = getDatabasePool(),
 ) {
   const client = await database.connect();
@@ -344,8 +345,14 @@ export async function setGiftReservation(
            SELECT 1 FROM list_circle_access la JOIN circle_members cm ON cm.circle_id = la.circle_id
            WHERE la.list_id = l.id AND cm.user_id = $2::uuid
          )
+         OR ($3::uuid IS NOT NULL AND EXISTS (
+           SELECT 1 FROM profile_share_links s
+           JOIN profile_share_link_lists sl ON sl.share_link_id = s.id
+           WHERE s.token = $3::uuid AND s.owner_id = l.owner_id AND sl.list_id = l.id
+             AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at > now())
+         )
        ) AS visible FROM lists l WHERE l.id = $1::uuid`,
-      [gift.list_id, viewerId],
+      [gift.list_id, viewerId, shareToken],
     );
     if (!visible.rows[0]?.visible) throw new ApiError(403, "FORBIDDEN");
 

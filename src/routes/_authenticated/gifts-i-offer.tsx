@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { ExpandableGiftList, ExpandableGiftRow } from "@/components/ExpandableGiftList";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,62 +44,19 @@ type Row = {
 };
 
 function GiftsIOffer() {
-  const [me, setMe] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [toCancel, setToCancel] = useState<Row | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<GiftCategoryFilterValue>("all");
 
   const load = useCallback(async () => {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
-    setMe(user.user.id);
-
-    const { data: res, error } = await supabase
-      .from("reservations")
-      .select("id, gift_id")
-      .eq("buyer_id", user.user.id);
-    if (error) {
-      toast.error(error.message);
+    try {
+      const data =
+        await apiQuery<Array<Omit<Row, "recipient"> & { owner_name: string | null }>>("offers");
+      setRows(data.map((row) => ({ ...row, recipient: row.owner_name ?? "Membre" })));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Chargement impossible");
       setRows([]);
-      return;
     }
-    if (!res || res.length === 0) {
-      setRows([]);
-      return;
-    }
-    const giftIds = res.map((r) => r.gift_id);
-    const { data: gifts } = await supabase
-      .from("gifts")
-      .select("id, title, price, currency, image_url, image_path, owner_id, category")
-      .in("id", giftIds);
-
-    const ownerIds = [...new Set((gifts ?? []).map((g) => g.owner_id))];
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, display_name")
-      .in("id", ownerIds);
-    const nameMap = new Map((profs ?? []).map((p) => [p.id, p.display_name ?? "Membre"]));
-
-    const giftMap = new Map((gifts ?? []).map((g) => [g.id, g]));
-    setRows(
-      res
-        .map((r) => {
-          const g = giftMap.get(r.gift_id);
-          if (!g) return null;
-          return {
-            category: g.category,
-            reservation_id: r.id,
-            gift_id: g.id,
-            title: g.title,
-            price: g.price,
-            currency: g.currency,
-            image_url: g.image_url,
-            image_path: g.image_path,
-            recipient: nameMap.get(g.owner_id) ?? "Membre",
-          } as Row;
-        })
-        .filter(Boolean) as Row[],
-    );
   }, []);
 
   useEffect(() => {
@@ -107,7 +64,12 @@ function GiftsIOffer() {
   }, [load]);
 
   async function cancel(resId: string) {
-    const { error } = await supabase.from("reservations").delete().eq("id", resId);
+    let error: Error | null = null;
+    try {
+      await apiAction("cancel-reservation", { id: resId });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Annulation impossible");
+    }
     if (error) toast.error(error.message);
     else {
       toast.success("Réservation annulée");

@@ -1,15 +1,66 @@
-# Local test before pushing to Coolify:
-#   docker compose up --build
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gift_plan}
+      POSTGRES_USER: ${POSTGRES_USER:-gift_plan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - gift_plan_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    image: postgres:17-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:-gift_plan}
+      PGUSER: ${POSTGRES_USER:-gift_plan}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - ./selfhost/migrations:/migrations:ro
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        for file in /migrations/*.sql; do
+          echo "Applying $$file"
+          psql -v ON_ERROR_STOP=1 -f "$$file"
+        done
+    restart: "no"
+
   app:
     build:
       context: .
-      args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
-        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_URL: ${APP_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
+      UPLOAD_DIR: /data/uploads
+      HEALTHCHECK_PATH: /api/public/health
+      AUTH_EMAIL_FROM: ${AUTH_EMAIL_FROM:-Gift-Plan <noreply@yeti-lab.fr>}
+      RESEND_API_KEY_GIFT_PLAN: ${RESEND_API_KEY_GIFT_PLAN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      STORAGE_CLEANUP_SECRET: ${STORAGE_CLEANUP_SECRET}
+    volumes:
+      - gift_plan_uploads:/data/uploads
     ports:
       - "3000:3000"
-    env_file:
-      - .env
     restart: unless-stopped
+
+volumes:
+  gift_plan_postgres:
+  gift_plan_uploads:
