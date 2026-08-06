@@ -81,8 +81,17 @@ function AuthPage() {
     ) {
       return "Cet email est déjà utilisé.";
     }
-    if (m.includes("password") && (m.includes("6") || m.includes("short") || m.includes("weak"))) {
-      return "Mot de passe trop court (6 caractères minimum).";
+    if (m.includes("pwned") || (m.includes("password") && m.includes("known"))) {
+      return "Ce mot de passe apparaît dans des fuites de données connues. Choisis-en un autre.";
+    }
+    if (m.includes("password") && (m.includes("weak") || m.includes("easy to guess"))) {
+      return "Mot de passe trop faible. Ajoute des lettres, chiffres et symboles.";
+    }
+    if (
+      m.includes("password") &&
+      (m.includes("should be at least") || m.includes("too short") || m.includes("minimum"))
+    ) {
+      return "Mot de passe trop court.";
     }
     if (m.includes("email not confirmed")) {
       return "Confirme d'abord ton adresse email (vérifie ta boîte mail).";
@@ -113,9 +122,10 @@ function AuthPage() {
     const form = e.currentTarget as HTMLFormElement;
     const fd = new FormData(form);
     const email = String(fd.get("email") ?? "").trim();
-    const password = String(fd.get("password") ?? "");
+    const passwordInput = form.elements.namedItem("password") as HTMLInputElement | null;
+    const password = String(fd.get("password") ?? passwordInput?.value ?? "");
     const name = String(fd.get("name") ?? "").trim();
-    if (password.length < 6) {
+    if (password.length > 0 && password.length < 6) {
       toast.error("Mot de passe trop court (6 caractères minimum).");
       return;
     }
