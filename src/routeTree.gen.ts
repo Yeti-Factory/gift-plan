@@ -26,6 +26,8 @@ import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
+import { Route as ApiV1ReservationsRouteImport } from './routes/api/v1/reservations'
+import { Route as ApiV1CommunityRouteImport } from './routes/api/v1/community'
 import { Route as ApiPublicSelfHostedReadyRouteImport } from './routes/api/public/self-hosted-ready'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -33,6 +35,7 @@ import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiV1ProfilesUsernameRouteImport } from './routes/api/v1/profiles/$username'
 import { Route as ApiPublicHooksPurgeStorageRouteImport } from './routes/api/public/hooks/purge-storage'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
 
@@ -122,6 +125,16 @@ const AuthenticatedCirclesIndexRoute =
     path: '/circles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiV1ReservationsRoute = ApiV1ReservationsRouteImport.update({
+  id: '/api/v1/reservations',
+  path: '/api/v1/reservations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CommunityRoute = ApiV1CommunityRouteImport.update({
+  id: '/api/v1/community',
+  path: '/api/v1/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSelfHostedReadyRoute =
   ApiPublicSelfHostedReadyRouteImport.update({
     id: '/api/public/self-hosted-ready',
@@ -160,6 +173,11 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1ProfilesUsernameRoute = ApiV1ProfilesUsernameRouteImport.update({
+  id: '/api/v1/profiles/$username',
+  path: '/api/v1/profiles/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksPurgeStorageRoute =
   ApiPublicHooksPurgeStorageRouteImport.update({
     id: '/api/public/hooks/purge-storage',
@@ -193,8 +211,11 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
+  '/api/v1/community': typeof ApiV1CommunityRoute
+  '/api/v1/reservations': typeof ApiV1ReservationsRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
+  '/api/v1/profiles/$username': typeof ApiV1ProfilesUsernameRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
@@ -219,8 +240,11 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
+  '/api/v1/community': typeof ApiV1CommunityRoute
+  '/api/v1/reservations': typeof ApiV1ReservationsRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
+  '/api/v1/profiles/$username': typeof ApiV1ProfilesUsernameRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdIndexRoute
@@ -248,8 +272,11 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
+  '/api/v1/community': typeof ApiV1CommunityRoute
+  '/api/v1/reservations': typeof ApiV1ReservationsRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
+  '/api/v1/profiles/$username': typeof ApiV1ProfilesUsernameRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/_authenticated/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
@@ -277,8 +304,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
+    | '/api/v1/community'
+    | '/api/v1/reservations'
     | '/circles/'
     | '/api/public/hooks/purge-storage'
+    | '/api/v1/profiles/$username'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/circles/$circleId/'
@@ -303,8 +333,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
+    | '/api/v1/community'
+    | '/api/v1/reservations'
     | '/circles'
     | '/api/public/hooks/purge-storage'
+    | '/api/v1/profiles/$username'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/circles/$circleId'
@@ -331,8 +364,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
+    | '/api/v1/community'
+    | '/api/v1/reservations'
     | '/_authenticated/circles/'
     | '/api/public/hooks/purge-storage'
+    | '/api/v1/profiles/$username'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/_authenticated/circles/$circleId/'
@@ -353,7 +389,10 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSelfHostedReadyRoute: typeof ApiPublicSelfHostedReadyRoute
+  ApiV1CommunityRoute: typeof ApiV1CommunityRoute
+  ApiV1ReservationsRoute: typeof ApiV1ReservationsRoute
   ApiPublicHooksPurgeStorageRoute: typeof ApiPublicHooksPurgeStorageRoute
+  ApiV1ProfilesUsernameRoute: typeof ApiV1ProfilesUsernameRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
@@ -479,6 +518,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/v1/reservations': {
+      id: '/api/v1/reservations'
+      path: '/api/v1/reservations'
+      fullPath: '/api/v1/reservations'
+      preLoaderRoute: typeof ApiV1ReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/community': {
+      id: '/api/v1/community'
+      path: '/api/v1/community'
+      fullPath: '/api/v1/community'
+      preLoaderRoute: typeof ApiV1CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/self-hosted-ready': {
       id: '/api/public/self-hosted-ready'
       path: '/api/public/self-hosted-ready'
@@ -526,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/auth/preview'
       fullPath: '/lovable/email/auth/preview'
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/profiles/$username': {
+      id: '/api/v1/profiles/$username'
+      path: '/api/v1/profiles/$username'
+      fullPath: '/api/v1/profiles/$username'
+      preLoaderRoute: typeof ApiV1ProfilesUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/purge-storage': {
@@ -603,7 +663,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSelfHostedReadyRoute: ApiPublicSelfHostedReadyRoute,
+  ApiV1CommunityRoute: ApiV1CommunityRoute,
+  ApiV1ReservationsRoute: ApiV1ReservationsRoute,
   ApiPublicHooksPurgeStorageRoute: ApiPublicHooksPurgeStorageRoute,
+  ApiV1ProfilesUsernameRoute: ApiV1ProfilesUsernameRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
