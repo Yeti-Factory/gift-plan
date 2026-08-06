@@ -8,7 +8,7 @@ interface HealthReport {
   status: "ok" | "degraded";
   version: string;
   uptimeMs: number;
-  checks: { worker: string; database: string };
+  checks: { worker: string; database: string; email: string };
   latencyMs: { database?: number };
   timestamp: string;
 }
@@ -67,6 +67,7 @@ function StatusPage() {
             loading={isLoading}
             extra={data?.latencyMs.database ? `${data.latencyMs.database} ms` : undefined}
           />
+          <Row label="Emails d’inscription" ok={data?.checks.email === "ok"} loading={isLoading} />
         </div>
 
         {data && (

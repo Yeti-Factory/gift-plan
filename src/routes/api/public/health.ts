@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { createLogger, newRequestId } from "@/lib/logger";
+import { getAuthEmailConfigStatus } from "@/lib/auth-email-config";
 
 // Public health-check endpoint for Coolify / uptime probes.
 // - GET  → JSON status (200 healthy, 503 degraded)
@@ -16,6 +17,7 @@ interface HealthReport {
   checks: {
     worker: "ok";
     database: "ok" | "fail" | "skip";
+    email: "ok" | "fail";
   };
   latencyMs: { database?: number };
   timestamp: string;
@@ -71,20 +73,32 @@ export const Route = createFileRoute("/api/public/health")({
       GET: async () => {
         const log = createLogger("health", { requestId: newRequestId() });
         const db = await pingDatabase();
+        const email = getAuthEmailConfigStatus();
+        const healthy = db.ok && email.ready;
 
         const report: HealthReport = {
-          status: db.ok ? "ok" : "degraded",
+          status: healthy ? "ok" : "degraded",
           version: process.env.APP_VERSION ?? "dev",
           uptimeMs: Date.now() - bootAt,
-          checks: { worker: "ok", database: db.ok ? "ok" : "fail" },
+          checks: {
+            worker: "ok",
+            database: db.ok ? "ok" : "fail",
+            email: email.ready ? "ok" : "fail",
+          },
           latencyMs: { database: db.latencyMs },
           timestamp: new Date().toISOString(),
         };
 
         if (!db.ok) log.warn("database unreachable", { latencyMs: db.latencyMs });
+        if (!email.ready) {
+          log.warn("auth email configuration incomplete", {
+            providerConfigured: email.providerConfigured,
+            webhookVerificationConfigured: email.webhookVerificationConfigured,
+          });
+        }
 
         return Response.json(report, {
-          status: db.ok ? 200 : 503,
+          status: healthy ? 200 : 503,
           headers: { "cache-control": "no-store" },
         });
       },
