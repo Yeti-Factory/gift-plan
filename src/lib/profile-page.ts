@@ -44,7 +44,8 @@ export type ProfilePageData = {
 };
 
 export type ProfilePageResult =
-  ProfilePageData | { error: "PROFILE_NOT_FOUND" | "PROFILE_PRIVATE" };
+  | ProfilePageData
+  | { error: "PROFILE_NOT_FOUND" | "PROFILE_PRIVATE" };
 
 export function isProfilePageData(value: unknown): value is ProfilePageData {
   if (!value || typeof value !== "object") return false;
