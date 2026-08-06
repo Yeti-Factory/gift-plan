@@ -15,7 +15,9 @@ services:
     restart: unless-stopped
 
   migrate:
-    image: postgres:17-alpine
+    build:
+      context: .
+      dockerfile: selfhost/Dockerfile.migrate
     depends_on:
       postgres:
         condition: service_healthy
@@ -24,8 +26,6 @@ services:
       PGDATABASE: ${POSTGRES_DB:-gift_plan}
       PGUSER: ${POSTGRES_USER:-gift_plan}
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-    volumes:
-      - ./selfhost/migrations:/migrations:ro
     command:
       - /bin/sh
       - -ec
