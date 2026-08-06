@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
-import { getGiftImageSignedUrls, getPublicGiftImageSignedUrls } from "@/lib/gift-image.functions";
+import { apiAction, apiGet, uploadFile } from "@/lib/self-hosted/api-client";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -47,20 +45,6 @@ export async function sniffImageMagicBytes(file: File): Promise<SniffedImageKind
   return null;
 }
 
-const EXT_BY_KIND: Record<SniffedImageKind, string> = {
-  jpeg: "jpg",
-  png: "png",
-  webp: "webp",
-  gif: "gif",
-};
-
-const MIME_BY_KIND: Record<SniffedImageKind, string> = {
-  jpeg: "image/jpeg",
-  png: "image/png",
-  webp: "image/webp",
-  gif: "image/gif",
-};
-
 /**
  * Upload a gift image to the private "gift-images" bucket after validating
  * size and magic bytes. Returns the storage path (to persist as gifts.image_path);
@@ -77,14 +61,14 @@ export async function uploadGiftImageChecked(
   if (!kind) {
     throw new Error("Format d'image non supporté (JPEG, PNG, WEBP, GIF uniquement).");
   }
-  const path = `${userId}/${crypto.randomUUID()}.${EXT_BY_KIND[kind]}`;
-  const { error } = await supabase.storage.from("gift-images").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: MIME_BY_KIND[kind],
-  });
-  if (error) throw error;
-  return { path };
+  void userId;
+  const uploaded = await uploadFile("gift", file);
+  return { path: uploaded.path };
+}
+
+export async function removeUncommittedGiftImage(userId: string, path: string) {
+  if (!path.startsWith(`${userId}/`)) return;
+  await apiAction("discard-upload", { kind: "gift", path });
 }
 
 /**
@@ -92,14 +76,14 @@ export async function uploadGiftImageChecked(
  * Returns `Record<giftId, signedUrl>` for gifts the caller can see.
  */
 export function useGiftImageUrls(giftIds: string[], enabled = true) {
-  const fetchUrls = useServerFn(getGiftImageSignedUrls);
   const key = [...giftIds].sort().join(",");
   return useQuery({
     queryKey: ["gift-image-urls", key],
     queryFn: async () => {
       if (giftIds.length === 0) return {} as Record<string, string>;
-      const res = await fetchUrls({ data: { giftIds } });
-      return res.urls;
+      return apiGet<Record<string, string>>(
+        `/api/v1/gift-images?ids=${encodeURIComponent(giftIds.join(","))}`,
+      );
     },
     // Signed URLs expire after 5 min; refresh at 4 min.
     staleTime: 4 * 60 * 1000,
@@ -114,14 +98,15 @@ export function usePublicGiftImageUrls(
   giftIds: string[],
   enabled = true,
 ) {
-  const fetchUrls = useServerFn(getPublicGiftImageSignedUrls);
   const key = [...giftIds].sort().join(",");
   return useQuery({
     queryKey: ["public-gift-image-urls", username, shareToken ?? "", key],
     queryFn: async () => {
       if (giftIds.length === 0) return {} as Record<string, string>;
-      const response = await fetchUrls({ data: { username, shareToken, giftIds } });
-      return response.urls;
+      void username;
+      return apiGet<Record<string, string>>(
+        `/api/v1/gift-images?ids=${encodeURIComponent(giftIds.join(","))}${shareToken ? `&share=${encodeURIComponent(shareToken)}` : ""}`,
+      );
     },
     staleTime: 4 * 60 * 1000,
     refetchInterval: 4 * 60 * 1000,

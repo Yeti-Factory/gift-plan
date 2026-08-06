@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -33,7 +33,13 @@ function AdminPage() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.rpc("get_app_status");
+    let data: unknown = null;
+    let error: Error | null = null;
+    try {
+      data = await apiQuery("admin");
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Chargement impossible");
+    }
     if (error) {
       toast.error("Impossible de charger le panneau d’administration.");
       return;
@@ -49,10 +55,13 @@ function AdminPage() {
 
   async function save(enabled: boolean) {
     setBusy(true);
-    const { data, error } = await supabase.rpc("set_maintenance_mode", {
-      _enabled: enabled,
-      _message: message,
-    });
+    let data: unknown = null;
+    let error: Error | null = null;
+    try {
+      data = await apiAction("maintenance", { enabled, message });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Modification impossible");
+    }
     setBusy(false);
     if (error) {
       toast.error("La maintenance n’a pas pu être modifiée.");

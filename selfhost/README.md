@@ -1,29 +1,30 @@
-# Migration autonome de Gift-Plan
+# Hébergement autonome de Gift-Plan
 
-Cette cible remplace Lovable Cloud et Supabase par des services possédés et hébergés sur le VPS :
+Gift-Plan fonctionne sans service Lovable ni Supabase :
 
 - PostgreSQL privé dans Coolify ;
 - Better Auth dans l'application TanStack Start ;
 - Resend pour la confirmation d'adresse et la réinitialisation du mot de passe ;
-- volume persistant `/data/uploads` pour les avatars et images de cadeaux.
+- volume persistant `/data/uploads` pour les avatars et les images de cadeaux.
 
-## Stratégie sans interruption
+## Déploiement Coolify
 
-1. Déployer le socle autonome sur une URL de test et appliquer `selfhost/migrations/*.sql`.
-2. Exporter les tables Lovable Cloud au format CSV et télécharger les deux espaces de stockage.
-3. Importer les comptes, profils et données en conservant tous les UUID.
-4. Demander aux comptes existants de définir un nouveau mot de passe : les anciens mots de passe ne sont pas exportables.
-5. Basculer les écrans un par un vers l'API serveur, puis faire une répétition complète de la migration.
-6. Pendant une courte maintenance, refaire l'export final, vérifier les totaux et basculer le domaine.
-7. Conserver l'ancien backend en lecture seule le temps de valider sauvegardes et restauration.
+1. Créer une ressource Docker Compose depuis ce dépôt et sélectionner la branche de production.
+2. Copier les variables de `selfhost/env.example` dans Coolify et remplacer toutes les valeurs d'exemple.
+3. Utiliser le même mot de passe PostgreSQL, encodé pour une URL, dans `POSTGRES_PASSWORD` et `DATABASE_URL`.
+4. Attacher le domaine `https://gift-plan.yeti-lab.fr` au service `app`, port `3000`, puis activer HTTPS.
+5. Déployer. Le service `migrate` applique automatiquement les migrations avant le démarrage de l'application.
+6. Vérifier `GET /api/public/health` et `GET /api/public/self-hosted-ready` avant de tester inscription, connexion, création et suppression d'un cadeau.
 
-## Export attendu
+Le domaine pointe déjà vers le VPS : aucun changement DNS n'est requis tant que Coolify reste sur `51.210.245.159`.
 
-Lovable Cloud exporte les tables une par une en CSV. Place les fichiers disponibles dans un même dossier en conservant le nom des tables, par exemple `profiles.csv`, `lists.csv` et `gifts.csv`.
+## Import des données historiques
 
-Le fichier `users.csv` est obligatoire car les profils publics ne contiennent pas les adresses email de connexion. Son format est fourni dans `selfhost/users.example.csv`. Les mots de passe ne doivent jamais y figurer : après l'import, la procédure « mot de passe oublié » crée de façon sûre le premier mot de passe Better Auth.
+Exporter les tables de l'ancien backend au format CSV et télécharger les espaces de stockage. Placer les fichiers CSV dans un même dossier en conservant les noms des tables, par exemple `profiles.csv`, `lists.csv` et `gifts.csv`.
 
-Avant l'import réel, effectuer une répétition transactionnelle :
+Le fichier `users.csv` est obligatoire, car les profils publics ne contiennent pas les adresses de connexion. Son format est fourni dans `selfhost/users.example.csv`. Les anciens mots de passe ne sont jamais exportables : après import, les utilisateurs utilisent « Mot de passe oublié » pour définir leur premier mot de passe Better Auth.
+
+Faire d'abord une répétition transactionnelle, puis l'import réel :
 
 ```sh
 bun run selfhost:import --dir /chemin/exports --dry-run
@@ -31,8 +32,26 @@ bun run selfhost:import --dir /chemin/exports
 bun run selfhost:verify
 ```
 
-## Contrôles
+Copier ensuite les objets de l'ancien espace `profile-avatars` dans `/data/uploads/avatars` et ceux de `gift-images` dans `/data/uploads/gifts`, sans modifier leurs chemins relatifs.
 
-`GET /api/public/self-hosted-ready` ne renvoie aucun secret. Il répond `200` uniquement lorsque la configuration autonome est complète et que PostgreSQL répond, sinon `503` avec la liste des éléments manquants.
+## Bascule sans perte
 
-La base n'est jamais publiée sur un port hôte. Toutes les autorisations métier seront contrôlées par les routes serveur ; le navigateur n'obtiendra aucune chaîne de connexion PostgreSQL.
+1. Déployer sur une URL de test et valider la migration complète.
+2. Afficher une courte maintenance sur l'ancienne version.
+3. Refaire l'export final, importer les données et les fichiers, puis comparer les totaux avec `bun run selfhost:verify`.
+4. Basculer le domaine vers le nouveau service Coolify.
+5. Conserver l'ancien backend en lecture seule jusqu'à validation des sauvegardes et de la restauration.
+
+## Nettoyage et sauvegardes
+
+Programmer dans Coolify une requête HTTP quotidienne :
+
+```sh
+curl -fsS -X POST \
+  -H "Authorization: Bearer $STORAGE_CLEANUP_SECRET" \
+  https://gift-plan.yeti-lab.fr/api/public/hooks/purge-storage
+```
+
+Activer une sauvegarde quotidienne du volume PostgreSQL et du volume `gift_plan_uploads`, avec une rétention d'au moins 14 jours. Effectuer un test de restauration avant la bascule définitive.
+
+La base ne publie aucun port sur l'hôte. Les autorisations métier sont contrôlées côté serveur ; le navigateur ne reçoit jamais la chaîne de connexion PostgreSQL.

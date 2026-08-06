@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { scrapeGiftUrl } from "@/lib/gift-scrape.functions";
 
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PRIORITY_LABEL, type Priority } from "@/lib/gift-box";
-import { uploadGiftImageChecked, useGiftImageUrls } from "@/lib/gift-image";
+import {
+  removeUncommittedGiftImage,
+  uploadGiftImageChecked,
+  useGiftImageUrls,
+} from "@/lib/gift-image";
 import { GiftCategoryFilter } from "@/components/GiftCategoryFilter";
 import {
   GIFT_CATEGORY_OPTIONS,
@@ -87,47 +91,22 @@ function MyLists() {
   const [categoryFilter, setCategoryFilter] = useState<GiftCategoryFilterValue>("all");
 
   const load = useCallback(async () => {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
-    setMe(user.user.id);
-
-    const { data: cs } = await supabase.from("circles").select("id, name");
-    setCircles(cs ?? []);
-
-    const { data: ls } = await supabase
-      .from("lists")
-      .select("id, title, occasion, circle_id, visibility")
-      .eq("owner_id", user.user.id)
-      .order("created_at", { ascending: false });
-    const listIds = (ls ?? []).map((l) => l.id);
-    const { data: accessRows } = listIds.length
-      ? await supabase
-          .from("list_circle_access")
-          .select("list_id, circle_id")
-          .in("list_id", listIds)
-      : { data: [] };
-    setLists(
-      (ls ?? []).map((list) => ({
-        ...list,
-        circle_ids: (accessRows ?? [])
-          .filter((row) => row.list_id === list.id)
-          .map((row) => row.circle_id),
-      })),
-    );
-    if (listIds.length === 0) {
-      setGifts([]);
+    try {
+      const data = await apiQuery<{
+        userId: string;
+        circles: Circle[];
+        lists: List[];
+        gifts: Gift[];
+      }>("my-lists");
+      setMe(data.userId);
+      setCircles(data.circles);
+      setLists(data.lists);
+      setGifts(data.gifts);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Chargement impossible");
+    } finally {
       setLoading(false);
-      return;
     }
-    const { data: gs } = await supabase
-      .from("gifts")
-      .select(
-        "id, list_id, title, description, url, image_url, image_path, price, currency, priority, category",
-      )
-      .in("list_id", listIds)
-      .order("created_at", { ascending: false });
-    setGifts((gs as Gift[]) ?? []);
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -263,23 +242,11 @@ function MyLists() {
                 const id = deleteGift.id;
                 setDeletingGift(true);
                 try {
-                  const { data: deletedGift, error } = await supabase
-                    .from("gifts")
-                    .delete()
-                    .eq("id", id)
-                    .select("id")
-                    .maybeSingle();
-
-                  if (error) {
-                    toast.error(error.message);
-                  } else if (!deletedGift) {
-                    toast.error("La suppression a été refusée. Rechargez la page et réessayez.");
-                  } else {
-                    setGifts((current) => current.filter((gift) => gift.id !== id));
-                    setDeleteGift(null);
-                    toast.success("Cadeau supprimé");
-                    await load();
-                  }
+                  await apiAction("delete-gift", { id });
+                  setGifts((current) => current.filter((gift) => gift.id !== id));
+                  setDeleteGift(null);
+                  toast.success("Cadeau supprimé");
+                  await load();
                 } catch {
                   toast.error("La suppression a échoué. Réessayez dans un instant.");
                 } finally {
@@ -308,30 +275,13 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
   async function create() {
     if (!title.trim() || (visibility === "circles" && circleIds.length === 0)) return;
     setBusy(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
-    const { data: created, error } = await supabase
-      .from("lists")
-      .insert({
+    try {
+      await apiAction("save-list", {
         title: title.trim(),
         occasion: occasion.trim() || null,
-        circle_id: visibility === "circles" ? circleIds[0] : null,
         visibility,
-        owner_id: user.user.id,
-      })
-      .select("id")
-      .single();
-    const { error: accessError } =
-      created && !error
-        ? await supabase.rpc("update_list_access", {
-            _list_id: created.id,
-            _visibility: visibility,
-            _circle_ids: circleIds,
-          })
-        : { error: null };
-    setBusy(false);
-    if (error || accessError) toast.error((error ?? accessError)?.message ?? "Création impossible");
-    else {
+        circleIds,
+      });
       toast.success("Liste créée !");
       setTitle("");
       setOccasion("");
@@ -339,6 +289,10 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
       setCircleIds([]);
       setOpen(false);
       onCreated();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Création impossible");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -531,10 +485,26 @@ function GiftFormDialog({
       image_url: imagePath ? null : imageUrl,
       image_path: imagePath,
     };
-    const { error } =
-      isEdit && gift
-        ? await supabase.from("gifts").update(payload).eq("id", gift.id)
-        : await supabase.from("gifts").insert({ ...payload, list_id: listId, owner_id: userId });
+    let error: Error | null = null;
+    try {
+      await apiAction("save-gift", {
+        id: isEdit && gift ? gift.id : undefined,
+        listId,
+        title: payload.title,
+        description: payload.description,
+        url: payload.url,
+        price: payload.price,
+        priority: payload.priority,
+        category: payload.category,
+        imageUrl: payload.image_url,
+        imagePath: payload.image_path,
+      });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Enregistrement impossible");
+      if (imagePath && imagePath !== gift?.image_path) {
+        await removeUncommittedGiftImage(userId, imagePath).catch(() => undefined);
+      }
+    }
     setBusy(false);
     if (error) toast.error(error.message);
     else {
@@ -671,6 +641,9 @@ function GiftFormDialog({
                   size="sm"
                   onClick={() => {
                     setImageUrl(null);
+                    if (userId && imagePath && imagePath !== gift?.image_path) {
+                      removeUncommittedGiftImage(userId, imagePath).catch(() => undefined);
+                    }
                     setImagePath(null);
                     if (imagePreview) URL.revokeObjectURL(imagePreview);
                     setImagePreview(null);
@@ -726,23 +699,20 @@ function EditListDialog({
   async function save() {
     if (!title.trim() || (visibility === "circles" && circleIds.length === 0)) return;
     setBusy(true);
-    const { error } = await supabase
-      .from("lists")
-      .update({
+    let error: Error | null = null;
+    try {
+      await apiAction("save-list", {
+        id: list.id,
         title: title.trim(),
         occasion: occasion.trim() || null,
-      })
-      .eq("id", list.id);
-    const { error: accessError } = !error
-      ? await supabase.rpc("update_list_access", {
-          _list_id: list.id,
-          _visibility: visibility,
-          _circle_ids: circleIds,
-        })
-      : { error: null };
+        visibility,
+        circleIds,
+      });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Modification impossible");
+    }
     setBusy(false);
-    if (error || accessError)
-      toast.error((error ?? accessError)?.message ?? "Modification impossible");
+    if (error) toast.error(error.message);
     else {
       toast.success("Liste modifiée");
       setOpen(false);
@@ -827,9 +797,12 @@ function DeleteListButton({ listId, onDeleted }: { listId: string; onDeleted: ()
 
   async function doDelete() {
     setBusy(true);
-    const { data: gs } = await supabase.from("gifts").select("id").eq("list_id", listId);
-    if (gs && gs.length) await supabase.from("gifts").delete().eq("list_id", listId);
-    const { error } = await supabase.from("lists").delete().eq("id", listId);
+    let error: Error | null = null;
+    try {
+      await apiAction("delete-list", { id: listId });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Suppression impossible");
+    }
     setBusy(false);
     setOpen(false);
     if (error) toast.error(error.message);

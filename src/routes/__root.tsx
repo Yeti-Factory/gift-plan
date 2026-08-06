@@ -11,12 +11,10 @@ import {
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { apiQuery } from "@/lib/self-hosted/api-client";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MaintenanceScreen } from "@/components/MaintenanceScreen";
-import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 
 function NotFoundComponent() {
   return (
@@ -43,10 +41,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -109,13 +103,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png",
+        content: "/icon-512.png",
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7e52bc3f-2c4a-4c1a-8906-8b7143022d9c/id-preview-21dcfb3d--96df8292-ee19-43bf-af6b-a257a4d04dfb.lovable.app-1784190548637.png",
+        content: "/icon-512.png",
       },
     ],
     links: [
@@ -150,7 +142,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const router = useRouter();
   const pathname = useLocation({ select: (location) => location.pathname });
   const [appStatus, setAppStatus] = useState<{
     maintenance: boolean;
@@ -159,7 +150,7 @@ function RootComponent() {
   } | null>(null);
 
   const loadAppStatus = useCallback(async () => {
-    const { data } = await supabase.rpc("get_app_status");
+    const data = await apiQuery<unknown>("status").catch(() => null);
     if (!data || typeof data !== "object" || Array.isArray(data)) return;
     const status = data as Record<string, unknown>;
     setAppStatus({
@@ -186,39 +177,11 @@ function RootComponent() {
   }, [loadAppStatus]);
 
   useEffect(() => {
-    if (redirectToResetPasswordIfNeeded()) return;
-
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        markPasswordRecovery();
-        redirectToResetPasswordIfNeeded();
-        return;
-      }
-      if (event === "SIGNED_IN" && redirectToResetPasswordIfNeeded()) return;
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      loadAppStatus();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [router, queryClient, loadAppStatus]);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
     if (!import.meta.env.PROD) return;
     if (window.top !== window.self) return; // iframe preview
-    const host = window.location.hostname;
-    const isLovablePreview =
-      host.startsWith("id-preview--") ||
-      host.startsWith("preview--") ||
-      host === "lovableproject.com" ||
-      host.endsWith(".lovableproject.com") ||
-      host === "lovableproject-dev.com" ||
-      host.endsWith(".lovableproject-dev.com") ||
-      host === "beta.lovable.dev" ||
-      host.endsWith(".beta.lovable.dev");
-    if (isLovablePreview || new URL(window.location.href).searchParams.get("sw") === "off") {
+    if (new URL(window.location.href).searchParams.get("sw") === "off") {
       navigator.serviceWorker
         .getRegistrations()
         .then((regs) => {

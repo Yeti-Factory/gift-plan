@@ -77,18 +77,11 @@ function Confidentialite() {
       <p>Les données sont traitées par :</p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>OVH SAS</strong> (France) — hébergement de l'application.
-        </li>
-        <li>
-          <strong>Supabase</strong> (via Lovable Cloud) — base de données, authentification,
-          stockage des images.
+          <strong>OVH SAS</strong> (France) — hébergement de l'application, de la base PostgreSQL et
+          des images.
         </li>
         <li>
           <strong>Resend</strong> — envoi des emails transactionnels.
-        </li>
-        <li>
-          <strong>Lovable AI</strong> — récupération d'aperçus produits depuis les liens que vous
-          ajoutez.
         </li>
       </ul>
       <p>
@@ -127,15 +120,15 @@ function Confidentialite() {
 
       <h2 className="text-lg font-semibold mt-6">Cookies</h2>
       <p>
-        Gift-Plan utilise uniquement du stockage local (localStorage) strictement nécessaire au
-        maintien de votre session. Aucun cookie de mesure d'audience ou de publicité n'est déposé.
+        Gift-Plan utilise uniquement un cookie de session sécurisé, HTTP-only et strictement
+        nécessaire à la connexion. Aucun cookie de mesure d'audience ou de publicité n'est déposé.
       </p>
 
       <h2 className="text-lg font-semibold mt-6">Sécurité</h2>
       <p>
-        L'accès à vos données est restreint par des règles de sécurité au niveau de la base (Row
-        Level Security). Les mots de passe sont hachés par Supabase Auth. Les images sont
-        accessibles uniquement via des URLs signées à durée limitée.
+        L'accès aux données est contrôlé par l'API serveur pour chaque opération. Les mots de passe
+        sont hachés par Better Auth et ne sont jamais stockés en clair. Les images de cadeaux sont
+        servies uniquement après vérification des droits d'accès ; les avatars sont publics.
       </p>
     </LegalLayout>
   );

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import type { User } from "@supabase/supabase-js";
 import { Gift, Users, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 
 export const ONBOARDING_VERSION = 1;
 const OPEN_EVENT = "gp:open-onboarding";
@@ -102,7 +101,7 @@ export function shouldShowOnboarding(profile: {
   return (profile.onboarding_version ?? 0) < ONBOARDING_VERSION;
 }
 
-export function OnboardingGuide({ user }: { user: User }) {
+export function OnboardingGuide({ user }: { user: { id: string } }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -118,11 +117,10 @@ export function OnboardingGuide({ user }: { user: User }) {
     let cancelled = false;
     if (isTechnicalRoute(pathname)) return;
     (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("onboarding_completed_at, onboarding_version")
-        .eq("id", user.id)
-        .maybeSingle();
+      const data = await apiQuery<{
+        onboarding_completed_at: string | null;
+        onboarding_version: number | null;
+      }>("session").catch(() => null);
       if (cancelled || !data) return;
       if (shouldShowOnboarding(data)) {
         manualRef.current = false;
@@ -149,12 +147,13 @@ export function OnboardingGuide({ user }: { user: User }) {
   const persist = useCallback(
     async ({ markCompleted }: { markCompleted: boolean }) => {
       setSaving(true);
-      const payload: {
-        onboarding_version: number;
-        onboarding_completed_at?: string;
-      } = { onboarding_version: ONBOARDING_VERSION };
-      if (markCompleted) payload.onboarding_completed_at = new Date().toISOString();
-      const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+      const error = await apiAction("onboarding", {
+        version: ONBOARDING_VERSION,
+        markCompleted,
+      }).then(
+        () => null,
+        (cause: unknown) => cause,
+      );
       setSaving(false);
       if (error) {
         toast.error("Impossible d'enregistrer votre progression. Réessayer ?", {

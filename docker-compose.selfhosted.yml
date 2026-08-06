@@ -39,11 +39,6 @@ services:
   app:
     build:
       context: .
-      args:
-        # Variables temporaires pendant la migration progressive du frontend.
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
-        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:-}
-        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -59,6 +54,7 @@ services:
       RESEND_API_KEY_GIFT_PLAN: ${RESEND_API_KEY_GIFT_PLAN}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      STORAGE_CLEANUP_SECRET: ${STORAGE_CLEANUP_SECRET}
     volumes:
       - gift_plan_uploads:/data/uploads
     ports:

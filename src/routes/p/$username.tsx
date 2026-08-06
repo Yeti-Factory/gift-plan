@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/self-hosted/auth-client";
+import { apiAction, apiGet, AppApiError } from "@/lib/self-hosted/api-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,16 +50,15 @@ function PublicProfilePage() {
   const [categoryFilter, setCategoryFilter] = useState<GiftCategoryFilterValue>("all");
 
   const load = useCallback(async () => {
-    const [{ data: auth }, { data, error: rpcError }] = await Promise.all([
-      supabase.auth.getUser(),
-      supabase.rpc("get_profile_page", {
-        _username: username,
-        _share_token: invite ?? undefined,
-      }),
+    const [{ data: auth }, data] = await Promise.all([
+      authClient.getSession(),
+      apiGet<unknown>(
+        `/api/v1/profiles/${encodeURIComponent(username)}${invite ? `?share=${encodeURIComponent(invite)}` : ""}`,
+      ).catch((cause: unknown) => cause),
     ]);
-    setMe(auth.user?.id ?? null);
-    if (rpcError) {
-      setError("PROFILE_NOT_FOUND");
+    setMe(auth?.user?.id ?? null);
+    if (data instanceof AppApiError) {
+      setError(data.code === "PROFILE_PRIVATE" ? "PROFILE_PRIVATE" : "PROFILE_NOT_FOUND");
       return;
     }
     if (isProfilePageData(data)) {
@@ -96,11 +96,14 @@ function PublicProfilePage() {
       return;
     }
     setBusyGift(giftId);
-    const { error: actionError } = await supabase.rpc("set_gift_reservation", {
-      _gift_id: giftId,
-      _action: action,
-      _share_token: invite ?? undefined,
-    });
+    const actionError = await apiAction("reserve", {
+      giftId,
+      status: action === "cancel" ? null : action === "purchased" ? "purchased" : "reserved",
+      shareToken: invite,
+    }).then(
+      () => null,
+      (cause: unknown) => cause,
+    );
     setBusyGift(null);
     if (actionError) {
       toast.error("Cette réservation n'a pas pu être modifiée.");

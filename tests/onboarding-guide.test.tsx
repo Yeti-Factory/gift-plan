@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { User } from "@supabase/supabase-js";
 
 // --- Mocks ---------------------------------------------------------------
 
@@ -16,21 +15,18 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => navigateMock,
 }));
 
-const updateMock = vi.fn();
-const maybeSingleMock = vi.fn();
+const { updateMock, maybeSingleMock } = vi.hoisted(() => ({
+  updateMock: vi.fn(),
+  maybeSingleMock: vi.fn(),
+}));
 
-vi.mock("@/integrations/supabase/client", () => {
-  const from = vi.fn(() => ({
-    // read chain used to decide auto-open
-    select: () => ({ eq: () => ({ maybeSingle: maybeSingleMock }) }),
-    // write chain used by persist()
-    update: (payload: Record<string, unknown>) => {
-      updateMock(payload);
-      return { eq: () => Promise.resolve({ error: null }) };
-    },
-  }));
-  return { supabase: { from } };
-});
+vi.mock("@/lib/self-hosted/api-client", () => ({
+  apiQuery: maybeSingleMock,
+  apiAction: (action: string, payload: Record<string, unknown>) => {
+    updateMock(action, payload);
+    return Promise.resolve();
+  },
+}));
 
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), {
@@ -65,7 +61,7 @@ import {
   ONBOARDING_VERSION,
 } from "@/components/OnboardingGuide";
 
-const user = { id: "user-1", email: "u@example.com" } as unknown as User;
+const user = { id: "user-1", email: "u@example.com" };
 
 beforeEach(() => {
   navigateMock.mockClear();
@@ -77,9 +73,7 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 async function renderAutoOpen() {
-  maybeSingleMock.mockResolvedValueOnce({
-    data: { onboarding_completed_at: null, onboarding_version: 0 },
-  });
+  maybeSingleMock.mockResolvedValueOnce({ onboarding_completed_at: null, onboarding_version: 0 });
   render(<OnboardingGuide user={user} />);
   await screen.findByText(/Bienvenue dans Gift-Plan/i);
 }
@@ -88,7 +82,8 @@ describe("<OnboardingGuide />", () => {
   it("does not auto-open on technical routes", async () => {
     mockPathname = "/auth";
     maybeSingleMock.mockResolvedValueOnce({
-      data: { onboarding_completed_at: null, onboarding_version: 0 },
+      onboarding_completed_at: null,
+      onboarding_version: 0,
     });
     render(<OnboardingGuide user={user} />);
     // Give the effect a tick — it should bail out on technical routes.
@@ -98,10 +93,8 @@ describe("<OnboardingGuide />", () => {
 
   it("does not auto-open for a user who already completed the current version", async () => {
     maybeSingleMock.mockResolvedValueOnce({
-      data: {
-        onboarding_completed_at: new Date().toISOString(),
-        onboarding_version: ONBOARDING_VERSION,
-      },
+      onboarding_completed_at: new Date().toISOString(),
+      onboarding_version: ONBOARDING_VERSION,
     });
     render(<OnboardingGuide user={user} />);
     await new Promise((r) => setTimeout(r, 20));
@@ -132,9 +125,9 @@ describe("<OnboardingGuide />", () => {
     await renderAutoOpen();
     await userEvent.setup().click(screen.getByRole("button", { name: /Passer le guide/i }));
     await waitFor(() => expect(updateMock).toHaveBeenCalledTimes(1));
-    const payload = updateMock.mock.calls[0][0];
-    expect(payload.onboarding_version).toBe(ONBOARDING_VERSION);
-    expect(typeof payload.onboarding_completed_at).toBe("string");
+    const payload = updateMock.mock.calls[0][1];
+    expect(payload.version).toBe(ONBOARDING_VERSION);
+    expect(payload.markCompleted).toBe(true);
   });
 
   it("Terminer + CTA navigates to /circles with a validated search param", async () => {
@@ -157,18 +150,16 @@ describe("<OnboardingGuide />", () => {
     await renderAutoOpen();
     fireEvent.keyDown(document.body, { key: "Escape", code: "Escape" });
     await waitFor(() => expect(updateMock).toHaveBeenCalled());
-    const payload = updateMock.mock.calls[0][0];
-    expect(payload.onboarding_version).toBe(ONBOARDING_VERSION);
-    expect(typeof payload.onboarding_completed_at).toBe("string");
+    const payload = updateMock.mock.calls[0][1];
+    expect(payload.version).toBe(ONBOARDING_VERSION);
+    expect(payload.markCompleted).toBe(true);
   });
 
   it("manual reopen never overwrites onboarding_completed_at", async () => {
     // User already finished the guide previously.
     maybeSingleMock.mockResolvedValueOnce({
-      data: {
-        onboarding_completed_at: new Date().toISOString(),
-        onboarding_version: ONBOARDING_VERSION,
-      },
+      onboarding_completed_at: new Date().toISOString(),
+      onboarding_version: ONBOARDING_VERSION,
     });
     render(<OnboardingGuide user={user} />);
     await new Promise((r) => setTimeout(r, 20));
@@ -179,9 +170,8 @@ describe("<OnboardingGuide />", () => {
 
     await userEvent.setup().click(screen.getByRole("button", { name: /Passer le guide/i }));
     await waitFor(() => expect(updateMock).toHaveBeenCalled());
-    const payload = updateMock.mock.calls[0][0];
-    expect(payload.onboarding_version).toBe(ONBOARDING_VERSION);
-    // Manual reopen: completed_at must NOT be re-written.
-    expect(payload.onboarding_completed_at).toBeUndefined();
+    const payload = updateMock.mock.calls[0][1];
+    expect(payload.version).toBe(ONBOARDING_VERSION);
+    expect(payload.markCompleted).toBe(false);
   });
 });

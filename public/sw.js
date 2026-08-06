@@ -44,7 +44,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-  // Bypass Supabase and API calls
+  // Never cache API calls.
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/__")) return;
 
   // Network-first for HTML navigations

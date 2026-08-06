@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { initials } from "@/lib/gift-box";
 import {
   PROFILE_ACCESS_CHANGED_EVENT,
@@ -52,22 +52,22 @@ export function ProfileDirectoryPage() {
   const [loadError, setLoadError] = useState(false);
 
   const loadDirectory = useCallback(async (search: string, offset: number, append: boolean) => {
-    const { data, error } = await supabase.rpc("list_profile_directory", {
-      _query: search || undefined,
-      _limit: PROFILE_DIRECTORY_PAGE_SIZE,
-      _offset: offset,
-    });
-    const parsed = parseProfileDirectory(data);
-    if (error || !parsed) return false;
+    const data = await apiQuery<{ directory: unknown }>("community", {
+      q: search || undefined,
+      limit: String(PROFILE_DIRECTORY_PAGE_SIZE),
+      offset: String(offset),
+    }).catch(() => null);
+    const parsed = parseProfileDirectory(data?.directory);
+    if (!parsed) return false;
     setProfiles((current) => (append ? [...current, ...parsed.profiles] : parsed.profiles));
     setTotal(parsed.total);
     return true;
   }, []);
 
   const loadInbox = useCallback(async () => {
-    const { data, error } = await supabase.rpc("list_profile_access_inbox");
-    const parsed = parseProfileAccessInbox(data);
-    if (error || !parsed) return false;
+    const data = await apiQuery<{ inbox: unknown }>("community").catch(() => null);
+    const parsed = parseProfileAccessInbox(data?.inbox);
+    if (!parsed) return false;
     setInbox(parsed);
     return true;
   }, []);
@@ -114,7 +114,10 @@ export function ProfileDirectoryPage() {
 
   async function requestAccess(profileId: string) {
     setBusyAction(`request:${profileId}`);
-    const { error } = await supabase.rpc("request_profile_access", { _profile_id: profileId });
+    const error = await apiAction("request", { profileId }).then(
+      () => null,
+      (cause: unknown) => cause,
+    );
     if (error) {
       toast.error("La demande de connexion n’a pas pu être envoyée.");
     } else {
@@ -127,7 +130,10 @@ export function ProfileDirectoryPage() {
 
   async function cancelAccess(profileId: string) {
     setBusyAction(`cancel:${profileId}`);
-    const { error } = await supabase.rpc("cancel_profile_access", { _profile_id: profileId });
+    const error = await apiAction("cancel", { profileId }).then(
+      () => null,
+      (cause: unknown) => cause,
+    );
     if (error) {
       toast.error("La connexion n’a pas pu être retirée.");
     } else {
@@ -140,10 +146,10 @@ export function ProfileDirectoryPage() {
 
   async function respondToRequest(requestId: string, accept: boolean) {
     setBusyAction(`${accept ? "accept" : "decline"}:${requestId}`);
-    const { error } = await supabase.rpc("respond_profile_access", {
-      _request_id: requestId,
-      _accept: accept,
-    });
+    const error = await apiAction("respond", { requestId, accept }).then(
+      () => null,
+      (cause: unknown) => cause,
+    );
     if (error) {
       toast.error("Cette demande n’a pas pu être traitée.");
     } else {
@@ -156,9 +162,10 @@ export function ProfileDirectoryPage() {
 
   async function revokeAccess(requesterId: string) {
     setBusyAction(`revoke:${requesterId}`);
-    const { error } = await supabase.rpc("revoke_profile_access", {
-      _requester_id: requesterId,
-    });
+    const error = await apiAction("revoke", { requesterId }).then(
+      () => null,
+      (cause: unknown) => cause,
+    );
     if (error) {
       toast.error("Cet accès n’a pas pu être révoqué.");
     } else {

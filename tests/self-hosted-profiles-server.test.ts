@@ -111,7 +111,7 @@ describe("self-hosted profile queries", () => {
     const database = { connect: vi.fn().mockResolvedValue({ query, release }) };
 
     await expect(
-      setGiftReservation(viewerId, ownerId, "reserved", database as never),
+      setGiftReservation(viewerId, ownerId, "reserved", null, database as never),
     ).rejects.toMatchObject({ status: 403, code: "FORBIDDEN" });
     expect(query.mock.calls.map((call) => call[0])).toEqual([
       "BEGIN",

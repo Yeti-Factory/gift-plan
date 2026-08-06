@@ -16,8 +16,8 @@ describe("auth error messages", () => {
   });
 
   it("keeps the minimum-length message for actual length errors", () => {
-    expect(translateAuthError("Password should be at least 6 characters long")).toBe(
-      "Mot de passe trop court (6 caractères minimum).",
+    expect(translateAuthError("Password should be at least 8 characters long")).toBe(
+      "Mot de passe trop court (8 caractères minimum).",
     );
   });
 
@@ -25,5 +25,12 @@ describe("auth error messages", () => {
     expect(isConfirmationEmailDeliveryError("Error sending confirmation email")).toBe(true);
     expect(isConfirmationEmailDeliveryError("Send email hook returned an error")).toBe(true);
     expect(isConfirmationEmailDeliveryError("Invalid login credentials")).toBe(false);
+  });
+
+  it("translates Better Auth error codes", () => {
+    expect(translateAuthError("INVALID_EMAIL_OR_PASSWORD")).toBe(
+      "Email ou mot de passe incorrect.",
+    );
+    expect(translateAuthError("EMAIL_NOT_VERIFIED")).toContain("Confirme");
   });
 });

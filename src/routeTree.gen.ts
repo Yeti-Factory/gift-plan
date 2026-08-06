@@ -26,16 +26,18 @@ import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
+import { Route as ApiV1UploadsRouteImport } from './routes/api/v1/uploads'
 import { Route as ApiV1ReservationsRouteImport } from './routes/api/v1/reservations'
+import { Route as ApiV1GiftImagesRouteImport } from './routes/api/v1/gift-images'
 import { Route as ApiV1CommunityRouteImport } from './routes/api/v1/community'
+import { Route as ApiV1AppRouteImport } from './routes/api/v1/app'
 import { Route as ApiPublicSelfHostedReadyRouteImport } from './routes/api/public/self-hosted-ready'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiV1ProfilesUsernameRouteImport } from './routes/api/v1/profiles/$username'
+import { Route as ApiV1FilesSplatRouteImport } from './routes/api/v1/files/$'
 import { Route as ApiPublicHooksPurgeStorageRouteImport } from './routes/api/public/hooks/purge-storage'
 import { Route as AuthenticatedCirclesCircleIdMembersUserIdRouteImport } from './routes/_authenticated/circles/$circleId.members.$userId'
 
@@ -125,14 +127,29 @@ const AuthenticatedCirclesIndexRoute =
     path: '/circles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiV1UploadsRoute = ApiV1UploadsRouteImport.update({
+  id: '/api/v1/uploads',
+  path: '/api/v1/uploads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1ReservationsRoute = ApiV1ReservationsRouteImport.update({
   id: '/api/v1/reservations',
   path: '/api/v1/reservations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1GiftImagesRoute = ApiV1GiftImagesRouteImport.update({
+  id: '/api/v1/gift-images',
+  path: '/api/v1/gift-images',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1CommunityRoute = ApiV1CommunityRouteImport.update({
   id: '/api/v1/community',
   path: '/api/v1/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AppRoute = ApiV1AppRouteImport.update({
+  id: '/api/v1/app',
+  path: '/api/v1/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSelfHostedReadyRoute =
@@ -163,19 +180,14 @@ const AuthenticatedCirclesCircleIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedCirclesCircleIdRoute,
   } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiV1ProfilesUsernameRoute = ApiV1ProfilesUsernameRouteImport.update({
   id: '/api/v1/profiles/$username',
   path: '/api/v1/profiles/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1FilesSplatRoute = ApiV1FilesSplatRouteImport.update({
+  id: '/api/v1/files/$',
+  path: '/api/v1/files/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksPurgeStorageRoute =
@@ -211,13 +223,15 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
+  '/api/v1/app': typeof ApiV1AppRoute
   '/api/v1/community': typeof ApiV1CommunityRoute
+  '/api/v1/gift-images': typeof ApiV1GiftImagesRoute
   '/api/v1/reservations': typeof ApiV1ReservationsRoute
+  '/api/v1/uploads': typeof ApiV1UploadsRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
+  '/api/v1/files/$': typeof ApiV1FilesSplatRoute
   '/api/v1/profiles/$username': typeof ApiV1ProfilesUsernameRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
@@ -240,13 +254,15 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
+  '/api/v1/app': typeof ApiV1AppRoute
   '/api/v1/community': typeof ApiV1CommunityRoute
+  '/api/v1/gift-images': typeof ApiV1GiftImagesRoute
   '/api/v1/reservations': typeof ApiV1ReservationsRoute
+  '/api/v1/uploads': typeof ApiV1UploadsRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
+  '/api/v1/files/$': typeof ApiV1FilesSplatRoute
   '/api/v1/profiles/$username': typeof ApiV1ProfilesUsernameRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdIndexRoute
   '/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
@@ -272,13 +288,15 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
+  '/api/v1/app': typeof ApiV1AppRoute
   '/api/v1/community': typeof ApiV1CommunityRoute
+  '/api/v1/gift-images': typeof ApiV1GiftImagesRoute
   '/api/v1/reservations': typeof ApiV1ReservationsRoute
+  '/api/v1/uploads': typeof ApiV1UploadsRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
+  '/api/v1/files/$': typeof ApiV1FilesSplatRoute
   '/api/v1/profiles/$username': typeof ApiV1ProfilesUsernameRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/_authenticated/circles/$circleId/': typeof AuthenticatedCirclesCircleIdIndexRoute
   '/_authenticated/circles/$circleId/members/$userId': typeof AuthenticatedCirclesCircleIdMembersUserIdRoute
 }
@@ -304,13 +322,15 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
+    | '/api/v1/app'
     | '/api/v1/community'
+    | '/api/v1/gift-images'
     | '/api/v1/reservations'
+    | '/api/v1/uploads'
     | '/circles/'
     | '/api/public/hooks/purge-storage'
+    | '/api/v1/files/$'
     | '/api/v1/profiles/$username'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
     | '/circles/$circleId/'
     | '/circles/$circleId/members/$userId'
   fileRoutesByTo: FileRoutesByTo
@@ -333,13 +353,15 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
+    | '/api/v1/app'
     | '/api/v1/community'
+    | '/api/v1/gift-images'
     | '/api/v1/reservations'
+    | '/api/v1/uploads'
     | '/circles'
     | '/api/public/hooks/purge-storage'
+    | '/api/v1/files/$'
     | '/api/v1/profiles/$username'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
     | '/circles/$circleId'
     | '/circles/$circleId/members/$userId'
   id:
@@ -364,13 +386,15 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
+    | '/api/v1/app'
     | '/api/v1/community'
+    | '/api/v1/gift-images'
     | '/api/v1/reservations'
+    | '/api/v1/uploads'
     | '/_authenticated/circles/'
     | '/api/public/hooks/purge-storage'
+    | '/api/v1/files/$'
     | '/api/v1/profiles/$username'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
     | '/_authenticated/circles/$circleId/'
     | '/_authenticated/circles/$circleId/members/$userId'
   fileRoutesById: FileRoutesById
@@ -389,12 +413,14 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSelfHostedReadyRoute: typeof ApiPublicSelfHostedReadyRoute
+  ApiV1AppRoute: typeof ApiV1AppRoute
   ApiV1CommunityRoute: typeof ApiV1CommunityRoute
+  ApiV1GiftImagesRoute: typeof ApiV1GiftImagesRoute
   ApiV1ReservationsRoute: typeof ApiV1ReservationsRoute
+  ApiV1UploadsRoute: typeof ApiV1UploadsRoute
   ApiPublicHooksPurgeStorageRoute: typeof ApiPublicHooksPurgeStorageRoute
+  ApiV1FilesSplatRoute: typeof ApiV1FilesSplatRoute
   ApiV1ProfilesUsernameRoute: typeof ApiV1ProfilesUsernameRoute
-  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
-  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -518,6 +544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/v1/uploads': {
+      id: '/api/v1/uploads'
+      path: '/api/v1/uploads'
+      fullPath: '/api/v1/uploads'
+      preLoaderRoute: typeof ApiV1UploadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/reservations': {
       id: '/api/v1/reservations'
       path: '/api/v1/reservations'
@@ -525,11 +558,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ReservationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/gift-images': {
+      id: '/api/v1/gift-images'
+      path: '/api/v1/gift-images'
+      fullPath: '/api/v1/gift-images'
+      preLoaderRoute: typeof ApiV1GiftImagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/community': {
       id: '/api/v1/community'
       path: '/api/v1/community'
       fullPath: '/api/v1/community'
       preLoaderRoute: typeof ApiV1CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/app': {
+      id: '/api/v1/app'
+      path: '/api/v1/app'
+      fullPath: '/api/v1/app'
+      preLoaderRoute: typeof ApiV1AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/self-hosted-ready': {
@@ -567,25 +614,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesCircleIdIndexRouteImport
       parentRoute: typeof AuthenticatedCirclesCircleIdRoute
     }
-    '/lovable/email/auth/webhook': {
-      id: '/lovable/email/auth/webhook'
-      path: '/lovable/email/auth/webhook'
-      fullPath: '/lovable/email/auth/webhook'
-      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/v1/profiles/$username': {
       id: '/api/v1/profiles/$username'
       path: '/api/v1/profiles/$username'
       fullPath: '/api/v1/profiles/$username'
       preLoaderRoute: typeof ApiV1ProfilesUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/files/$': {
+      id: '/api/v1/files/$'
+      path: '/api/v1/files/$'
+      fullPath: '/api/v1/files/$'
+      preLoaderRoute: typeof ApiV1FilesSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/purge-storage': {
@@ -663,12 +703,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSelfHostedReadyRoute: ApiPublicSelfHostedReadyRoute,
+  ApiV1AppRoute: ApiV1AppRoute,
   ApiV1CommunityRoute: ApiV1CommunityRoute,
+  ApiV1GiftImagesRoute: ApiV1GiftImagesRoute,
   ApiV1ReservationsRoute: ApiV1ReservationsRoute,
+  ApiV1UploadsRoute: ApiV1UploadsRoute,
   ApiPublicHooksPurgeStorageRoute: ApiPublicHooksPurgeStorageRoute,
+  ApiV1FilesSplatRoute: ApiV1FilesSplatRoute,
   ApiV1ProfilesUsernameRoute: ApiV1ProfilesUsernameRoute,
-  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
-  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

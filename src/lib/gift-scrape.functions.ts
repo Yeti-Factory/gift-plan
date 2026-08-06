@@ -1,6 +1,6 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createMiddleware, createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertSafeUrl } from "./net-guard";
 import { createLogger, newRequestId } from "./logger";
 import { retryFetch } from "./retry";
@@ -16,6 +16,15 @@ const MAX_REDIRECTS = 3;
 const RATE_WINDOW_MS = 5 * 60 * 1000;
 const RATE_MAX = 10;
 const rateHits = new Map<string, number[]>();
+
+const requireSelfHostedAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  const request = getRequest();
+  if (!request?.headers) throw new Error("Unauthorized");
+  const { getSession } = await import("@/lib/self-hosted/session.server");
+  const session = await getSession(request.headers);
+  if (!session?.user.id) throw new Error("Unauthorized");
+  return next({ context: { userId: session.user.id } });
+});
 
 function rateLimited(userId: string): boolean {
   const now = Date.now();
@@ -121,8 +130,8 @@ async function fetchWithGuards(rawUrl: string, requestId: string): Promise<strin
 }
 
 export const scrapeGiftUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => schema.parse(input))
+  .middleware([requireSelfHostedAuth])
+  .validator((input: unknown) => schema.parse(input))
   .handler(async ({ data, context }) => {
     const requestId = newRequestId();
     const log = createLogger("scrape", { requestId });

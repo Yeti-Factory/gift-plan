@@ -4,10 +4,14 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { rpcMock } = vi.hoisted(() => ({ rpcMock: vi.fn() }));
+const { apiQueryMock, apiActionMock } = vi.hoisted(() => ({
+  apiQueryMock: vi.fn(),
+  apiActionMock: vi.fn(),
+}));
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { rpc: rpcMock },
+vi.mock("@/lib/self-hosted/api-client", () => ({
+  apiQuery: apiQueryMock,
+  apiAction: apiActionMock,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -63,22 +67,16 @@ const privateProfile = {
 };
 
 function mockDirectory(inbox = { pending: [], granted: [] }) {
-  rpcMock.mockImplementation((name: string) => {
-    if (name === "list_profile_directory") {
-      return Promise.resolve({
-        data: { profiles: [publicProfile, privateProfile], total: 2 },
-        error: null,
-      });
-    }
-    if (name === "list_profile_access_inbox") {
-      return Promise.resolve({ data: inbox, error: null });
-    }
-    return Promise.resolve({ data: null, error: null });
+  apiQueryMock.mockResolvedValue({
+    directory: { profiles: [publicProfile, privateProfile], total: 2 },
+    inbox,
   });
+  apiActionMock.mockResolvedValue(undefined);
 }
 
 beforeEach(() => {
-  rpcMock.mockReset();
+  apiQueryMock.mockReset();
+  apiActionMock.mockReset();
 });
 
 afterEach(() => {
@@ -110,9 +108,7 @@ describe("profile directory page", () => {
 
     await user.click(screen.getByRole("button", { name: /Se connecter/i }));
 
-    expect(rpcMock).toHaveBeenCalledWith("request_profile_access", {
-      _profile_id: "private-1",
-    });
+    expect(apiActionMock).toHaveBeenCalledWith("request", { profileId: "private-1" });
   });
 
   it("lets the owner accept an incoming request", async () => {
@@ -135,9 +131,9 @@ describe("profile directory page", () => {
     await user.click(await screen.findByRole("button", { name: "Accepter" }));
 
     await waitFor(() => {
-      expect(rpcMock).toHaveBeenCalledWith("respond_profile_access", {
-        _request_id: "request-1",
-        _accept: true,
+      expect(apiActionMock).toHaveBeenCalledWith("respond", {
+        requestId: "request-1",
+        accept: true,
       });
     });
   });

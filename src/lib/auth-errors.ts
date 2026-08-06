@@ -1,7 +1,7 @@
-export const MIN_PASSWORD_LENGTH = 6;
+export const MIN_PASSWORD_LENGTH = 8;
 
 export function isConfirmationEmailDeliveryError(message: string): boolean {
-  const normalized = message.toLowerCase();
+  const normalized = message.toLowerCase().replace(/[_-]+/g, " ");
 
   return (
     normalized.includes("confirmation email") ||
@@ -15,9 +15,13 @@ export function isConfirmationEmailDeliveryError(message: string): boolean {
 }
 
 export function translateAuthError(message: string): string {
-  const normalized = message.toLowerCase();
+  const normalized = message.toLowerCase().replace(/[_-]+/g, " ");
 
-  if (normalized.includes("invalid login") || normalized.includes("invalid credentials")) {
+  if (
+    normalized.includes("invalid login") ||
+    normalized.includes("invalid credentials") ||
+    normalized.includes("invalid email or password")
+  ) {
     return "Email ou mot de passe incorrect.";
   }
 
@@ -29,7 +33,7 @@ export function translateAuthError(message: string): string {
     return "Cet email est déjà utilisé.";
   }
 
-  // Supabase can reject passwords found in public breach databases. This is
+  // Authentication providers can reject passwords found in public breach databases. This is
   // different from a password that is merely too short or too easy to guess.
   if (
     normalized.includes("pwned") ||
@@ -55,7 +59,7 @@ export function translateAuthError(message: string): string {
     return `Mot de passe trop court (${MIN_PASSWORD_LENGTH} caractères minimum).`;
   }
 
-  if (normalized.includes("email not confirmed")) {
+  if (normalized.includes("email not confirmed") || normalized.includes("email not verified")) {
     return "Confirme d'abord ton adresse email (vérifie ta boîte mail).";
   }
 

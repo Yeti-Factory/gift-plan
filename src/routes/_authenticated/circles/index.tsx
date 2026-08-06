@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
+import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,12 +43,12 @@ function CirclesPage() {
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data, error } = await supabase
-      .from("circles")
-      .select("id, name, created_at")
-      .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
-    else setCircles(data ?? []);
+    try {
+      setCircles(await apiQuery<Circle[]>("circles"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Chargement impossible");
+      setCircles([]);
+    }
   }
 
   useEffect(() => {
@@ -68,7 +68,13 @@ function CirclesPage() {
   async function createCircle() {
     if (!name.trim()) return;
     setBusy(true);
-    const { data: c, error } = await supabase.rpc("create_circle", { _name: name.trim() });
+    let c: Circle | null = null;
+    let error: Error | null = null;
+    try {
+      c = await apiAction<Circle>("create-circle", { name: name.trim() });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Erreur");
+    }
     if (error || !c) {
       setBusy(false);
       toast.error(error?.message ?? "Erreur");
@@ -87,7 +93,18 @@ function CirclesPage() {
     setBusy(true);
     // join_circle_v2 returns a structured jsonb result and, crucially, persists
     // the attempt even on invalid codes (real rate limiting).
-    const { data, error } = await supabase.rpc("join_circle_v2", { _code: invite });
+    let data: {
+      ok: boolean;
+      error?: string;
+      circle_id?: string;
+      circle_name?: string;
+    } | null = null;
+    let error: Error | null = null;
+    try {
+      data = await apiAction("join-circle", { code: invite });
+    } catch (caught) {
+      error = caught instanceof Error ? caught : new Error("Erreur");
+    }
     setBusy(false);
     if (error) {
       toast.error(error.message || "Erreur");
