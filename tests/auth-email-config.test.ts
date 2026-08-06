@@ -3,24 +3,28 @@ import { describe, expect, it } from "vitest";
 import { getAuthEmailConfigStatus } from "@/lib/auth-email-config";
 
 describe("auth email deployment configuration", () => {
-  it("is ready with a Resend key and Lovable signing key", () => {
+  it("is ready with Resend and the native Supabase hook secret", () => {
     expect(
       getAuthEmailConfigStatus({
         RESEND_API_KEY_GIFT_PLAN: "resend-key",
-        LOVABLE_API_KEY: "lovable-key",
+        SEND_EMAIL_HOOK_SECRET: "v1,whsec_secret",
       }),
     ).toEqual({
       ready: true,
       providerConfigured: true,
       webhookVerificationConfigured: true,
+      supabaseWebhookConfigured: true,
+      lovableWebhookConfigured: false,
     });
   });
 
   it("fails readiness when the email provider key is missing", () => {
-    expect(getAuthEmailConfigStatus({ LOVABLE_API_KEY: "lovable-key" })).toEqual({
+    expect(getAuthEmailConfigStatus({ SEND_EMAIL_HOOK_SECRET: "v1,whsec_secret" })).toEqual({
       ready: false,
       providerConfigured: false,
       webhookVerificationConfigured: true,
+      supabaseWebhookConfigured: true,
+      lovableWebhookConfigured: false,
     });
   });
 
@@ -29,10 +33,12 @@ describe("auth email deployment configuration", () => {
       ready: false,
       providerConfigured: true,
       webhookVerificationConfigured: false,
+      supabaseWebhookConfigured: false,
+      lovableWebhookConfigured: false,
     });
   });
 
-  it("accepts the documented rotation secret as a verification fallback", () => {
+  it("keeps the documented Lovable compatibility fallback", () => {
     expect(
       getAuthEmailConfigStatus({
         RESEND_API_KEY: "resend-key",
