@@ -14,6 +14,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { markPasswordRecovery, redirectToResetPasswordIfNeeded } from "@/lib/password-recovery";
 import { BrandMark } from "@/components/BrandMark";
 import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
+import {
+  isConfirmationEmailDeliveryError,
+  MIN_PASSWORD_LENGTH,
+  translateAuthError,
+} from "@/lib/auth-errors";
 
 const RESET_PASSWORD_REDIRECT_URL = "https://gift-plan.yeti-lab.fr/reset-password";
 
@@ -69,36 +74,6 @@ function AuthPage() {
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
 
-  function translateError(msg: string): string {
-    const m = msg.toLowerCase();
-    if (m.includes("invalid login") || m.includes("invalid credentials")) {
-      return "Email ou mot de passe incorrect.";
-    }
-    if (
-      m.includes("already registered") ||
-      m.includes("already exists") ||
-      m.includes("user already")
-    ) {
-      return "Cet email est déjà utilisé.";
-    }
-    if (m.includes("pwned") || (m.includes("password") && m.includes("known"))) {
-      return "Ce mot de passe apparaît dans des fuites de données connues. Choisis-en un autre.";
-    }
-    if (m.includes("password") && (m.includes("weak") || m.includes("easy to guess"))) {
-      return "Mot de passe trop faible. Ajoute des lettres, chiffres et symboles.";
-    }
-    if (
-      m.includes("password") &&
-      (m.includes("should be at least") || m.includes("too short") || m.includes("minimum"))
-    ) {
-      return "Mot de passe trop court.";
-    }
-    if (m.includes("email not confirmed")) {
-      return "Confirme d'abord ton adresse email (vérifie ta boîte mail).";
-    }
-    return msg;
-  }
-
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     const form = e.currentTarget as HTMLFormElement;
@@ -106,14 +81,19 @@ function AuthPage() {
     const email = String(fd.get("email") ?? "").trim();
     const password = String(fd.get("password") ?? "");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error(translateError(error.message));
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        setConfirmationEmail(email);
-        setConfirmationOpen(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(translateAuthError(error.message));
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          setConfirmationEmail(email);
+          setConfirmationOpen(true);
+        }
       }
+    } catch {
+      toast.error("Connexion impossible pour le moment. Vérifie ta connexion et réessaie.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -122,33 +102,59 @@ function AuthPage() {
     const form = e.currentTarget as HTMLFormElement;
     const fd = new FormData(form);
     const email = String(fd.get("email") ?? "").trim();
-    const passwordInput = form.elements.namedItem("password") as HTMLInputElement | null;
-    const password = String(fd.get("password") ?? passwordInput?.value ?? "");
+    const password = String(fd.get("password") ?? "");
     const name = String(fd.get("name") ?? "").trim();
-    if (password.length > 0 && password.length < 6) {
-      toast.error("Mot de passe trop court (6 caractères minimum).");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Mot de passe trop court (${MIN_PASSWORD_LENGTH} caractères minimum).`);
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: name || displayName.trim() || email.split("@")[0] },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(translateError(error.message));
-      return;
-    }
-    if (!data.session) {
-      setConfirmationEmail(email);
-      toast.success(
-        "Vérifie ta boîte mail pour confirmer ton inscription. Pense aussi aux spams ✉️",
-        { duration: 8000 },
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: name || displayName.trim() || email.split("@")[0] },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (error) {
+        setConfirmationEmail(email);
+        if (isConfirmationEmailDeliveryError(error.message)) {
+          setConfirmationOpen(true);
+          toast.error(
+            "L’inscription a été enregistrée, mais l’email de confirmation n’a pas pu être envoyé. Tu peux le renvoyer depuis cet écran.",
+            { duration: 10000 },
+          );
+          return;
+        }
+
+        if (
+          error.message.toLowerCase().includes("already registered") ||
+          error.message.toLowerCase().includes("already exists") ||
+          error.message.toLowerCase().includes("user already")
+        ) {
+          setConfirmationOpen(true);
+        }
+        toast.error(translateAuthError(error.message));
+        return;
+      }
+
+      if (!data.session) {
+        setConfirmationEmail(email);
+        setConfirmationOpen(true);
+        toast.success(
+          "Compte créé. Vérifie ta boîte mail pour confirmer ton inscription, ainsi que les spams ✉️",
+          { duration: 8000 },
+        );
+      }
+    } catch {
+      toast.error(
+        "Création du compte impossible pour le moment. Vérifie ta connexion et réessaie.",
       );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -403,10 +409,11 @@ function AuthPage() {
                         name="password"
                         type={showSignupPwd ? "text" : "password"}
                         required
-                        minLength={6}
+                        minLength={MIN_PASSWORD_LENGTH}
                         autoComplete="new-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        aria-describedby="signup-password-help"
                         className="pr-10"
                       />
                       <button
@@ -424,7 +431,10 @@ function AuthPage() {
                         )}
                       </button>
                     </div>
-                    <p className="text-xs text-muted-foreground">6 caractères minimum.</p>
+                    <p id="signup-password-help" className="text-xs text-muted-foreground">
+                      {MIN_PASSWORD_LENGTH} caractères minimum. Évite les mots de passe connus ou
+                      trop faciles à deviner.
+                    </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Création..." : "Créer mon compte"}

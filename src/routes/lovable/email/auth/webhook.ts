@@ -14,10 +14,14 @@ import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
 import { createLogger, newRequestId } from "@/lib/logger";
 import { retryFetch } from "@/lib/retry";
+import { StandardWebhookError, verifyStandardWebhookRequest } from "@/lib/standard-webhook";
+import {
+  normalizeSupabaseAuthEmailPayload,
+  type NormalizedAuthEmailEvent,
+} from "@/lib/supabase-auth-email";
 
 // Configuration
 const SITE_NAME = "Gift-Plan";
-const SENDER_DOMAIN = "yeti-lab.fr";
 const FROM_DOMAIN = "yeti-lab.fr";
 const APP_URL = process.env.APP_URL ?? "https://gift-plan.yeti-lab.fr";
 const SITE_URL = APP_URL;
@@ -172,9 +176,7 @@ function getResendApiKey() {
   return process.env.RESEND_API_KEY_GIFT_PLAN || process.env.RESEND_API_KEY || null;
 }
 
-function parseAuthPayload(
-  body: unknown,
-): { run_id?: string; data: AuthEmailHookData; version?: string } | null {
+function parseAuthPayload(body: unknown): NormalizedAuthEmailEvent | null {
   if (!body || typeof body !== "object") return null;
   const payload = body as { run_id?: unknown; version?: unknown; type?: unknown; data?: unknown };
   const data = payload.data as Partial<AuthEmailHookData> | undefined;
@@ -208,7 +210,7 @@ function parseAuthPayload(
   };
 }
 
-async function sendAuthEmailWithResend(body: unknown, requestId: string) {
+async function sendAuthEmailsWithResend(events: NormalizedAuthEmailEvent[], requestId: string) {
   const log = createLogger("auth-email", { requestId });
   const resendKey = getResendApiKey();
   if (!resendKey) {
@@ -219,62 +221,60 @@ async function sendAuthEmailWithResend(body: unknown, requestId: string) {
     );
   }
 
-  const event = parseAuthPayload(body);
-  if (!event) {
-    return Response.json({ error: "Invalid auth email webhook payload" }, { status: 400 });
-  }
-  if (event.version && event.version !== "1") {
-    return Response.json(
-      { error: `Unsupported payload version: ${event.version}` },
-      { status: 400 },
-    );
-  }
-  if (!isAuthEmailActionAllowed(event.data.action_type, event.data.url)) {
-    log.warn("unsupported auth email url", { action_type: event.data.action_type });
-    return Response.json({ error: "Unsupported auth email action" }, { status: 400 });
-  }
-
-  const definition = authEmails[event.data.action_type];
   const { render } = await import("@react-email/render");
-  const subject = definition.subject;
-  const element = await definition.render(event.data);
-  const html = await render(element);
-  const text = await render(element, { plainText: true });
 
-  const started = Date.now();
-  const response = await retryFetch(
-    () =>
-      fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          "Content-Type": "application/json",
-          ...(event.run_id ? { "Idempotency-Key": event.run_id } : {}),
-        },
-        body: JSON.stringify({
-          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-          to: [event.data.email],
-          subject,
-          html,
-          text,
+  for (const event of events) {
+    if (event.version && event.version !== "1") {
+      return Response.json(
+        { error: `Unsupported payload version: ${event.version}` },
+        { status: 400 },
+      );
+    }
+    if (!isAuthEmailActionAllowed(event.data.action_type, event.data.url)) {
+      log.warn("unsupported auth email url", { action_type: event.data.action_type });
+      return Response.json({ error: "Unsupported auth email action" }, { status: 400 });
+    }
+
+    const definition = authEmails[event.data.action_type];
+    const element = await definition.render(event.data);
+    const html = await render(element);
+    const text = await render(element, { plainText: true });
+    const started = Date.now();
+    const response = await retryFetch(
+      () =>
+        fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            "Content-Type": "application/json",
+            ...(event.run_id ? { "Idempotency-Key": event.run_id } : {}),
+          },
+          body: JSON.stringify({
+            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            to: [event.data.email],
+            subject: definition.subject,
+            html,
+            text,
+          }),
         }),
-      }),
-    { attempts: 3, logger: log, label: "resend" },
-  );
+      { attempts: 3, logger: log, label: "resend" },
+    );
 
-  const latencyMs = Date.now() - started;
-  if (!response.ok) {
-    const errorText = await response.text();
-    log.error("resend failed", undefined, {
-      status: response.status,
-      latencyMs,
-      body: errorText.slice(0, 200),
-    });
-    return Response.json({ error: "Failed to send email" }, { status: 500 });
+    const latencyMs = Date.now() - started;
+    if (!response.ok) {
+      const errorText = await response.text();
+      log.error("resend failed", undefined, {
+        status: response.status,
+        latencyMs,
+        body: errorText.slice(0, 200),
+      });
+      return Response.json({ error: "Failed to send email" }, { status: 500 });
+    }
+
+    log.info("sent", { action: event.data.action_type, latencyMs });
   }
 
-  log.info("sent", { action: event.data.action_type, latencyMs });
-  return Response.json({ success: true, sent: true });
+  return Response.json({ success: true, sent: events.length });
 }
 
 export const Route = createFileRoute("/lovable/email/auth/webhook")({
@@ -302,6 +302,41 @@ async function handleAuthWebhook(
   ip: string,
 ): Promise<Response> {
   const log = createLogger("auth-email", { requestId });
+
+  const hasStandardWebhookHeaders =
+    request.headers.has("webhook-id") ||
+    request.headers.has("webhook-timestamp") ||
+    request.headers.has("webhook-signature");
+
+  if (hasStandardWebhookHeaders) {
+    const secret = process.env.SEND_EMAIL_HOOK_SECRET;
+    const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+    if (!secret || !supabaseUrl) {
+      log.error("supabase webhook configuration missing");
+      return new Response("Server misconfigured", { status: 503 });
+    }
+
+    let verified: Awaited<ReturnType<typeof verifyStandardWebhookRequest>>;
+    try {
+      verified = await verifyStandardWebhookRequest(request, secret);
+    } catch (error) {
+      const code = error instanceof StandardWebhookError ? error.code : "unknown";
+      log.warn("supabase hmac rejected", { reason: code, ip });
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const events = normalizeSupabaseAuthEmailPayload(verified.payload, {
+      appUrl: SITE_URL,
+      supabaseUrl,
+      messageId: verified.messageId,
+      allowedRedirectOrigins: ALLOWED_RECOVERY_REDIRECT_ORIGINS,
+    });
+    if (!events) {
+      return Response.json({ error: "Invalid Supabase auth email payload" }, { status: 400 });
+    }
+    return sendAuthEmailsWithResend(events, requestId);
+  }
+
   const apiKey = process.env.LOVABLE_API_KEY;
   const fallbackSecret = process.env.AUTH_EMAIL_WEBHOOK_SECRET;
   const secrets = [apiKey, fallbackSecret].filter((v): v is string => Boolean(v));
@@ -326,5 +361,9 @@ async function handleAuthWebhook(
     return new Response("Unauthorized", { status: 401 });
   }
 
-  return sendAuthEmailWithResend(payload, requestId);
+  const event = parseAuthPayload(payload);
+  if (!event) {
+    return Response.json({ error: "Invalid auth email webhook payload" }, { status: 400 });
+  }
+  return sendAuthEmailsWithResend([event], requestId);
 }
