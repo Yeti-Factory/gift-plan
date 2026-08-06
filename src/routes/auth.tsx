@@ -92,6 +92,10 @@ function AuthPage() {
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const fd = new FormData(form);
+    const email = String(fd.get("email") ?? "").trim();
+    const password = String(fd.get("password") ?? "");
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
@@ -106,6 +110,11 @@ function AuthPage() {
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const fd = new FormData(form);
+    const email = String(fd.get("email") ?? "").trim();
+    const password = String(fd.get("password") ?? "");
+    const name = String(fd.get("name") ?? "").trim();
     if (password.length < 6) {
       toast.error("Mot de passe trop court (6 caractères minimum).");
       return;
@@ -115,7 +124,7 @@ function AuthPage() {
       email,
       password,
       options: {
-        data: { display_name: displayName.trim() || email.split("@")[0] },
+        data: { display_name: name || displayName.trim() || email.split("@")[0] },
         emailRedirectTo: window.location.origin,
       },
     });
