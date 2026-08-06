@@ -293,6 +293,7 @@ function AuthPage() {
                     <Label htmlFor="signin-email">Email</Label>
                     <Input
                       id="signin-email"
+                      name="email"
                       type="email"
                       required
                       autoComplete="email"
@@ -306,6 +307,7 @@ function AuthPage() {
                     <div className="relative">
                       <Input
                         id="signin-password"
+                        name="password"
                         type={showSigninPwd ? "text" : "password"}
                         required
                         autoComplete="current-password"
@@ -361,6 +363,7 @@ function AuthPage() {
                     <Label htmlFor="signup-name">Nom</Label>
                     <Input
                       id="signup-name"
+                      name="name"
                       type="text"
                       required
                       autoComplete="name"
@@ -373,6 +376,7 @@ function AuthPage() {
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
                       id="signup-email"
+                      name="email"
                       type="email"
                       required
                       autoComplete="email"
@@ -386,6 +390,7 @@ function AuthPage() {
                     <div className="relative">
                       <Input
                         id="signup-password"
+                        name="password"
                         type={showSignupPwd ? "text" : "password"}
                         required
                         minLength={6}
