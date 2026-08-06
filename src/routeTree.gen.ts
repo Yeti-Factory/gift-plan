@@ -26,7 +26,9 @@ import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCirclesIndexRouteImport } from './routes/_authenticated/circles/index'
+import { Route as ApiPublicSelfHostedReadyRouteImport } from './routes/api/public/self-hosted-ready'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -120,9 +122,20 @@ const AuthenticatedCirclesIndexRoute =
     path: '/circles/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicSelfHostedReadyRoute =
+  ApiPublicSelfHostedReadyRouteImport.update({
+    id: '/api/public/self-hosted-ready',
+    path: '/api/public/self-hosted-ready',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCirclesCircleIdRoute =
@@ -177,7 +190,9 @@ export interface FileRoutesByFullPath {
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/p/$username': typeof PUsernameRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
   '/circles/': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -201,7 +216,9 @@ export interface FileRoutesByTo {
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/p/$username': typeof PUsernameRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
   '/circles': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -228,7 +245,9 @@ export interface FileRoutesById {
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/p/$username': typeof PUsernameRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
   '/_authenticated/circles/': typeof AuthenticatedCirclesIndexRoute
   '/api/public/hooks/purge-storage': typeof ApiPublicHooksPurgeStorageRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -255,7 +274,9 @@ export interface FileRouteTypes {
     | '/legal/mentions-legales'
     | '/p/$username'
     | '/circles/$circleId'
+    | '/api/auth/$'
     | '/api/public/health'
+    | '/api/public/self-hosted-ready'
     | '/circles/'
     | '/api/public/hooks/purge-storage'
     | '/lovable/email/auth/preview'
@@ -279,7 +300,9 @@ export interface FileRouteTypes {
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/p/$username'
+    | '/api/auth/$'
     | '/api/public/health'
+    | '/api/public/self-hosted-ready'
     | '/circles'
     | '/api/public/hooks/purge-storage'
     | '/lovable/email/auth/preview'
@@ -305,7 +328,9 @@ export interface FileRouteTypes {
     | '/legal/mentions-legales'
     | '/p/$username'
     | '/_authenticated/circles/$circleId'
+    | '/api/auth/$'
     | '/api/public/health'
+    | '/api/public/self-hosted-ready'
     | '/_authenticated/circles/'
     | '/api/public/hooks/purge-storage'
     | '/lovable/email/auth/preview'
@@ -325,7 +350,9 @@ export interface RootRouteChildren {
   LegalConfidentialiteRoute: typeof LegalConfidentialiteRoute
   LegalMentionsLegalesRoute: typeof LegalMentionsLegalesRoute
   PUsernameRoute: typeof PUsernameRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicSelfHostedReadyRoute: typeof ApiPublicSelfHostedReadyRoute
   ApiPublicHooksPurgeStorageRoute: typeof ApiPublicHooksPurgeStorageRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -452,11 +479,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCirclesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/self-hosted-ready': {
+      id: '/api/public/self-hosted-ready'
+      path: '/api/public/self-hosted-ready'
+      fullPath: '/api/public/self-hosted-ready'
+      preLoaderRoute: typeof ApiPublicSelfHostedReadyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/health': {
       id: '/api/public/health'
       path: '/api/public/health'
       fullPath: '/api/public/health'
       preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/circles/$circleId': {
@@ -559,7 +600,9 @@ const rootRouteChildren: RootRouteChildren = {
   LegalConfidentialiteRoute: LegalConfidentialiteRoute,
   LegalMentionsLegalesRoute: LegalMentionsLegalesRoute,
   PUsernameRoute: PUsernameRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicSelfHostedReadyRoute: ApiPublicSelfHostedReadyRoute,
   ApiPublicHooksPurgeStorageRoute: ApiPublicHooksPurgeStorageRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
@@ -567,3 +610,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
