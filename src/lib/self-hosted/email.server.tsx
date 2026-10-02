@@ -11,11 +11,16 @@ const log = createLogger("self-hosted-email");
 
 async function sendEmail(to: string, subject: string, element: React.ReactElement) {
   const config = getSelfHostedConfig();
+  if (!config.resendApiKey) {
+    log.error("Email delivery is not configured");
+    throw new Error("Email delivery is not configured");
+  }
   const html = await render(element);
   const response = await retryFetch(
     () =>
       fetch("https://api.resend.com/emails", {
         method: "POST",
+        signal: AbortSignal.timeout(10_000),
         headers: {
           authorization: `Bearer ${config.resendApiKey}`,
           "content-type": "application/json",

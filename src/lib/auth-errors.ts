@@ -1,5 +1,10 @@
 export const MIN_PASSWORD_LENGTH = 8;
 
+export function isEmailVerificationRequired(message: string): boolean {
+  const normalized = message.toLowerCase().replace(/[_-]+/g, " ");
+  return normalized.includes("email not confirmed") || normalized.includes("email not verified");
+}
+
 export function isConfirmationEmailDeliveryError(message: string): boolean {
   const normalized = message.toLowerCase().replace(/[_-]+/g, " ");
 

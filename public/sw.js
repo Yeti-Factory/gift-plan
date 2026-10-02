@@ -1,10 +1,9 @@
 // Gift-Plan service worker
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `gp-static-${VERSION}`;
 const RUNTIME_CACHE = `gp-runtime-${VERSION}`;
 
 const PRECACHE_URLS = [
-  "/",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
@@ -47,20 +46,14 @@ self.addEventListener("fetch", (event) => {
   // Never cache API calls.
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/__")) return;
 
-  // Network-first for HTML navigations
+  // Never persist authenticated HTML or password reset URLs on a shared device.
   if (req.mode === "navigate" || req.headers.get("accept")?.includes("text/html")) {
     event.respondWith(
       (async () => {
         try {
           const fresh = await fetch(req);
-          const cache = await caches.open(RUNTIME_CACHE);
-          cache.put(req, fresh.clone()).catch(() => undefined);
           return fresh;
         } catch {
-          const cached = await caches.match(req);
-          if (cached) return cached;
-          const shell = await caches.match("/");
-          if (shell) return shell;
           return new Response("Hors ligne", { status: 503, statusText: "Offline" });
         }
       })(),

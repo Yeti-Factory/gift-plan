@@ -1,6 +1,7 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 import { Pool } from "pg";
 
 import { readCsv } from "./csv.mjs";
@@ -42,12 +43,13 @@ function quoteIdentifier(identifier) {
 }
 
 function parseBoolean(value, column) {
+  if (typeof value === "boolean") return value;
   if (value === "true" || value === "t" || value === "1") return true;
   if (value === "false" || value === "f" || value === "0") return false;
   throw new Error(`Valeur booléenne invalide pour ${column}`);
 }
 
-function normalizeValue(column, value) {
+export function normalizeValue(column, value) {
   if (value === "" || value === "NULL" || value === "null") return null;
   if (BOOLEAN_COLUMNS.has(column)) return parseBoolean(value, column);
   if (NUMBER_COLUMNS.has(column)) {
@@ -58,7 +60,7 @@ function normalizeValue(column, value) {
   return value;
 }
 
-function transformUser(source) {
+export function transformUser(source) {
   const id = source.id?.trim();
   const email = source.email?.trim().toLowerCase();
   if (!id || !UUID_PATTERN.test(id)) throw new Error("users.csv contient un UUID invalide");
@@ -69,7 +71,7 @@ function transformUser(source) {
     name: source.name?.trim() || source.display_name?.trim() || email.split("@")[0],
     email,
     emailVerified: parseBoolean(
-      source.email_verified || source.emailVerified || "true",
+      source.email_verified || source.emailVerified || "false",
       "emailVerified",
     ),
     image: source.image?.trim() || source.avatar_url?.trim() || null,
@@ -159,7 +161,9 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
+}

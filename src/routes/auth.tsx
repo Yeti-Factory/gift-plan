@@ -13,6 +13,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 import {
   isConfirmationEmailDeliveryError,
+  isEmailVerificationRequired,
   MIN_PASSWORD_LENGTH,
   translateAuthError,
 } from "@/lib/auth-errors";
@@ -62,7 +63,10 @@ function AuthPage() {
       if (error) {
         const message = String(error.message ?? error.code ?? "");
         toast.error(translateAuthError(message));
-        if (message.toLowerCase().includes("email")) {
+        if (
+          isEmailVerificationRequired(String(error.code ?? "")) ||
+          isEmailVerificationRequired(message)
+        ) {
           setConfirmationEmail(email);
           setConfirmationOpen(true);
         }
@@ -144,27 +148,33 @@ function AuthPage() {
     if (!targetEmail) return;
 
     setLoading(true);
-    const { error } = await authClient.sendVerificationEmail({
-      email: targetEmail,
-      callbackURL: "/people",
-    });
-    setLoading(false);
+    try {
+      const { error } = await authClient.sendVerificationEmail({
+        email: targetEmail,
+        callbackURL: "/people",
+      });
+      setLoading(false);
 
-    if (error) {
-      const message = String(error.message ?? error.code ?? "").toLowerCase();
-      toast.error(
-        message.includes("rate") || message.includes("too many")
-          ? "Trop de demandes rapprochées. Attends quelques minutes avant de réessayer."
-          : "L’email n’a pas pu être renvoyé. Vérifie l’adresse et réessaie dans un instant.",
+      if (error) {
+        const message = String(error.message ?? error.code ?? "").toLowerCase();
+        toast.error(
+          message.includes("rate") || message.includes("too many")
+            ? "Trop de demandes rapprochées. Attends quelques minutes avant de réessayer."
+            : "L’email n’a pas pu être renvoyé. Vérifie l’adresse et réessaie dans un instant.",
+        );
+        return;
+      }
+
+      toast.success(
+        "Si ce compte attend une confirmation, un nouveau lien vient d’être envoyé. Vérifie aussi les spams.",
+        { duration: 8000 },
       );
-      return;
+      setConfirmationOpen(false);
+    } catch {
+      toast.error("L’email n’a pas pu être renvoyé. Réessaie dans un instant.");
+    } finally {
+      setLoading(false);
     }
-
-    toast.success(
-      "Si ce compte attend une confirmation, un nouveau lien vient d’être envoyé. Vérifie aussi les spams.",
-      { duration: 8000 },
-    );
-    setConfirmationOpen(false);
   }
 
   async function handleForgot(e: React.FormEvent) {
@@ -173,12 +183,12 @@ function AuthPage() {
     setLoading(true);
     try {
       const { error } = await authClient.requestPasswordReset({
-        email: forgotEmail,
+        email: forgotEmail.trim().toLowerCase(),
         redirectTo: "/reset-password",
       });
       if (error) throw error;
       toast.success(
-        "Si un compte existe pour cet email, un lien vient d'être envoyé. Pense à vérifier tes spams / courriers indésirables.",
+        "Demande prise en compte. Si cette adresse correspond à un compte, consulte ta boîte mail et tes spams dans quelques minutes. Si rien n’arrive, contacte l’administrateur.",
         { duration: 8000 },
       );
       setForgotOpen(false);
@@ -192,12 +202,18 @@ function AuthPage() {
 
   async function signInGoogle() {
     setLoading(true);
-    const result = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/people",
-    });
-    setLoading(false);
-    if (result.error) toast.error("Connexion Google impossible.");
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/people",
+      });
+      setLoading(false);
+      if (result.error) toast.error("Connexion Google impossible.");
+    } catch {
+      toast.error("Connexion Google impossible. Réessaie dans un instant.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

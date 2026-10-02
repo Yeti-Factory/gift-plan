@@ -42,6 +42,10 @@ function hasValidAppUrl(value: string | undefined) {
   }
 }
 
+function emailApiKey(env: Environment) {
+  return env.RESEND_API_KEY_GIFT_PLAN?.trim() || env.RESEND_API_KEY?.trim() || "";
+}
+
 function enabled(value: string | undefined) {
   return value === "1" || value?.toLowerCase() === "true";
 }
@@ -54,7 +58,7 @@ export function getSelfHostedReadiness(env: Environment = process.env): SelfHost
     appUrl: hasValidAppUrl(appUrl),
     authSecret: Boolean(env.BETTER_AUTH_SECRET && env.BETTER_AUTH_SECRET.length >= 32),
     database: Boolean(env.DATABASE_URL),
-    email: Boolean(env.RESEND_API_KEY_GIFT_PLAN || env.RESEND_API_KEY),
+    email: Boolean(emailApiKey(env)),
     uploads: Boolean(env.UPLOAD_DIR || env.NODE_ENV !== "production"),
     google: !googlePartiallyConfigured || googleConfigured,
   };
@@ -73,12 +77,15 @@ export function getSelfHostedReadiness(env: Environment = process.env): SelfHost
 
 export function getSelfHostedConfig(env: Environment = process.env): SelfHostedConfig {
   const readiness = getSelfHostedReadiness(env);
-  if (!readiness.ready) {
-    throw new Error(`Configuration autonome incomplète : ${readiness.missing.join(", ")}`);
+  // Email configuration must not prevent existing users from signing in or reading data.
+  // Readiness still reports the missing email service, and sending explicitly rejects it.
+  const blocking = readiness.missing.filter((item) => !item.startsWith("RESEND_API_KEY"));
+  if (blocking.length > 0) {
+    throw new Error(`Configuration autonome incomplète : ${blocking.join(", ")}`);
   }
 
   const appUrl = env.APP_URL ?? DEFAULT_APP_URL;
-  const resendApiKey = env.RESEND_API_KEY_GIFT_PLAN ?? env.RESEND_API_KEY;
+  const resendApiKey = emailApiKey(env);
   const google =
     env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
       ? { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET }
@@ -89,7 +96,7 @@ export function getSelfHostedConfig(env: Environment = process.env): SelfHostedC
     authSecret: env.BETTER_AUTH_SECRET!,
     databaseUrl: env.DATABASE_URL!,
     databaseSsl: enabled(env.DATABASE_SSL),
-    emailFrom: env.AUTH_EMAIL_FROM ?? "Gift-Plan <noreply@yeti-lab.fr>",
+    emailFrom: env.AUTH_EMAIL_FROM?.trim() || "Gift-Plan <noreply@yeti-lab.fr>",
     resendApiKey: resendApiKey!,
     uploadDir: env.UPLOAD_DIR ?? DEFAULT_UPLOAD_DIR,
     google,

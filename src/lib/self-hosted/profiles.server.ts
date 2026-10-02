@@ -43,9 +43,10 @@ export async function listProfileDirectory(
              WHERE ar.owner_id = p.id AND ar.requester_id = $1::uuid AND ar.status = 'accepted'
            )
            OR EXISTS (
-             SELECT 1 FROM circles c
-             JOIN circle_members cm ON cm.circle_id = c.id
-             WHERE c.created_by = p.id AND cm.user_id = $1::uuid
+             SELECT 1 FROM circle_members owner_membership
+             JOIN circle_members viewer_membership
+               ON viewer_membership.circle_id = owner_membership.circle_id
+             WHERE owner_membership.user_id = p.id AND viewer_membership.user_id = $1::uuid
            )
          ) AS can_view
        ) access
@@ -200,8 +201,10 @@ async function profileVisibility(
          WHERE ar.owner_id = p.id AND ar.requester_id = $2::uuid AND ar.status = 'accepted'
        ))
        OR ($2::uuid IS NOT NULL AND EXISTS (
-         SELECT 1 FROM circles c JOIN circle_members cm ON cm.circle_id = c.id
-         WHERE c.created_by = p.id AND cm.user_id = $2::uuid
+         SELECT 1 FROM circle_members owner_membership
+         JOIN circle_members viewer_membership
+           ON viewer_membership.circle_id = owner_membership.circle_id
+         WHERE owner_membership.user_id = p.id AND viewer_membership.user_id = $2::uuid
        ))
        OR ($3::uuid IS NOT NULL AND EXISTS (
          SELECT 1 FROM profile_share_links share
@@ -246,7 +249,7 @@ export async function getProfilePage(
     event_date: string | null;
     visibility: "public" | "circles";
   }>(
-    `SELECT DISTINCT l.id, l.title, l.occasion, l.event_date, l.visibility
+    `SELECT l.id, l.title, l.occasion, l.event_date, l.visibility
        FROM lists l
       WHERE l.owner_id = $1::uuid
         AND (
@@ -350,7 +353,7 @@ export async function setGiftReservation(
            JOIN profile_share_link_lists sl ON sl.share_link_id = s.id
            WHERE s.token = $3::uuid AND s.owner_id = l.owner_id AND sl.list_id = l.id
              AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at > now())
-         )
+         ))
        ) AS visible FROM lists l WHERE l.id = $1::uuid`,
       [gift.list_id, viewerId, shareToken],
     );

@@ -161,3 +161,58 @@ describe("account creation form", () => {
     );
   });
 });
+
+describe("sign-in and recovery failures", () => {
+  it("keeps the sign-in form after an incorrect password", async () => {
+    mocks.signInWithPassword.mockResolvedValue({
+      error: { code: "INVALID_EMAIL_OR_PASSWORD", message: "Invalid email or password" },
+    });
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.type(screen.getByLabelText("Email"), "member@example.com");
+    await user.type(screen.getByLabelText("Mot de passe"), "Wrong-password-42");
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith("Email ou mot de passe incorrect."),
+    );
+    expect(screen.queryByText("Renvoyer l’email de confirmation")).toBeNull();
+    expect(screen.getByText("Mot de passe oublié ?")).toBeTruthy();
+  });
+
+  it("opens confirmation only for an unverified address", async () => {
+    mocks.signInWithPassword.mockResolvedValue({ error: { code: "EMAIL_NOT_VERIFIED" } });
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.type(screen.getByLabelText("Email"), "member@example.com");
+    await user.type(screen.getByLabelText("Mot de passe"), "Correct-password-42");
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+    expect(await screen.findByText("Renvoyer l’email de confirmation")).toBeTruthy();
+  });
+
+  it("reenables confirmation sending after a network failure", async () => {
+    mocks.resend.mockRejectedValueOnce(new Error("offline"));
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.click(screen.getByText("Email de confirmation non reçu ?"));
+    await user.type(screen.getByLabelText("Email"), "member@example.com");
+    await user.click(screen.getByRole("button", { name: "Renvoyer le lien" }));
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalled());
+    expect(
+      (screen.getByRole("button", { name: "Renvoyer le lien" }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it("does not announce a reset email when sending fails", async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: { message: "delivery failed" } });
+    const user = userEvent.setup();
+    render(<AuthPage />);
+    await user.click(screen.getByText("Mot de passe oublié ?"));
+    await user.type(screen.getByLabelText("Mot de passe oublié"), "member@example.com");
+    await user.click(screen.getByRole("button", { name: "Envoyer le lien" }));
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalled());
+    expect(mocks.toastSuccess).not.toHaveBeenCalled();
+    expect(
+      (screen.getByRole("button", { name: "Envoyer le lien" }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+});
