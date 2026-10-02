@@ -28,10 +28,15 @@ export const Route = createFileRoute("/api/public/health")({
             });
           }
         }
-        const healthy = configuration.ready && database === "ok";
+        // Mail outages should be visible without removing a working app from the proxy.
+        const healthy =
+          database === "ok" &&
+          Object.entries(configuration.checks).every(([name, configured]) =>
+            name === "email" ? true : configured,
+          );
         return Response.json(
           {
-            status: healthy ? "ok" : "degraded",
+            status: healthy && configuration.ready ? "ok" : "degraded",
             version: process.env.APP_VERSION ?? "dev",
             uptimeMs: Date.now() - bootAt,
             checks: {
