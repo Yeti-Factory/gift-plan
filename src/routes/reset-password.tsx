@@ -53,6 +53,7 @@ function ResetPasswordPage() {
       return;
     }
     setLoading(true);
+    try {
     const { error } = await authClient.resetPassword({ newPassword: password, token });
     setLoading(false);
     if (error) {
@@ -61,6 +62,11 @@ function ResetPasswordPage() {
     }
     toast.success("Mot de passe mis à jour ✅");
     navigate({ to: "/auth", replace: true });
+    } catch {
+      toast.error("Enregistrement impossible. Vérifie ta connexion et réessaie.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

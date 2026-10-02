@@ -8,6 +8,21 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: gift_plan_test
+          POSTGRES_USER: gift_plan_test
+          POSTGRES_PASSWORD: test-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gift_plan_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://gift_plan_test:test-only-password@localhost:5432/gift_plan_test
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -18,10 +33,20 @@ jobs:
       - name: Lint
         run: bun run lint
       - name: Typecheck
+        if: success() || failure()
         run: bun run typecheck
       - name: Format check
+        if: success() || failure()
         run: bun run format:check
       - name: Unit tests
+        if: success() || failure()
         run: bun run test
       - name: Build
+        if: success() || failure()
         run: bun run build
+
+      - name: Show formatting diff on failure
+        if: failure()
+        run: |
+          bun run format
+          git diff --no-ext-diff

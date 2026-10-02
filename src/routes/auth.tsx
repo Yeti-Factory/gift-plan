@@ -13,6 +13,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 import {
   isConfirmationEmailDeliveryError,
+  isEmailVerificationRequired,
   MIN_PASSWORD_LENGTH,
   translateAuthError,
 } from "@/lib/auth-errors";
@@ -62,7 +63,7 @@ function AuthPage() {
       if (error) {
         const message = String(error.message ?? error.code ?? "");
         toast.error(translateAuthError(message));
-        if (message.toLowerCase().includes("email")) {
+        if (isEmailVerificationRequired(String(error.code ?? "")) || isEmailVerificationRequired(message)) {
           setConfirmationEmail(email);
           setConfirmationOpen(true);
         }
@@ -144,6 +145,7 @@ function AuthPage() {
     if (!targetEmail) return;
 
     setLoading(true);
+    try {
     const { error } = await authClient.sendVerificationEmail({
       email: targetEmail,
       callbackURL: "/people",
@@ -165,6 +167,11 @@ function AuthPage() {
       { duration: 8000 },
     );
     setConfirmationOpen(false);
+    } catch {
+      toast.error("L’email n’a pas pu être renvoyé. Réessaie dans un instant.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleForgot(e: React.FormEvent) {
@@ -173,7 +180,7 @@ function AuthPage() {
     setLoading(true);
     try {
       const { error } = await authClient.requestPasswordReset({
-        email: forgotEmail,
+        email: forgotEmail.trim().toLowerCase(),
         redirectTo: "/reset-password",
       });
       if (error) throw error;
@@ -192,12 +199,18 @@ function AuthPage() {
 
   async function signInGoogle() {
     setLoading(true);
+    try {
     const result = await authClient.signIn.social({
       provider: "google",
       callbackURL: "/people",
     });
     setLoading(false);
     if (result.error) toast.error("Connexion Google impossible.");
+    } catch {
+      toast.error("Connexion Google impossible. Réessaie dans un instant.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

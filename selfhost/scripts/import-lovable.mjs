@@ -42,6 +42,7 @@ function quoteIdentifier(identifier) {
 }
 
 function parseBoolean(value, column) {
+  if (typeof value === "boolean") return value;
   if (value === "true" || value === "t" || value === "1") return true;
   if (value === "false" || value === "f" || value === "0") return false;
   throw new Error(`Valeur booléenne invalide pour ${column}`);
@@ -69,7 +70,7 @@ function transformUser(source) {
     name: source.name?.trim() || source.display_name?.trim() || email.split("@")[0],
     email,
     emailVerified: parseBoolean(
-      source.email_verified || source.emailVerified || "true",
+      source.email_verified || source.emailVerified || "false",
       "emailVerified",
     ),
     image: source.image?.trim() || source.avatar_url?.trim() || null,
