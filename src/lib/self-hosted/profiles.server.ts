@@ -353,7 +353,7 @@ export async function setGiftReservation(
            JOIN profile_share_link_lists sl ON sl.share_link_id = s.id
            WHERE s.token = $3::uuid AND s.owner_id = l.owner_id AND sl.list_id = l.id
              AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at > now())
-         )
+         ))
        ) AS visible FROM lists l WHERE l.id = $1::uuid`,
       [gift.list_id, viewerId, shareToken],
     );

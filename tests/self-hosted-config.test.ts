@@ -50,7 +50,11 @@ describe("self-hosted configuration", () => {
 
 describe("email configuration isolation", () => {
   it("uses the generic key when Compose supplies an empty specific key", () => {
-    const env = { ...completeEnvironment, RESEND_API_KEY_GIFT_PLAN: " ", RESEND_API_KEY: " re_fallback " };
+    const env = {
+      ...completeEnvironment,
+      RESEND_API_KEY_GIFT_PLAN: " ",
+      RESEND_API_KEY: " re_fallback ",
+    };
     expect(getSelfHostedReadiness(env).checks.email).toBe(true);
     expect(getSelfHostedConfig(env).resendApiKey).toBe("re_fallback");
   });

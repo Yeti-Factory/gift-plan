@@ -20,6 +20,7 @@ async function sendEmail(to: string, subject: string, element: React.ReactElemen
     () =>
       fetch("https://api.resend.com/emails", {
         method: "POST",
+        signal: AbortSignal.timeout(10_000),
         headers: {
           authorization: `Bearer ${config.resendApiKey}`,
           "content-type": "application/json",

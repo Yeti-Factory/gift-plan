@@ -54,14 +54,14 @@ function ResetPasswordPage() {
     }
     setLoading(true);
     try {
-    const { error } = await authClient.resetPassword({ newPassword: password, token });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message ?? "Ce lien est invalide ou expiré.");
-      return;
-    }
-    toast.success("Mot de passe mis à jour ✅");
-    navigate({ to: "/auth", replace: true });
+      const { error } = await authClient.resetPassword({ newPassword: password, token });
+      setLoading(false);
+      if (error) {
+        toast.error(error.message ?? "Ce lien est invalide ou expiré.");
+        return;
+      }
+      toast.success("Mot de passe mis à jour ✅");
+      navigate({ to: "/auth", replace: true });
     } catch {
       toast.error("Enregistrement impossible. Vérifie ta connexion et réessaie.");
     } finally {
