@@ -49,7 +49,7 @@ services:
       DATABASE_SSL: ${DATABASE_SSL:-false}
       DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
       UPLOAD_DIR: /data/uploads
-      HEALTHCHECK_PATH: /api/public/self-hosted-ready
+      HEALTHCHECK_PATH: /api/public/health
       AUTH_EMAIL_FROM: ${AUTH_EMAIL_FROM:-Gift-Plan <noreply@yeti-lab.fr>}
       RESEND_API_KEY_GIFT_PLAN: ${RESEND_API_KEY_GIFT_PLAN:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
