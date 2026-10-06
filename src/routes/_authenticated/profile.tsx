@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, Copy, Eye, Link2, Lock, Plus, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { InviteAppButton } from "@/components/InviteAppButton";
 import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -232,6 +233,7 @@ function ManageProfilePage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6 space-y-6">
+      <InviteAppButton />
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Mon profil</h1>
