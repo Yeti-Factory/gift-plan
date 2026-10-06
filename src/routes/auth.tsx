@@ -19,6 +19,8 @@ import {
 } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { mode?: "signup" } =>
+    search.mode === "signup" ? { mode: "signup" } : {},
   head: () => ({
     meta: [
       { title: "Se connecter — Gift-Plan" },
@@ -33,7 +35,12 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const { mode: requestedMode } = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup">(requestedMode ?? "signin");
+
+  useEffect(() => {
+    setMode(requestedMode ?? "signin");
+  }, [requestedMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");

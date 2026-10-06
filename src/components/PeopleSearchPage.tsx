@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { InviteAppButton } from "@/components/InviteAppButton";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -129,6 +130,7 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
               Un nom, un identifiant, et la bonne idée cadeau est à portée de main.
             </p>
           </div>
+          <InviteAppButton />
           {searchForm}
           {resultList}
         </div>

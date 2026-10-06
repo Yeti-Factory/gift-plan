@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
+import { InviteAppButton } from "@/components/InviteAppButton";
 import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -142,6 +143,7 @@ function CirclesPage() {
         </p>
       </div>
 
+      <InviteAppButton />
       <div className="grid grid-cols-2 gap-3">
         <Dialog open={openCreate} onOpenChange={setOpenCreate}>
           <DialogTrigger asChild>

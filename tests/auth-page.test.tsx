@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
+  search: {} as { mode?: "signup" },
   signInWithPassword: vi.fn(),
   signUp: vi.fn(),
   resend: vi.fn(),
@@ -15,7 +16,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => (options: { component: React.ComponentType }) => ({ options }),
+  createFileRoute: () => (options: { component: React.ComponentType }) => ({
+    options,
+    useSearch: () => mocks.search,
+  }),
   useNavigate: () => mocks.navigate,
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -46,6 +50,7 @@ const AuthPage = (Route as unknown as { options: { component: React.ComponentTyp
   .component;
 
 beforeEach(() => {
+  mocks.search = {};
   mocks.navigate.mockReset();
   mocks.signInWithPassword.mockReset();
   mocks.signUp.mockReset();
@@ -73,6 +78,15 @@ function signupForm(): HTMLFormElement {
 }
 
 describe("account creation form", () => {
+  it("opens account creation directly when arriving from the app invitation", () => {
+    mocks.search = { mode: "signup" };
+    render(<AuthPage />);
+    expect(screen.getByRole("button", { name: "Créer mon compte" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Créer un compte" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+  });
+
   it("submits the password value currently present in the DOM after autofill", async () => {
     const user = await openSignupForm();
     await user.type(screen.getByLabelText("Nom"), "Marie Dupont");
