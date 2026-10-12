@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Plus, Trash2, ImagePlus, Sparkles, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -405,9 +405,34 @@ function GiftFormDialog({
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(false);
   const scrape = useServerFn(scrapeGiftUrl);
+  const fetchGeneration = useRef(0);
+  const latestForm = useRef({
+    open,
+    title,
+    description,
+    url,
+    price,
+    imageUrl,
+    imagePath,
+    imagePreview,
+  });
+  useEffect(() => {
+    latestForm.current = {
+      open,
+      title,
+      description,
+      url,
+      price,
+      imageUrl,
+      imagePath,
+      imagePreview,
+    };
+  }, [open, title, description, url, price, imageUrl, imagePath, imagePreview]);
 
   // Reset form on open (edit mode: refresh with current gift; create: clear)
   useEffect(() => {
+    fetchGeneration.current += 1;
+    setFetching(false);
     if (!open) return;
     setTitle(gift?.title ?? "");
     setDescription(gift?.description ?? "");
@@ -423,33 +448,61 @@ function GiftFormDialog({
   }, [open]);
 
   async function fetchFromUrl() {
-    if (!url.trim()) return;
+    const requestedUrl = url.trim();
+    if (!requestedUrl) return;
+    const generation = ++fetchGeneration.current;
     setFetching(true);
     try {
-      const res = await scrape({ data: { url: url.trim() } });
+      const res = await scrape({ data: { url: requestedUrl } });
+      const current = latestForm.current;
+      if (
+        generation !== fetchGeneration.current ||
+        !current.open ||
+        current.url.trim() !== requestedUrl
+      )
+        return;
       if (!res.ok) {
-        toast.error("Impossible de récupérer les infos, saisis-les à la main.");
+        toast.error(
+          res.reason === "rate_limited"
+            ? "Trop de demandes. Réessaie dans quelques minutes."
+            : "Le site ne fournit pas de fiche produit exploitable. Aucun champ n’a été modifié ; tu peux compléter le cadeau à la main.",
+        );
         return;
       }
       let filled = false;
-      if (res.title && !title) {
-        setTitle(res.title);
+      if (res.title && !current.title.trim()) {
+        setTitle((value) => (value.trim() ? value : res.title));
         filled = true;
       }
-      if (res.imageUrl && !imageUrl) {
+      if (res.description && !current.description.trim()) {
+        setDescription((value) => (value.trim() ? value : res.description!));
+        filled = true;
+      }
+      if (res.imageUrl && !current.imageUrl && !current.imagePath && !current.imagePreview) {
         setImageUrl(res.imageUrl);
         filled = true;
       }
-      if (res.price != null && !price) {
-        setPrice(String(res.price));
-        filled = true;
+      if (res.price != null && !current.price.trim()) {
+        if (res.currency === "EUR") {
+          setPrice((value) => (value.trim() ? value : String(res.price)));
+          filled = true;
+        } else {
+          toast.message("Prix non repris : sa devise n’est pas indiquée ou n’est pas l’euro.");
+        }
       }
-      if (filled) toast.success("Infos récupérées !");
-      else toast.message("Rien trouvé à préremplir.");
+      if (filled && res.source === "url")
+        toast.message(
+          "Fnac bloque l’import automatique : titre provisoire déduit du lien, à vérifier. Ajoute la photo et le prix à la main.",
+          { duration: 10000 },
+        );
+      else if (filled)
+        toast.success("Informations disponibles récupérées. Vérifie-les avant d’enregistrer.");
+      else toast.message("Aucun champ vide à préremplir.");
     } catch {
-      toast.error("Impossible de récupérer les infos, saisis-les à la main.");
+      if (generation === fetchGeneration.current && latestForm.current.open)
+        toast.error("Impossible de récupérer les infos, saisis-les à la main.");
     } finally {
-      setFetching(false);
+      if (generation === fetchGeneration.current) setFetching(false);
     }
   }
 
