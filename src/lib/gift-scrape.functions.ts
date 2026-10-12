@@ -51,7 +51,7 @@ export const scrapeGiftUrl = createServerFn({ method: "POST" })
         ? { ok: true as const, source: "url" as const, ...fallback }
         : { ok: false as const, reason: "unavailable" as const };
     try {
-      const metadata = extractGiftMetadata(page.html, page.url);
+      const metadata = extractGiftMetadata(page.html, page.url, data.url);
       if (!metadata)
         return fallback
           ? { ok: true as const, source: "url" as const, ...fallback }

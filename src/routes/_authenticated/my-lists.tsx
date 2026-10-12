@@ -1,3 +1,4 @@
+import type { AmazonVariant } from "@/lib/amazon-variants.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Plus, Trash2, ImagePlus, Sparkles, Pencil, Loader2 } from "lucide-react";
@@ -404,6 +405,22 @@ function GiftFormDialog({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [variants, setVariants] = useState<AmazonVariant[]>([]);
+  const imported = useRef<Partial<Record<"title" | "description" | "price" | "imageUrl", string>>>(
+    {},
+  );
+  function changeUrl(value: string) {
+    fetchGeneration.current++;
+    setFetching(false);
+    setVariants([]);
+    const current = latestForm.current;
+    if (imported.current.title === current.title) setTitle("");
+    if (imported.current.description === current.description) setDescription("");
+    if (imported.current.price === current.price) setPrice("");
+    if (imported.current.imageUrl === current.imageUrl) setImageUrl(null);
+    imported.current = {};
+    setUrl(value);
+  }
   const scrape = useServerFn(scrapeGiftUrl);
   const fetchGeneration = useRef(0);
   const latestForm = useRef({
@@ -433,6 +450,8 @@ function GiftFormDialog({
   useEffect(() => {
     fetchGeneration.current += 1;
     setFetching(false);
+    imported.current = {};
+    setVariants([]);
     if (!open) return;
     setTitle(gift?.title ?? "");
     setDescription(gift?.description ?? "");
@@ -447,8 +466,12 @@ function GiftFormDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  async function fetchFromUrl() {
-    const requestedUrl = url.trim();
+  async function fetchFromUrl(selectedUrl?: string) {
+    const requestedUrl = (selectedUrl ?? url).trim();
+    if (selectedUrl) {
+      setUrl(selectedUrl);
+      latestForm.current.url = selectedUrl;
+    }
     if (!requestedUrl) return;
     const generation = ++fetchGeneration.current;
     setFetching(true);
@@ -469,26 +492,54 @@ function GiftFormDialog({
         );
         return;
       }
+      setVariants(res.variants ?? []);
+      if (res.selectionRequired) {
+        toast.message(
+          "Choisis la couleur et la taille du produit pour récupérer les bonnes informations.",
+        );
+      }
       let filled = false;
-      if (res.title && !current.title.trim()) {
-        setTitle((value) => (value.trim() ? value : res.title));
+      if (res.title && (!current.title.trim() || imported.current.title === current.title)) {
+        imported.current.title = res.title;
+        setTitle(res.title);
         filled = true;
       }
-      if (res.description && !current.description.trim()) {
-        setDescription((value) => (value.trim() ? value : res.description!));
+      if (
+        res.description &&
+        (!current.description.trim() || imported.current.description === current.description)
+      ) {
+        imported.current.description = res.description;
+        setDescription(res.description);
         filled = true;
       }
-      if (res.imageUrl && !current.imageUrl && !current.imagePath && !current.imagePreview) {
+      if (
+        res.imageUrl &&
+        (!current.imageUrl || imported.current.imageUrl === current.imageUrl) &&
+        !current.imagePath &&
+        !current.imagePreview
+      ) {
+        imported.current.imageUrl = res.imageUrl;
         setImageUrl(res.imageUrl);
         filled = true;
       }
-      if (res.price != null && !current.price.trim()) {
+      if (
+        res.price != null &&
+        (!current.price.trim() || imported.current.price === current.price)
+      ) {
         if (res.currency === "EUR") {
-          setPrice((value) => (value.trim() ? value : String(res.price)));
+          imported.current.price = String(res.price);
+          setPrice(String(res.price));
           filled = true;
         } else {
           toast.message("Prix non repris : sa devise n’est pas indiquée ou n’est pas l’euro.");
         }
+      }
+      if (res.selectionRequired) return;
+      if (res.variantPriceUnavailable) {
+        toast.message(
+          "Couleur et taille reprises. Amazon ne fournit pas le prix de cette variante : complète-le à la main.",
+        );
+        return;
       }
       if (filled && res.source === "url")
         toast.message(
@@ -635,14 +686,14 @@ function GiftFormDialog({
             <div className="flex gap-2">
               <Input
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => changeUrl(e.target.value)}
                 placeholder="https://…"
                 inputMode="url"
               />
               <Button
                 type="button"
                 variant="outline"
-                onClick={fetchFromUrl}
+                onClick={() => void fetchFromUrl()}
                 disabled={fetching || !url.trim()}
                 className="rounded-xl shrink-0"
               >
@@ -654,6 +705,33 @@ function GiftFormDialog({
               Colle un lien produit puis « Récupérer » pour préremplir.
             </p>
           </div>
+          {variants.length > 0 && (
+            <div>
+              <Label htmlFor="product-variant">Couleur et taille</Label>
+              <select
+                id="product-variant"
+                className="w-full rounded-xl border bg-background p-3"
+                disabled={fetching}
+                defaultValue=""
+                onChange={(event) => {
+                  const selected = variants.find((variant) => variant.asin === event.target.value);
+                  if (selected) {
+                    changeUrl(selected.url);
+                    void fetchFromUrl(selected.url);
+                  }
+                }}
+              >
+                <option value="" disabled>
+                  Choisir la variante du produit
+                </option>
+                {variants.map((variant) => (
+                  <option key={variant.asin} value={variant.asin}>
+                    {variant.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Prix (€)</Label>

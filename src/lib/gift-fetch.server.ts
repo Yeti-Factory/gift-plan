@@ -21,6 +21,7 @@ export async function fetchGiftPage(
         () =>
           fetch(safe.href, {
             method: "GET",
+            cache: "no-store",
             redirect: "manual",
             signal: controller.signal,
             headers: {
