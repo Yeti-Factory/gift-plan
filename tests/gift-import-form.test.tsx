@@ -76,6 +76,71 @@ function pendingResult() {
 }
 
 describe("gift URL import form", () => {
+  it("replaces the previous imported product after changing the link", async () => {
+    const user = await openForm();
+    await user.click(screen.getByRole("button", { name: "Récupérer" }));
+    await waitFor(() => expect(input("29.90").value).toBe("27"));
+    fireEvent.change(input("https://…"), { target: { value: "https://amzn.eu/d/0dAUJiiH" } });
+    expect(input("Livre, jeu, écharpe…").value).toBe("");
+    expect(input("29.90").value).toBe("");
+    expect(screen.getByRole("dialog").querySelector("img")).toBeNull();
+    mocks.scrape.mockResolvedValue({
+      ...metadata,
+      title: "Hoodie orange",
+      description: "Taille L",
+      price: 20.98,
+      imageUrl: "https://shop.example/orange.jpg",
+    });
+    await user.click(screen.getByRole("button", { name: "Récupérer" }));
+    await waitFor(() => expect(input("Livre, jeu, écharpe…").value).toBe("Hoodie orange"));
+    expect(input("29.90").value).toBe("20.98");
+    expect(screen.getByRole("dialog").querySelector("img")?.getAttribute("src")).toBe(
+      "https://shop.example/orange.jpg",
+    );
+  });
+  it("preserves a hand edited name when clearing a previous import", async () => {
+    const user = await openForm();
+    await user.click(screen.getByRole("button", { name: "Récupérer" }));
+    await waitFor(() => expect(input("29.90").value).toBe("27"));
+    fireEvent.change(input("Livre, jeu, écharpe…"), { target: { value: "Mon hoodie orange" } });
+    fireEvent.change(input("https://…"), { target: { value: "https://shop.example/new" } });
+    expect(input("Livre, jeu, écharpe…").value).toBe("Mon hoodie orange");
+    expect(input("29.90").value).toBe("");
+  });
+  it("asks for a variant and fetches its own URL", async () => {
+    const user = await openForm();
+    mocks.scrape.mockResolvedValue({
+      ...metadata,
+      description: null,
+      imageUrl: null,
+      price: null,
+      selectionRequired: true,
+      variants: [
+        {
+          asin: "B0DP77BGQP",
+          url: "https://www.amazon.fr/dp/B0DP77BGQP?th=1&psc=1",
+          label: "L · Orange",
+          attributes: { color_name: "Orange", size_name: "L" },
+        },
+      ],
+    });
+    await user.click(screen.getByRole("button", { name: "Récupérer" }));
+    const picker = await screen.findByLabelText("Couleur et taille");
+    expect(input("29.90").value).toBe("");
+    mocks.scrape.mockResolvedValue({
+      ...metadata,
+      title: "Hoodie",
+      description: "L · Orange",
+      price: null,
+    });
+    fireEvent.change(picker, { target: { value: "B0DP77BGQP" } });
+    await waitFor(() =>
+      expect(mocks.scrape).toHaveBeenLastCalledWith({
+        data: { url: "https://www.amazon.fr/dp/B0DP77BGQP?th=1&psc=1" },
+      }),
+    );
+    await waitFor(() => expect(input("Livre, jeu, écharpe…").value).toBe("Hoodie"));
+  });
   it("labels the Fnac fallback as a provisional title and never invents photo or price", async () => {
     mocks.scrape.mockResolvedValue({
       ok: true,

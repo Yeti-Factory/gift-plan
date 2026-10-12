@@ -1,4 +1,5 @@
 import { DomUtils, parseDocument } from "htmlparser2";
+import { getAmazonVariants, type AmazonVariant } from "./amazon-variants.server";
 import { isBlockedHostname } from "./net-guard";
 
 type Element = ReturnType<typeof DomUtils.findAll>[number];
@@ -10,6 +11,9 @@ export interface GiftMetadata {
   imageUrl: string | null;
   price: number | null;
   currency: string | null;
+  variants?: AmazonVariant[];
+  selectionRequired?: boolean;
+  variantPriceUnavailable?: boolean;
 }
 
 function plainText(value: unknown, max = 2000): string | null {
@@ -122,7 +126,11 @@ function structuredProducts(scripts: Element[]) {
   return { products, references };
 }
 
-export function extractGiftMetadata(html: string, sourceUrl: string): GiftMetadata | null {
+export function extractGiftMetadata(
+  html: string,
+  sourceUrl: string,
+  requestedUrl?: string,
+): GiftMetadata | null {
   const dom = parseDocument(html);
   const elements = DomUtils.findAll(() => true, dom.children);
   const byId = (id: string) => elements.find((node) => node.attribs.id === id);
@@ -299,7 +307,52 @@ export function extractGiftMetadata(html: string, sourceUrl: string): GiftMetada
       }
     }
   }
-  return { title, description, imageUrl: image, price: parseProductPrice(rawPrice), currency };
+  let variantSource = sourceUrl;
+  if (amazon && requestedUrl) {
+    const requested = new URL(requestedUrl);
+    if (requested.hostname === new URL(sourceUrl).hostname) variantSource = requestedUrl;
+  }
+  const choices = amazon
+    ? getAmazonVariants(html, variantSource, byId("ASIN")?.attribs.value)
+    : null;
+  if (choices)
+    for (const variant of choices.variants) {
+      const swatch = elements.find(
+        (node) =>
+          node.name === "img" &&
+          node.attribs.alt === variant.attributes.color_name &&
+          /swatch-image/.test(node.attribs.class ?? ""),
+      );
+      variant.imageUrl = swatch ? imageUrl(swatch.attribs.src, sourceUrl) : null;
+    }
+  if (choices?.selectionRequired && choices.selected)
+    return {
+      title,
+      description: choices.selected.label,
+      imageUrl: choices.selected.imageUrl ?? null,
+      price: null,
+      currency: null,
+      variantPriceUnavailable: true,
+    };
+  if (choices?.selectionRequired)
+    return {
+      title,
+      description: null,
+      imageUrl: null,
+      price: null,
+      currency: null,
+      variants: choices.variants,
+      selectionRequired: true,
+    };
+  return {
+    title,
+    description: choices?.selectedLabel
+      ? [description, choices.selectedLabel].filter(Boolean).join(" — ")
+      : description,
+    imageUrl: image,
+    price: parseProductPrice(rawPrice),
+    currency,
+  };
 }
 
 /** A labelled fallback for Fnac when the public product page cannot be read. */
