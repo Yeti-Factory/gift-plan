@@ -85,7 +85,7 @@ export function getAmazonVariants(html: string, sourceUrl: string, displayedAsin
   const visible = displayedAsin && /^[A-Z0-9]{10}$/.test(displayedAsin) ? displayedAsin : null;
   const selectionRequired = Boolean(
     requestedAsin &&
-    (requestedAsin === parentAsin ||
+    ((requestedAsin === parentAsin && variants.length > 1) ||
       (visible && visible !== requestedAsin) ||
       (variants.length > 1 && !selected)),
   );
