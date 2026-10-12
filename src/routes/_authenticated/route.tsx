@@ -5,7 +5,6 @@ import {
   Link,
   useNavigate,
   useRouter,
-  useLocation,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -20,7 +19,6 @@ import {
 import { authClient } from "@/lib/self-hosted/auth-client";
 import { apiQuery } from "@/lib/self-hosted/api-client";
 import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/BackButton";
 import { BrandMark } from "@/components/BrandMark";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
@@ -43,16 +41,6 @@ function AuthLayout() {
   const [signingOut, setSigningOut] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [pendingProfileAccess, setPendingProfileAccess] = useState(0);
-  const pathname = useLocation({ select: (l) => l.pathname });
-  const topLevel = new Set([
-    "/people",
-    "/my-lists",
-    "/gifts-i-offer",
-    "/circles",
-    "/profile",
-    "/admin",
-  ]);
-  const showBack = !topLevel.has(pathname);
 
   useEffect(() => {
     apiQuery<{ is_superadmin: boolean }>("session")
@@ -84,7 +72,7 @@ function AuthLayout() {
 
   return (
     <div className="gp-mesh min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-white/70 bg-background/75 px-4 py-2.5 shadow-sm backdrop-blur-xl">
+      <header className="sticky top-14 z-40 border-b border-white/70 bg-background/75 px-4 py-2.5 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <Link to="/people" aria-label="Accueil Gift-Plan">
             <BrandMark />
@@ -111,11 +99,6 @@ function AuthLayout() {
       </header>
 
       <main className="flex-1 pb-20">
-        {showBack && (
-          <div className="mx-auto max-w-md px-4 pt-4">
-            <BackButton fallback="/people" />
-          </div>
-        )}
         <Outlet />
         <div className="mx-auto flex max-w-md justify-center px-4 pt-8">
           <PoweredByYetiLab />

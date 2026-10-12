@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff, Gift } from "lucide-react";
 import { toast } from "sonner";
 
-import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -71,9 +70,6 @@ function ResetPasswordPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-10">
-      <div className="-mt-4 mb-2 w-full max-w-sm">
-        <BackButton fallback="/auth" />
-      </div>
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg">
           <Gift className="h-8 w-8" />
