@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 export function PublicHeader({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <header className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-      <Link to="/discover" aria-label="Accueil Gift-Plan">
+      <Link to="/" aria-label="Accueil Gift-Plan">
         <BrandMark />
       </Link>
       <div className="flex items-center gap-2">

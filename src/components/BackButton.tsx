@@ -1,10 +1,10 @@
 import { ArrowLeft } from "lucide-react";
-import { useRouter, useNavigate } from "@tanstack/react-router";
+import { useRouter, useNavigate, useCanGoBack } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 
 export function BackButton({
-  fallback = "/circles",
+  fallback = "/",
   variant = "text",
 }: {
   fallback?: string;
@@ -12,9 +12,10 @@ export function BackButton({
 }) {
   const router = useRouter();
   const navigate = useNavigate();
+  const canGoBack = useCanGoBack();
 
   function handleClick() {
-    if (typeof window !== "undefined" && window.history.length > 1) {
+    if (canGoBack) {
       router.history.back();
     } else {
       navigate({ to: fallback, replace: true });
@@ -27,13 +28,9 @@ export function BackButton({
       size={variant === "icon" ? "icon" : "default"}
       onClick={handleClick}
       aria-label="Retour"
-      className={
-        variant === "text"
-          ? "h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground -ml-2"
-          : "h-8 w-8"
-      }
+      className={variant === "text" ? "h-11 px-3 text-sm font-medium" : "h-11 w-11"}
     >
-      <ArrowLeft className={variant === "text" ? "h-3.5 w-3.5" : "h-4 w-4"} />
+      <ArrowLeft aria-hidden="true" className={variant === "text" ? "h-3.5 w-3.5" : "h-4 w-4"} />
       {variant === "text" && "Retour"}
     </Button>
   );

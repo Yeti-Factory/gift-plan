@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/BackButton";
 
 interface HealthReport {
   status: "ok" | "degraded";
@@ -39,7 +38,6 @@ function StatusPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <BackButton />
       <div className="mt-4 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-3">
           {isLoading ? (
