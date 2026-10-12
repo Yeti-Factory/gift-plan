@@ -7,6 +7,21 @@ const html = `<span id="productTitle">Hoodie MEDUOLA</span>
 <span id="priceblock_ourprice">27,98 €</span>
 <script>{"parentAsin":"B0DF2RQVT3","dimensions":["size_name","color_name"],"dimensionValuesDisplayData":{"B0DF2HXK5M":["S","Blanc"],"B0DP77BGQP":["L","Orange"]}}</script>`;
 describe("Amazon product identity", () => {
+  it("imports a standalone Amazon product even when its ASIN is also called parentAsin", () => {
+    const standalone = `<span id="productTitle">BAMBUA Gratte Dos télescopique</span>
+      <input id="ASIN" value="B09VHCJQQL">
+      <img id="landingImage" src="https://m.media-amazon.com/images/I/711sQfBUicL.jpg">
+      <span id="apex-pricetopay-accessibility-label">9,99 €</span>
+      <script>{"parentAsin":"B09VHCJQQL"}</script>`;
+    const result = extractGiftMetadata(standalone, "https://www.amazon.fr/dp/B09VHCJQQL");
+    expect(result).toMatchObject({
+      title: "BAMBUA Gratte Dos télescopique",
+      imageUrl: "https://m.media-amazon.com/images/I/711sQfBUicL.jpg",
+      price: 9.99,
+      currency: "EUR",
+    });
+    expect(result?.selectionRequired).not.toBe(true);
+  });
   it("does not import the default white variant for a parent product", () => {
     const result = extractGiftMetadata(html, "https://www.amazon.fr/dp/B0DF2RQVT3");
     expect(result).toMatchObject({
