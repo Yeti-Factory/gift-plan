@@ -1,3 +1,4 @@
+import { LIST_ACCESS_SQL } from "./list-access.server";
 import type { Pool, PoolClient } from "pg";
 
 import type {
@@ -54,9 +55,10 @@ export async function listProfileDirectory(
          ON outgoing.requester_id = $1::uuid AND outgoing.owner_id = p.id
        LEFT JOIN profile_access_requests incoming
          ON incoming.requester_id = p.id AND incoming.owner_id = $1::uuid
-       WHERE $2 = ''
-          OR lower(p.username) LIKE '%' || lower($2) || '%'
-          OR lower(coalesce(p.display_name, '')) LIKE '%' || lower($2) || '%'
+       WHERE (access.can_view OR outgoing.id IS NOT NULL OR incoming.id IS NOT NULL
+              OR ($2 <> '' AND lower(p.username) = lower($2)))
+         AND ($2 = '' OR lower(p.username) LIKE '%' || lower($2) || '%'
+              OR lower(coalesce(p.display_name, '')) LIKE '%' || lower($2) || '%')
      ), page AS (
        SELECT * FROM candidates
        ORDER BY sort_name, lower(username), id
@@ -209,6 +211,7 @@ async function profileVisibility(
        OR ($3::uuid IS NOT NULL AND EXISTS (
          SELECT 1 FROM profile_share_links share
          WHERE share.owner_id = p.id AND share.token = $3::uuid
+           AND EXISTS (SELECT 1 FROM profile_share_link_lists selection JOIN lists l ON l.id = selection.list_id WHERE selection.share_link_id = share.id AND l.visibility <> 'private')
            AND share.revoked_at IS NULL AND (share.expires_at IS NULL OR share.expires_at > now())
        ))
      ) AS can_view
@@ -247,30 +250,12 @@ export async function getProfilePage(
     title: string;
     occasion: string | null;
     event_date: string | null;
-    visibility: "public" | "circles";
+    visibility: "public" | "circles" | "private";
   }>(
     `SELECT l.id, l.title, l.occasion, l.event_date, l.visibility
        FROM lists l
       WHERE l.owner_id = $1::uuid
-        AND (
-          l.owner_id = $2::uuid
-          OR l.visibility = 'public'
-          OR ($2::uuid IS NOT NULL AND EXISTS (
-            SELECT 1 FROM profile_access_requests ar
-            WHERE ar.owner_id = l.owner_id AND ar.requester_id = $2::uuid AND ar.status = 'accepted'
-          ))
-          OR ($2::uuid IS NOT NULL AND EXISTS (
-            SELECT 1 FROM list_circle_access la JOIN circle_members cm ON cm.circle_id = la.circle_id
-            WHERE la.list_id = l.id AND cm.user_id = $2::uuid
-          ))
-          OR ($3::uuid IS NOT NULL AND EXISTS (
-            SELECT 1 FROM profile_share_links share
-            JOIN profile_share_link_lists selection ON selection.share_link_id = share.id
-            WHERE share.owner_id = l.owner_id AND share.token = $3::uuid
-              AND selection.list_id = l.id AND share.revoked_at IS NULL
-              AND (share.expires_at IS NULL OR share.expires_at > now())
-          ))
-        )
+        AND ${LIST_ACCESS_SQL}
       ORDER BY l.created_at DESC, l.id`,
     [profile.id, viewerId, shareToken],
   );
@@ -338,23 +323,7 @@ export async function setGiftReservation(
     if (gift.owner_id === viewerId) throw new ApiError(403, "FORBIDDEN");
 
     const visible = await client.query<{ visible: boolean }>(
-      `SELECT (
-         l.visibility = 'public'
-         OR EXISTS (
-           SELECT 1 FROM profile_access_requests ar
-           WHERE ar.owner_id = l.owner_id AND ar.requester_id = $2::uuid AND ar.status = 'accepted'
-         )
-         OR EXISTS (
-           SELECT 1 FROM list_circle_access la JOIN circle_members cm ON cm.circle_id = la.circle_id
-           WHERE la.list_id = l.id AND cm.user_id = $2::uuid
-         )
-         OR ($3::uuid IS NOT NULL AND EXISTS (
-           SELECT 1 FROM profile_share_links s
-           JOIN profile_share_link_lists sl ON sl.share_link_id = s.id
-           WHERE s.token = $3::uuid AND s.owner_id = l.owner_id AND sl.list_id = l.id
-             AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at > now())
-         ))
-       ) AS visible FROM lists l WHERE l.id = $1::uuid`,
+      `SELECT ${LIST_ACCESS_SQL} AS visible FROM lists l WHERE l.id = $1::uuid`,
       [gift.list_id, viewerId, shareToken],
     );
     if (!visible.rows[0]?.visible) throw new ApiError(403, "FORBIDDEN");

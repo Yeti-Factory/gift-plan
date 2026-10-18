@@ -89,7 +89,7 @@ async function saveList(userId: string, body: Record<string, unknown>) {
   const id = optionalUuid(body.id);
   const title = requiredText(body.title, 160);
   const occasion = optionalText(body.occasion, 160);
-  const visibility = enumValue(body.visibility, new Set(["public", "circles"]));
+  const visibility = enumValue(body.visibility, new Set(["public", "circles", "private"]));
   const circleIds = uuidArray(body.circleIds ?? []);
   if (visibility === "circles" && circleIds.length === 0) {
     throw new ApiError(400, "INVALID_REQUEST");
@@ -117,6 +117,9 @@ async function saveList(userId: string, body: Record<string, unknown>) {
          SELECT $1::uuid, unnest($2::uuid[])`,
         [listId, circleIds],
       );
+    }
+    if (visibility === "private") {
+      await client.query("DELETE FROM profile_share_link_lists WHERE list_id = $1::uuid", [listId]);
     }
     return { id: listId };
   });
@@ -393,7 +396,7 @@ async function createShare(userId: string, body: Record<string, unknown>) {
   const label = optionalText(body.label, 100);
   return transaction(async (client) => {
     const owned = await client.query(
-      "SELECT id FROM lists WHERE owner_id = $1::uuid AND id = ANY($2::uuid[])",
+      "SELECT id FROM lists WHERE owner_id = $1::uuid AND id = ANY($2::uuid[]) AND visibility <> 'private'",
       [userId, listIds],
     );
     if (owned.rowCount !== listIds.length) throw new ApiError(403, "FORBIDDEN");

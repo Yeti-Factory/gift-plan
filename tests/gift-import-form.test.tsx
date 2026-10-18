@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   scrape: vi.fn(),
   query: vi.fn(),
+  action: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
   message: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: () => mocks.scrape }));
 vi.mock("@/lib/gift-scrape.functions", () => ({ scrapeGiftUrl: vi.fn() }));
-vi.mock("@/lib/self-hosted/api-client", () => ({ apiQuery: mocks.query, apiAction: vi.fn() }));
+vi.mock("@/lib/self-hosted/api-client", () => ({ apiQuery: mocks.query, apiAction: mocks.action }));
 vi.mock("sonner", () => ({
   toast: { error: mocks.error, success: mocks.success, message: mocks.message },
 }));
@@ -76,6 +77,27 @@ function pendingResult() {
 }
 
 describe("gift URL import form", () => {
+  it("creates a personal list by default without requiring a circle", async () => {
+    mocks.action.mockResolvedValue({ id: "new-private-list" });
+    const user = userEvent.setup();
+    render(<Page />);
+    await user.click(await screen.findByRole("button", { name: "Liste" }));
+    expect(screen.getByRole("combobox", { name: "Visibilité de la liste" }).textContent).toContain(
+      "Privée — uniquement moi",
+    );
+    await user.type(screen.getByPlaceholderText("Mon anniversaire"), "Mes idées personnelles");
+    await user.click(screen.getByRole("button", { name: "Créer" }));
+    await waitFor(() =>
+      expect(mocks.action).toHaveBeenCalledWith(
+        "save-list",
+        expect.objectContaining({
+          title: "Mes idées personnelles",
+          visibility: "private",
+          circleIds: [],
+        }),
+      ),
+    );
+  });
   it("replaces the previous imported product after changing the link", async () => {
     const user = await openForm();
     await user.click(screen.getByRole("button", { name: "Récupérer" }));

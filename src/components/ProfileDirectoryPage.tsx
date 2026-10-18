@@ -185,8 +185,9 @@ export function ProfileDirectoryPage() {
             Profils Gift-Plan
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Tous les profils créés, classés par ordre alphabétique. Les profils publics sont
-            accessibles immédiatement ; les profils privés valident chaque demande.
+            Les profils publics et vos contacts sont affichés ici. Un profil privé sans lien avec
+            vous n’apparaît pas dans cet annuaire ; son identifiant exact permet de lui demander un
+            accès.
           </p>
         </header>
 

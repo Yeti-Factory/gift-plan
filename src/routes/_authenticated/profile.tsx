@@ -29,7 +29,7 @@ type OwnProfile = {
   visibility: "public" | "private";
   email_searchable: boolean;
 };
-type OwnList = { id: string; title: string; visibility: "public" | "circles" };
+type OwnList = { id: string; title: string; visibility: "public" | "circles" | "private" };
 type ShareLink = {
   id: string;
   token: string;
@@ -335,8 +335,9 @@ function ManageProfilePage() {
             <div>
               <Label htmlFor="profile-public">Profil public</Label>
               <p className="text-xs text-muted-foreground">
-                Public : vos listes publiques sont consultables immédiatement. Privé : vous validez
-                chaque demande de connexion.
+                Rendre votre profil public ne rend pas vos contacts publics. Chaque personne garde
+                ses propres réglages. La visibilité de chaque liste se règle dans Mes listes ; une
+                liste privée reste uniquement pour vous.
               </p>
             </div>
             <Switch id="profile-public" checked={isPublic} onCheckedChange={setIsPublic} />
@@ -387,28 +388,32 @@ function ManageProfilePage() {
           placeholder="Pour Mamie, collègues… (optionnel)"
         />
         <div className="space-y-2">
-          {lists.map((list) => (
-            <label
-              key={list.id}
-              className="flex cursor-pointer items-center gap-2 rounded-lg border p-3"
-            >
-              <Checkbox
-                checked={selectedLists.includes(list.id)}
-                onCheckedChange={(checked) =>
-                  setSelectedLists((current) =>
-                    checked ? [...current, list.id] : current.filter((id) => id !== list.id),
-                  )
-                }
-              />
-              <span className="flex-1 text-sm">{list.title}</span>
-              <Badge variant="outline">
-                {list.visibility === "public" ? "Publique" : "Cercles"}
-              </Badge>
-            </label>
-          ))}
+          {lists
+            .filter((list) => list.visibility !== "private")
+            .map((list) => (
+              <label
+                key={list.id}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border p-3"
+              >
+                <Checkbox
+                  checked={selectedLists.includes(list.id)}
+                  onCheckedChange={(checked) =>
+                    setSelectedLists((current) =>
+                      checked ? [...current, list.id] : current.filter((id) => id !== list.id),
+                    )
+                  }
+                />
+                <span className="flex-1 text-sm">{list.title}</span>
+                <Badge variant="outline">
+                  {list.visibility === "public" ? "Publique" : "Cercles"}
+                </Badge>
+              </label>
+            ))}
         </div>
-        {lists.length === 0 && (
-          <p className="text-sm text-muted-foreground">Créez d'abord une liste.</p>
+        {lists.filter((list) => list.visibility !== "private").length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Aucune liste partageable. Les listes privées ne peuvent pas être incluses dans un lien.
+          </p>
         )}
         <Button
           onClick={createShareLink}

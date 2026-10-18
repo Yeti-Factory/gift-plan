@@ -251,7 +251,11 @@ function PublicProfilePage() {
                       {list.title}
                     </h2>
                     <Badge variant="outline" className="rounded-full bg-white/60">
-                      {list.visibility === "public" ? "Publique" : "Cercles"}
+                      {list.visibility === "private"
+                        ? "Privée — visible uniquement par vous"
+                        : list.visibility === "public"
+                          ? "Publique"
+                          : "Cercles"}
                     </Badge>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">

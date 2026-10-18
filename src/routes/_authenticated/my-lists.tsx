@@ -64,7 +64,7 @@ type List = {
   title: string;
   occasion: string | null;
   circle_id: string | null;
-  visibility: "public" | "circles";
+  visibility: "public" | "circles" | "private";
   circle_ids: string[];
 };
 type Gift = {
@@ -123,7 +123,7 @@ function MyLists() {
         <div>
           <h1 className="text-2xl font-bold">Mes listes</h1>
           <p className="text-sm text-muted-foreground">
-            Vos envies, publiques ou partagées avec vos cercles.
+            Vos listes personnelles, publiques ou partagées avec les cercles de votre choix.
           </p>
         </div>
         <NewListDialog circles={circles} onCreated={load} />
@@ -159,7 +159,11 @@ function MyLists() {
                 <div className="min-w-0">
                   <h2 className="font-semibold text-lg leading-tight">{list.title}</h2>
                   <p className="text-xs text-muted-foreground">
-                    {list.visibility === "public" ? "Tout le monde" : circleNames.join(", ")}
+                    {list.visibility === "private"
+                      ? "Privée — uniquement moi"
+                      : list.visibility === "public"
+                        ? "Publique — tout le monde"
+                        : circleNames.join(", ")}
                     {list.occasion ? ` · ${list.occasion}` : ""}
                   </p>
                 </div>
@@ -269,7 +273,7 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [occasion, setOccasion] = useState("");
-  const [visibility, setVisibility] = useState<"public" | "circles">("public");
+  const [visibility, setVisibility] = useState<"public" | "circles" | "private">("private");
   const [circleIds, setCircleIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -286,7 +290,7 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
       toast.success("Liste créée !");
       setTitle("");
       setOccasion("");
-      setVisibility("public");
+      setVisibility("private");
       setCircleIds([]);
       setOpen(false);
       onCreated();
@@ -329,16 +333,22 @@ function NewListDialog({ circles, onCreated }: { circles: Circle[]; onCreated: (
             <Label>Qui peut consulter cette liste ?</Label>
             <Select
               value={visibility}
-              onValueChange={(value) => setVisibility(value as "public" | "circles")}
+              onValueChange={(value) => setVisibility(value as "public" | "circles" | "private")}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Visibilité de la liste">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="public">Tout le monde</SelectItem>
+                <SelectItem value="private">Privée — uniquement moi</SelectItem>
+                <SelectItem value="public">Publique — tout le monde</SelectItem>
                 <SelectItem value="circles">Un ou plusieurs cercles</SelectItem>
               </SelectContent>
             </Select>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Une liste privée reste invisible aux autres, même si votre profil est public. Une
+              liste publique est visible par tous ; une liste partagée est réservée aux cercles
+              choisis et aux liens que vous créez.
+            </p>
             {visibility === "circles" && (
               <div className="mt-2 space-y-2">
                 {circles.map((circle) => (
@@ -815,7 +825,7 @@ function EditListDialog({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(list.title);
   const [occasion, setOccasion] = useState(list.occasion ?? "");
-  const [visibility, setVisibility] = useState<"public" | "circles">(list.visibility);
+  const [visibility, setVisibility] = useState<"public" | "circles" | "private">(list.visibility);
   const [circleIds, setCircleIds] = useState<string[]>(list.circle_ids);
   const [busy, setBusy] = useState(false);
 
@@ -875,16 +885,22 @@ function EditListDialog({
             <Label>Qui peut consulter cette liste ?</Label>
             <Select
               value={visibility}
-              onValueChange={(value) => setVisibility(value as "public" | "circles")}
+              onValueChange={(value) => setVisibility(value as "public" | "circles" | "private")}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Visibilité de la liste">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="public">Tout le monde</SelectItem>
+                <SelectItem value="private">Privée — uniquement moi</SelectItem>
+                <SelectItem value="public">Publique — tout le monde</SelectItem>
                 <SelectItem value="circles">Un ou plusieurs cercles</SelectItem>
               </SelectContent>
             </Select>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Une liste privée reste invisible aux autres, même si votre profil est public. Une
+              liste publique est visible par tous ; une liste partagée est réservée aux cercles
+              choisis et aux liens que vous créez.
+            </p>
             {visibility === "circles" && (
               <div className="mt-2 space-y-2">
                 {circles.map((circle) => (
