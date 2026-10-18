@@ -1,7 +1,7 @@
 import { formatBirthday } from "@/lib/birthday";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Check, X, ShoppingBag } from "lucide-react";
+import { Check, X, ShoppingBag, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
@@ -178,6 +178,14 @@ function MemberLists() {
           )}
         </div>
       </div>
+
+      {me && profile && !isOwn && (
+        <Button asChild>
+          <Link to="/messages" search={{ recipient: userId }}>
+            <MessageCircle className="h-4 w-4" /> Écrire à {name}
+          </Link>
+        </Button>
+      )}
 
       {gifts.length > 0 && (
         <GiftCategoryFilter value={categoryFilter} onValueChange={setCategoryFilter} />

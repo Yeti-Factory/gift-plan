@@ -35,6 +35,48 @@ const message = {
   created_at: "2026-10-18T12:00:00Z",
 };
 describe("private messaging interface", () => {
+  it("opens a new recipient and sends the first message before waiting for acceptance", async () => {
+    let created = false;
+    const pending = {
+      ...conversation,
+      other_id: "emilie",
+      username: "emilie",
+      display_name: "Émilie",
+      initiated_by: "alice",
+    };
+    api.query.mockImplementation(async (view: string) => {
+      if (view === "messages")
+        return {
+          conversations: created ? [pending] : [],
+          unread: 0,
+          userId: "alice",
+          hasMore: false,
+        };
+      if (view === "message-recipient")
+        return { id: "emilie", display_name: "Émilie", username: "emilie", conversation_id: null };
+      return {
+        conversation: pending,
+        messages: [{ ...message, sender_id: "alice", body: "Bonjour Émilie" }],
+        hasMore: false,
+      };
+    });
+    api.action.mockImplementation(async () => {
+      created = true;
+      return { conversationId: "conversation" };
+    });
+    const user = userEvent.setup();
+    render(<MessagingPage userId="alice" recipientId="emilie" />);
+    await user.type(await screen.findByLabelText("Votre message"), "Bonjour Émilie");
+    await user.click(screen.getByRole("button", { name: "Envoyer" }));
+    await waitFor(() =>
+      expect(api.action).toHaveBeenCalledWith(
+        "message-start",
+        expect.objectContaining({ recipientId: "emilie", text: "Bonjour Émilie" }),
+      ),
+    );
+    expect(await screen.findByText(/Demande envoyée\. Vous pourrez/)).toBeTruthy();
+    expect(screen.queryByLabelText("Votre message")).toBeNull();
+  });
   it("requires acceptance before replying, escapes message text and allows sending and blocking", async () => {
     let state = { ...conversation };
     api.query.mockImplementation(async (view: string) =>

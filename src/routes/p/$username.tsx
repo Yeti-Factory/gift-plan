@@ -7,6 +7,7 @@ import {
   CircleCheck,
   Gift as GiftIcon,
   Lock,
+  MessageCircle,
   Share2,
   ShoppingBag,
   Sparkles,
@@ -216,6 +217,13 @@ function PublicProfilePage() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              {me && me !== profile.id && (
+                <Button asChild className="rounded-2xl">
+                  <Link to="/messages" search={{ recipient: profile.id }}>
+                    <MessageCircle className="h-4 w-4" /> Écrire
+                  </Link>
+                </Button>
+              )}
               <Button variant="outline" className="rounded-lg bg-white/80" onClick={shareProfile}>
                 <Share2 className="h-4 w-4" /> Partager
               </Button>
