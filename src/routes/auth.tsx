@@ -240,6 +240,11 @@ function AuthPage() {
       </div>
 
       <Card className="gp-glass relative z-10 w-full max-w-sm space-y-4 rounded-[1.75rem] border-0 p-6">
+        <p className="rounded-xl bg-primary/10 p-3 text-sm text-foreground">
+          Après votre connexion, un guide explique Gift-Plan et les nouveaux réglages de
+          confidentialité. Utilisez votre compte habituel : vos listes et vos cadeaux sont
+          conservés.
+        </p>
         {forgotOpen ? (
           <form onSubmit={handleForgot} className="space-y-3">
             <div className="space-y-2">
