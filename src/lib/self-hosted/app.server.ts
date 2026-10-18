@@ -68,7 +68,7 @@ export async function getAppStatus(userId: string | null, database: Database = g
 export async function getSessionView(userId: string, database: Database = getDatabasePool()) {
   const result = await database.query(
     `SELECT u.id, u.name, u.email, u."emailVerified" AS email_verified, u.image,
-            p.username, p.display_name, p.avatar_url, p.bio, p.visibility,
+            p.username, p.display_name, p.avatar_url, p.bio, p.birthday, p.visibility,
             p.email_searchable, p.onboarding_completed_at, p.onboarding_version,
             EXISTS (SELECT 1 FROM app_admins a WHERE a.user_id = u.id) AS is_superadmin,
             (SELECT count(*)::int FROM profile_access_requests ar
@@ -84,7 +84,7 @@ export async function searchPublicProfiles(query: string, database: Database = g
   const term = query.trim().toLowerCase();
   if (term.length < 2 || term.length > 100) return [];
   const result = await database.query(
-    `SELECT p.id, p.username, p.display_name, p.avatar_url, p.bio
+    `SELECT p.id, p.username, p.display_name, p.avatar_url, p.bio, p.birthday
        FROM profiles p JOIN "user" u ON u.id = p.id AND u."emailVerified" = true
       WHERE p.visibility = 'public' AND (
         lower(p.username) LIKE '%' || $1 || '%'
@@ -186,7 +186,7 @@ export async function getCircleMember(
   await circleMembership(database, circleId, memberId);
   const [profile, lists] = await Promise.all([
     database.query(
-      `SELECT id, username, display_name, avatar_url FROM profiles WHERE id = $1::uuid`,
+      `SELECT id, username, display_name, avatar_url, birthday FROM profiles WHERE id = $1::uuid`,
       [memberId],
     ),
     database.query(
@@ -242,7 +242,7 @@ export async function getOffers(userId: string, database: Database = getDatabase
 export async function getMyProfile(userId: string, database: Database = getDatabasePool()) {
   const [profile, lists, shares] = await Promise.all([
     database.query(
-      `SELECT id, username, display_name, avatar_url, avatar_path, bio, visibility,
+      `SELECT id, username, display_name, avatar_url, avatar_path, bio, birthday, visibility,
               email_searchable, onboarding_completed_at, onboarding_version
          FROM profiles WHERE id = $1::uuid`,
       [userId],

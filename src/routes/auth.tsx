@@ -1,3 +1,5 @@
+import { BirthdayFields } from "@/components/BirthdayFields";
+import { birthdayFromParts } from "@/lib/birthday";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Sparkles } from "lucide-react";
@@ -44,6 +46,8 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [birthdayDay, setBirthdayDay] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -94,6 +98,14 @@ function AuthPage() {
     const email = String(fd.get("email") ?? "").trim();
     const password = String(fd.get("password") ?? "");
     const name = String(fd.get("name") ?? "").trim();
+    const birthday = birthdayFromParts(
+      String(fd.get("birthdayDay") ?? ""),
+      String(fd.get("birthdayMonth") ?? ""),
+    );
+    if (!birthday) {
+      toast.error("Renseignez un jour et un mois d’anniversaire valides.");
+      return;
+    }
     if (password.length < MIN_PASSWORD_LENGTH) {
       toast.error(`Mot de passe trop court (${MIN_PASSWORD_LENGTH} caractères minimum).`);
       return;
@@ -104,6 +116,7 @@ function AuthPage() {
         email,
         password,
         name: name || displayName.trim() || email.split("@")[0],
+        birthday,
         callbackURL: "/people",
       });
 
@@ -397,6 +410,14 @@ function AuthPage() {
                       onChange={(e) => setDisplayName(e.target.value)}
                     />
                   </div>
+                  <BirthdayFields
+                    id="signup-birthday"
+                    day={birthdayDay}
+                    month={birthdayMonth}
+                    onDayChange={setBirthdayDay}
+                    onMonthChange={setBirthdayMonth}
+                    required
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input

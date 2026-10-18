@@ -12,6 +12,30 @@ afterEach(() => {
 });
 
 describe("authentication during an email configuration outage", () => {
+  it("rejects missing and impossible birthdays before creating any account", async () => {
+    for (const birthday of [undefined, "04-31", "2000-04-22"]) {
+      const response = await handleAuthRequest(
+        new Request("https://gift-plan.example.com/api/auth/sign-up/email", {
+          method: "POST",
+          body: JSON.stringify({ email: "new@example.com", birthday }),
+        }),
+      );
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ code: "INVALID_BIRTHDAY" });
+    }
+    expect(handler).not.toHaveBeenCalled();
+  });
+  it("preserves a valid birthday in the body passed to account creation", async () => {
+    handler.mockImplementation(async (request: Request) => Response.json(await request.json()));
+    const response = await handleAuthRequest(
+      new Request("https://gift-plan.example.com/api/auth/sign-up/email", {
+        method: "POST",
+        body: JSON.stringify({ birthday: "02-29" }),
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ birthday: "02-29" });
+  });
   it("rejects reset requests uniformly before account lookup", async () => {
     vi.stubEnv("RESEND_API_KEY_GIFT_PLAN", "");
     vi.stubEnv("RESEND_API_KEY", "");

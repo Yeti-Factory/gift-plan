@@ -1,3 +1,4 @@
+import { formatBirthday } from "@/lib/birthday";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -195,6 +196,11 @@ function PublicProfilePage() {
                   @{profile.username}
                 </Badge>
               </div>
+              {formatBirthday(profile.birthday) && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  🎂 Anniversaire : {formatBirthday(profile.birthday)}
+                </p>
+              )}
               {profile.bio && (
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                   {profile.bio}

@@ -1,3 +1,4 @@
+import { isBirthday } from "../birthday";
 import { randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
 
@@ -372,16 +373,21 @@ async function saveProfile(userId: string, body: Record<string, unknown>) {
   const bio = optionalText(body.bio, 1_000);
   const visibility = enumValue(body.visibility, new Set(["public", "private"]));
   const emailSearchable = boolean(body.emailSearchable);
+  const birthdayProvided = Object.prototype.hasOwnProperty.call(body, "birthday");
+  const birthday = body.birthday ?? null;
+  if (birthdayProvided && birthday !== null && !isBirthday(birthday))
+    throw new ApiError(400, "INVALID_REQUEST");
   try {
     const result = await getDatabasePool().query(
       `UPDATE profiles SET display_name = $2, username = $3, bio = $4,
-              visibility = $5::profile_visibility, email_searchable = $6
+              visibility = $5::profile_visibility, email_searchable = $6,
+              birthday = CASE WHEN $8::boolean THEN $7 ELSE birthday END
         WHERE id = $1::uuid RETURNING *`,
-      [userId, displayName, username, bio, visibility, emailSearchable],
+      [userId, displayName, username, bio, visibility, emailSearchable, birthday, birthdayProvided],
     );
     await getDatabasePool().query(
-      'UPDATE "user" SET name = $2, "updatedAt" = now() WHERE id = $1::uuid',
-      [userId, displayName],
+      'UPDATE "user" SET name = $2, "updatedAt" = now(), birthday = CASE WHEN $4::boolean THEN $3 ELSE birthday END WHERE id = $1::uuid',
+      [userId, displayName, birthday, birthdayProvided],
     );
     return result.rows[0];
   } catch (error) {

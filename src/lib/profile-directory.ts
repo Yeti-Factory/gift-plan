@@ -9,6 +9,7 @@ export type DirectoryProfile = {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  birthday?: string | null;
   visibility: "public" | "private";
   can_view: boolean;
   is_self: boolean;

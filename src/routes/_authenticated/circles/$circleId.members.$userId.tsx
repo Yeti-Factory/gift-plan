@@ -1,3 +1,4 @@
+import { formatBirthday } from "@/lib/birthday";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { Check, X, ShoppingBag } from "lucide-react";
@@ -46,6 +47,7 @@ function MemberLists() {
   const [profile, setProfile] = useState<{
     display_name: string | null;
     avatar_url: string | null;
+    birthday?: string | null;
   } | null>(null);
   const [lists, setLists] = useState<List[]>([]);
   const [gifts, setGifts] = useState<Gift[]>([]);
@@ -164,6 +166,11 @@ function MemberLists() {
         </Avatar>
         <div>
           <h1 className="text-xl font-bold">{isOwn ? "Vos listes" : `Idées pour ${name}`}</h1>
+          {formatBirthday(profile?.birthday) && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              🎂 Anniversaire : {formatBirthday(profile?.birthday)}
+            </p>
+          )}
           {isOwn && (
             <p className="text-xs text-muted-foreground">
               Les réservations sont cachées pour préserver la surprise.

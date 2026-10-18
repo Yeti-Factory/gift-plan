@@ -142,6 +142,7 @@ const STEPS: Step[] = [
       "Les boutons Retour et Accueil restent en haut des pages. Les onglets du bas donnent accès à Communauté, Mes listes, J’offre, Cercles et Mon profil.",
     bullets: [
       "Dans Mon profil, choisissez si votre profil est public ou privé ; cela ne change pas les réglages de vos listes ni ceux de vos contacts.",
+      "Dans Mon profil, ajoutez votre anniversaire (jour et mois) pour aider vos proches à préparer leurs cadeaux. Il est affiché aux personnes autorisées à consulter votre profil.",
       "Les photos de profil gardent leurs proportions et sont recadrées dans le cercle.",
       "Dans Mon compte, utilisez Revoir le guide de démarrage pour relire ces explications à tout moment.",
       "Ce guide est proposé à chaque nouvelle connexion, pas à chaque page. Si vous l’avez fermé, vous pouvez toujours le rouvrir depuis Mon compte.",
