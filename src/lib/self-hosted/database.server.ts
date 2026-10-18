@@ -43,7 +43,7 @@ export async function pingDatabase(timeoutMs = 3_000): Promise<number> {
   try {
     await Promise.race([
       pool.query(
-        "SELECT p.birthday, 'private'::list_visibility FROM profiles p LEFT JOIN direct_conversations c ON false LEFT JOIN direct_messages m ON false LIMIT 0",
+        "SELECT p.birthday, 'private'::list_visibility FROM profiles p LEFT JOIN direct_conversations c ON false LEFT JOIN direct_messages m ON false LEFT JOIN group_conversations gc ON false LEFT JOIN group_participants gp ON false LEFT JOIN group_messages gm ON false LIMIT 0",
       ),
       new Promise<never>((_, reject) => {
         timeout = setTimeout(

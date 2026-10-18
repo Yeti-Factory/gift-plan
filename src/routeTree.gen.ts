@@ -36,6 +36,7 @@ import { Route as ApiV1AppRouteImport } from './routes/api/v1/app'
 import { Route as ApiPublicSelfHostedReadyRouteImport } from './routes/api/public/self-hosted-ready'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedGroupMessagesGroupIdRouteImport } from './routes/_authenticated/group-messages.$groupId'
 import { Route as AuthenticatedCirclesCircleIdRouteImport } from './routes/_authenticated/circles/$circleId'
 import { Route as AuthenticatedCirclesCircleIdIndexRouteImport } from './routes/_authenticated/circles/$circleId.index'
 import { Route as ApiV1ProfilesUsernameRouteImport } from './routes/api/v1/profiles/$username'
@@ -180,6 +181,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedGroupMessagesGroupIdRoute =
+  AuthenticatedGroupMessagesGroupIdRouteImport.update({
+    id: '/group-messages/$groupId',
+    path: '/group-messages/$groupId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCirclesCircleIdRoute =
   AuthenticatedCirclesCircleIdRouteImport.update({
     id: '/circles/$circleId',
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/p/$username': typeof PUsernameRoute
   '/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/group-messages/$groupId': typeof AuthenticatedGroupMessagesGroupIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
@@ -267,6 +275,7 @@ export interface FileRoutesByTo {
   '/legal/confidentialite': typeof LegalConfidentialiteRoute
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/p/$username': typeof PUsernameRoute
+  '/group-messages/$groupId': typeof AuthenticatedGroupMessagesGroupIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/legal/mentions-legales': typeof LegalMentionsLegalesRoute
   '/p/$username': typeof PUsernameRoute
   '/_authenticated/circles/$circleId': typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  '/_authenticated/group-messages/$groupId': typeof AuthenticatedGroupMessagesGroupIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/self-hosted-ready': typeof ApiPublicSelfHostedReadyRoute
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/legal/mentions-legales'
     | '/p/$username'
     | '/circles/$circleId'
+    | '/group-messages/$groupId'
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/legal/confidentialite'
     | '/legal/mentions-legales'
     | '/p/$username'
+    | '/group-messages/$groupId'
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
@@ -407,6 +419,7 @@ export interface FileRouteTypes {
     | '/legal/mentions-legales'
     | '/p/$username'
     | '/_authenticated/circles/$circleId'
+    | '/_authenticated/group-messages/$groupId'
     | '/api/auth/$'
     | '/api/public/health'
     | '/api/public/self-hosted-ready'
@@ -639,6 +652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/group-messages/$groupId': {
+      id: '/_authenticated/group-messages/$groupId'
+      path: '/group-messages/$groupId'
+      fullPath: '/group-messages/$groupId'
+      preLoaderRoute: typeof AuthenticatedGroupMessagesGroupIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/circles/$circleId': {
       id: '/_authenticated/circles/$circleId'
       path: '/circles/$circleId'
@@ -711,6 +731,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedCirclesCircleIdRoute: typeof AuthenticatedCirclesCircleIdRouteWithChildren
+  AuthenticatedGroupMessagesGroupIdRoute: typeof AuthenticatedGroupMessagesGroupIdRoute
   AuthenticatedCirclesIndexRoute: typeof AuthenticatedCirclesIndexRoute
 }
 
@@ -724,6 +745,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedCirclesCircleIdRoute:
     AuthenticatedCirclesCircleIdRouteWithChildren,
+  AuthenticatedGroupMessagesGroupIdRoute:
+    AuthenticatedGroupMessagesGroupIdRoute,
   AuthenticatedCirclesIndexRoute: AuthenticatedCirclesIndexRoute,
 }
 

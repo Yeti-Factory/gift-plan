@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { GroupInboxSection } from "@/components/GroupInboxSection";
 import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import {
   messageError,
@@ -109,6 +110,14 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
           });
           if (!active || version !== generation.current) return;
           setThread((current) => {
+            if (
+              !current ||
+              current.conversation.id !== selected ||
+              !current.messages.some((message) =>
+                value.messages.some((fresh) => fresh.id === message.id),
+              )
+            )
+              return value;
             // Retain any older messages that the reader explicitly loaded.
             const oldest = value.messages[0]?.id;
             const older =
@@ -230,8 +239,9 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
     <div className="mx-auto max-w-5xl space-y-4 p-4">
       <h1 className="font-display text-3xl font-bold">Messages</h1>
       <p className="text-sm text-muted-foreground">
-        Échangez à deux pour préparer une surprise. Hors cercle commun, la personne doit accepter
-        votre premier message. Les messages ne donnent accès ni aux listes privées ni aux contacts.
+        Échangez à deux ou préparez une surprise en groupe depuis un cercle. Pour un échange à deux
+        hors cercle commun, la personne doit accepter votre premier message. Les messages ne donnent
+        accès ni aux listes privées ni aux contacts.
       </p>
       {error && (
         <p role="alert" className="rounded-xl bg-destructive/10 p-3">
@@ -246,6 +256,7 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
           aria-label="Conversations"
           className={`${selected || recipient ? "hidden md:block" : ""} space-y-2 rounded-2xl border bg-card p-3`}
         >
+          <GroupInboxSection />
           <Button asChild variant="outline" className="w-full">
             <Link to="/people">Nouvelle conversation</Link>
           </Button>

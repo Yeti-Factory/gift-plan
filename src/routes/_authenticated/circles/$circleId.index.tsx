@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { initials } from "@/lib/gift-box";
+import { CreateCircleConversation } from "@/components/CreateCircleConversation";
 
 export const Route = createFileRoute("/_authenticated/circles/$circleId/")({
   component: CircleDetail,
@@ -252,6 +253,15 @@ function CircleDetail() {
           {members.length} membre{members.length > 1 ? "s" : ""}
         </p>
       </div>
+
+      {me && (
+        <CreateCircleConversation
+          key={circleId}
+          circleId={circleId}
+          members={members}
+          userId={me}
+        />
+      )}
 
       {isAdmin ? (
         <Card className="p-4 bg-secondary">

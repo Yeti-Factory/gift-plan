@@ -2,7 +2,14 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { getAccountData } from "../src/lib/self-hosted/app.server";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  getGroupInbox,
+  getGroupThread,
+  getGroupUnread,
+  groupMessagingAction,
+} from "../src/lib/self-hosted/group-messaging.server";
+import { getCircleDetail } from "../src/lib/self-hosted/app.server";
 import {
   getMessageInbox,
   getMessageThread,
@@ -50,6 +57,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
       "0005_release_events.sql",
       "0007_profile_birthdays.sql",
       "0009_private_messaging.sql",
+      "0010_circle_conversations.sql",
     ])
       await database.query(
         await readFile(new URL("../selfhost/migrations/" + file, import.meta.url), "utf8"),
@@ -77,7 +85,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
   }, 30000);
   beforeEach(async () => {
     await database.query(
-      "TRUNCATE direct_messages,direct_conversations,direct_message_blocks,direct_message_reports CASCADE",
+      "TRUNCATE direct_messages,direct_conversations,direct_message_blocks,direct_message_reports,group_conversations,group_participants,group_messages,group_message_reports CASCADE",
     );
   });
   afterAll(async () => {
@@ -306,5 +314,263 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
     });
     await resolveMessageReport(a, reports[0].id, database);
     expect(await getMessageReports(a, database)).toEqual([]);
+  });
+
+  describe("circle conversations with excluded members", () => {
+    const group = (user: string, action: string, input: Record<string, unknown>) =>
+      groupMessagingAction(user, { action, ...input }, database);
+    const create = (participants = [a, b], nonce = randomUUID()) =>
+      group(a, "group-message-create", {
+        circleId: circle,
+        title: "Surprise secrète",
+        participantIds: participants,
+        nonce,
+      });
+    const post = (user: string, conversationId: string, text = "Orange !", nonce = randomUUID()) =>
+      group(user, "group-message-send", { conversationId, text, nonce });
+    beforeEach(async () => {
+      await database.query(
+        "INSERT INTO circle_members(circle_id,user_id) VALUES($1,$2),($1,$3) ON CONFLICT DO NOTHING",
+        [circle, c, d],
+      );
+    });
+    afterEach(async () => {
+      await database.query(
+        "DELETE FROM circle_members WHERE circle_id=$1 AND user_id=ANY($2::uuid[])",
+        [circle, [c, d]],
+      );
+    });
+    it("excludes circle members from discovery, messages, exports, counts and every mutation", async () => {
+      const { conversationId } = await create();
+      const thread = await getGroupThread(b, conversationId, null, database);
+      expect(thread.participants.map((p) => p.id).sort()).toEqual([a, b].sort());
+      expect(thread.messages).toEqual([]);
+      await post(a, conversationId);
+      expect((await getGroupInbox(b, 0, database)).groups[0]).toMatchObject({
+        id: conversationId,
+        unread: 1,
+      });
+      expect(await getGroupUnread(c, database)).toBe(0);
+      expect((await getGroupInbox(c, 0, database)).groups).toEqual([]);
+      await expect(getGroupThread(c, conversationId, null, database)).rejects.toMatchObject({
+        status: 404,
+      });
+      for (const action of [
+        "group-message-send",
+        "group-message-read",
+        "group-message-report",
+        "group-message-leave",
+      ])
+        await expect(
+          group(c, action, {
+            conversationId,
+            text: "Intrusion",
+            nonce: randomUUID(),
+            lastId: "1",
+            messageId: "1",
+            reason: "Test",
+          }),
+        ).rejects.toMatchObject({ status: 404 });
+      expect((await getAccountData(c, database)).group_messages).toEqual([]);
+      expect(JSON.stringify(await getCircleDetail(c, circle, database))).not.toContain(
+        "Surprise secrète",
+      );
+    });
+    it("validates circle membership and immutable selections, including retry idempotency", async () => {
+      await expect(create([a])).rejects.toMatchObject({ status: 400 });
+      await expect(create([a, unverified])).rejects.toMatchObject({ status: 403 });
+      await expect(
+        group(unverified, "group-message-create", {
+          circleId: circle,
+          title: "Test",
+          participantIds: [a, b],
+          nonce: randomUUID(),
+        }),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(create(Array.from({ length: 51 }, () => randomUUID()))).rejects.toMatchObject({
+        status: 400,
+      });
+      const nonce = randomUUID();
+      const [first, retry] = await Promise.all([create([a, b], nonce), create([a, b], nonce)]);
+      expect(first.conversationId).toBe(retry.conversationId);
+      await create([a, b, c, d], nonce);
+      expect(
+        (await getGroupThread(a, first.conversationId, null, database)).participants,
+      ).toHaveLength(2);
+      await expect(
+        group(a, "group-message-add", {
+          conversationId: first.conversationId,
+          participantIds: [c],
+        }),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+    it("never grants access on later circle joins and permanently revokes access on departure", async () => {
+      await database.query("DELETE FROM circle_members WHERE circle_id=$1 AND user_id=$2", [
+        circle,
+        d,
+      ]);
+      const { conversationId } = await create();
+      await database.query("INSERT INTO circle_members(circle_id,user_id) VALUES($1,$2)", [
+        circle,
+        d,
+      ]);
+      await expect(getGroupThread(d, conversationId, null, database)).rejects.toMatchObject({
+        status: 404,
+      });
+      await database.query("DELETE FROM circle_members WHERE circle_id=$1 AND user_id=$2", [
+        circle,
+        b,
+      ]);
+      await expect(getGroupThread(b, conversationId, null, database)).rejects.toMatchObject({
+        status: 404,
+      });
+      await database.query("INSERT INTO circle_members(circle_id,user_id) VALUES($1,$2)", [
+        circle,
+        b,
+      ]);
+      await expect(getGroupThread(b, conversationId, null, database)).rejects.toMatchObject({
+        status: 404,
+      });
+      expect((await getGroupInbox(b, 0, database)).groups).toEqual([]);
+    });
+    it("honors bilateral blocks inside a group and lets participants leave permanently", async () => {
+      const { conversationId } = await create([a, b, c]);
+      await act(b, "message-block", { recipientId: a });
+      expect((await getGroupThread(a, conversationId, null, database)).canSend).toBe(false);
+      await expect(post(a, conversationId)).rejects.toMatchObject({ status: 403 });
+      await expect(post(b, conversationId)).rejects.toMatchObject({ status: 403 });
+      await post(c, conversationId);
+      await act(b, "message-unblock", { recipientId: a });
+      await post(a, conversationId);
+      await group(b, "group-message-leave", { conversationId });
+      await expect(getGroupThread(b, conversationId, null, database)).rejects.toMatchObject({
+        status: 404,
+      });
+      await post(a, conversationId);
+      expect(
+        (await getGroupThread(a, conversationId, null, database)).participants.map((p) => p.id),
+      ).not.toContain(b);
+    });
+    it("shares send quotas with direct messages and safely deduplicates retries", async () => {
+      const { conversationId } = await create(),
+        nonce = randomUUID();
+      await Promise.all([
+        post(a, conversationId, "Test", nonce),
+        post(a, conversationId, "Test", nonce),
+      ]);
+      expect((await getGroupThread(b, conversationId, null, database)).messages).toHaveLength(1);
+      const direct = await start(a, b);
+      for (let i = 0; i < 18; i++) await post(a, conversationId);
+      await expect(post(a, conversationId)).rejects.toMatchObject({ status: 429 });
+      await expect(send(a, direct.conversationId!)).rejects.toMatchObject({ status: 429 });
+      await post(a, conversationId, "Test", nonce);
+    });
+    it("paginates history and advances only valid read markers", async () => {
+      const { conversationId } = await create();
+      for (let i = 0; i < 56; i++)
+        await database.query(
+          "INSERT INTO group_messages(conversation_id,sender_id,client_nonce,body,created_at) VALUES($1,$2,$3,$4,now()-interval '1 hour')",
+          [conversationId, a, randomUUID(), "Message " + i],
+        );
+      const latest = await getGroupThread(b, conversationId, null, database);
+      expect(latest.messages).toHaveLength(50);
+      expect(latest.hasMore).toBe(true);
+      const old = await getGroupThread(b, conversationId, latest.messages[0].id, database);
+      expect(old.messages).toHaveLength(6);
+      expect(old.hasMore).toBe(false);
+      expect(new Set([...old.messages, ...latest.messages].map((m) => m.id)).size).toBe(56);
+      await group(b, "group-message-read", { conversationId, lastId: old.messages[0].id });
+      expect(await getGroupUnread(b, database)).toBe(55);
+      const other = await create([a, c]);
+      await post(a, other.conversationId);
+      const foreign = (await getGroupThread(c, other.conversationId, null, database)).messages[0];
+      await group(b, "group-message-read", { conversationId, lastId: foreign.id });
+      expect(await getGroupUnread(b, database)).toBe(55);
+      await group(b, "group-message-read", { conversationId, lastId: latest.messages.at(-1)!.id });
+      expect(await getGroupUnread(b, database)).toBe(0);
+      await expect(getGroupThread(b, conversationId, "invalid", database)).rejects.toMatchObject({
+        status: 400,
+      });
+    });
+    it("moderates only reported group messages and exports only participant-visible history", async () => {
+      const { conversationId } = await create();
+      await post(a, conversationId, "Message signalé");
+      await post(a, conversationId, "Autre message privé");
+      const message = (await getGroupThread(b, conversationId, null, database)).messages[0];
+      await group(b, "group-message-report", {
+        conversationId,
+        messageId: message.id,
+        reason: "Test",
+      });
+      await expect(
+        group(c, "group-message-report", { conversationId, messageId: message.id, reason: "Test" }),
+      ).rejects.toMatchObject({ status: 404 });
+      const reports = await getMessageReports(a, database);
+      expect(reports).toHaveLength(1);
+      expect(reports[0].body).toBe("Message signalé");
+      expect(JSON.stringify(reports)).not.toContain("Autre message privé");
+      expect((await getAccountData(b, database)).group_messages).toHaveLength(2);
+      expect((await getAccountData(c, database)).group_messages).toEqual([]);
+      await expect(resolveMessageReport(b, reports[0].id, database)).rejects.toMatchObject({
+        status: 403,
+      });
+      await resolveMessageReport(a, reports[0].id, database);
+      expect(await getMessageReports(a, database)).toEqual([]);
+    });
+    it("preserves others' messages on account deletion and deletes history with its circle", async () => {
+      const user = randomUUID(),
+        temporaryCircle = randomUUID();
+      try {
+        await database.query(
+          "INSERT INTO \"user\"(id,name,email,\"emailVerified\",username) VALUES($1,'Temporary',$2,true,'temporary-group-user')",
+          [user, user + "@example.com"],
+        );
+        await database.query("INSERT INTO circle_members(circle_id,user_id) VALUES($1,$2)", [
+          circle,
+          user,
+        ]);
+        const created = await group(user, "group-message-create", {
+          circleId: circle,
+          title: "Surprise",
+          participantIds: [user, a, b],
+          nonce: randomUUID(),
+        });
+        await post(user, created.conversationId, "À effacer");
+        await post(b, created.conversationId, "À garder");
+        await database.query('DELETE FROM "user" WHERE id=$1', [user]);
+        const remaining = await getGroupThread(b, created.conversationId, null, database);
+        expect(remaining.messages.map((m) => m.body)).toEqual(["À garder"]);
+        expect(remaining.participants).toHaveLength(2);
+        await database.query(
+          "INSERT INTO circles(id,name,invite_code,created_by) VALUES($1,'Temp','GROUPTMP',$2)",
+          [temporaryCircle, a],
+        );
+        await database.query("INSERT INTO circle_members(circle_id,user_id) VALUES($1,$2)", [
+          temporaryCircle,
+          b,
+        ]);
+        const other = await group(a, "group-message-create", {
+          circleId: temporaryCircle,
+          title: "Temp",
+          participantIds: [a, b],
+          nonce: randomUUID(),
+        });
+        await post(a, other.conversationId);
+        await database.query("DELETE FROM circles WHERE id=$1", [temporaryCircle]);
+        await expect(getGroupThread(b, other.conversationId, null, database)).rejects.toMatchObject(
+          { status: 404 },
+        );
+        expect(
+          (
+            await database.query("SELECT 1 FROM group_messages WHERE conversation_id=$1", [
+              other.conversationId,
+            ])
+          ).rowCount,
+        ).toBe(0);
+      } finally {
+        await database.query('DELETE FROM "user" WHERE id=$1', [user]);
+        await database.query("DELETE FROM circles WHERE id=$1", [temporaryCircle]);
+      }
+    });
   });
 });
