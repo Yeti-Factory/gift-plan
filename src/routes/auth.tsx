@@ -254,9 +254,9 @@ function AuthPage() {
 
       <Card className="gp-glass relative z-10 w-full max-w-sm space-y-4 rounded-[1.75rem] border-0 p-6">
         <p className="rounded-xl bg-primary/10 p-3 text-sm text-foreground">
-          Après votre connexion, un guide explique Gift-Plan et les nouveaux réglages de
-          confidentialité. Utilisez votre compte habituel : vos listes et vos cadeaux sont
-          conservés.
+          Une mise à jour importante ajoute les messageries privées et de groupe. Après votre
+          connexion, prenez le temps d’étudier le nouveau guide et d’utiliser le mode d’emploi
+          interactif. Utilisez votre compte habituel : vos listes et vos cadeaux sont conservés.
         </p>
         {forgotOpen ? (
           <form onSubmit={handleForgot} className="space-y-3">

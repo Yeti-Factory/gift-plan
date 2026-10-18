@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Gift, Users, ListChecks, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  BookOpen,
+  Gift,
+  MessageCircle,
+  Users,
+  ListChecks,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -14,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 
-export const ONBOARDING_VERSION = 2;
+export const ONBOARDING_VERSION = 3;
 const OPEN_EVENT = "gp:open-onboarding";
 
 /** Fire from anywhere (e.g. the account page) to reopen the guide manually. */
@@ -31,6 +39,18 @@ type Step = {
 };
 
 const STEPS: Step[] = [
+  {
+    key: "important-update",
+    title: "Une mise à jour importante de Gift-Plan",
+    description:
+      "Merci de bien étudier le nouveau mode d’emploi et d’utiliser le mode d’emploi interactif, car une mise à jour importante vient d’être faite avec de nouvelles fonctionnalités.",
+    bullets: [
+      "Découvrez les messages privés, les conversations de groupe pour préparer une surprise, les réglages de confidentialité et les nouveautés des cercles.",
+      "Suivez ce guide avec Suivant. Vous pouvez aussi ouvrir l’assistant interactif pour poser vos questions et recevoir des explications étape par étape.",
+      "Le bouton Mode d’emploi se trouve entre Retour et Accueil. Vos comptes, mots de passe, listes et cadeaux sont conservés.",
+    ],
+    icon: <Sparkles className="h-6 w-6" />,
+  },
   {
     key: "welcome",
     title: "Bienvenue dans Gift-Plan 🎁",
@@ -105,11 +125,52 @@ const STEPS: Step[] = [
       "Seuls les membres peuvent voir les membres et le contenu partagé avec ce cercle.",
       "Un administrateur peut transmettre le code, gérer les membres et renouveler un code expiré.",
       "Vous pouvez appartenir à plusieurs cercles et choisir précisément lesquels voient chaque liste.",
-      "Pour organiser une surprise à plusieurs, ouvrez le cercle puis Écrire au cercle. Décochez les personnes à exclure et vérifiez le récapitulatif avant de créer l’échange. Seuls les participants sélectionnés le verront, dans Messages → Groupes et surprises. Les nouveaux membres du cercle ne sont pas ajoutés automatiquement.",
-      "Pour écrire à une personne, touchez la bulle sur sa fiche dans Communauté. Retrouvez vos échanges via la bulle Messages en haut de l’écran. Hors cercle commun, le premier message doit être accepté avant de poursuivre. Vous pouvez refuser, bloquer ou signaler un message ; échanger ne donne aucun accès supplémentaire aux listes.",
-      "Dans Communauté, recherchez un compte par nom ou identifiant. Une fiche privée reste verrouillée jusqu’à l’autorisation du propriétaire ou un cercle commun ; l’annuaire ne montre pas les relations entre les personnes.",
+      "Voir les cadeaux ouvre les listes du membre auxquelles vous avez accès. Le compteur inclut ses listes publiques et celles partagées avec vos cercles, sans compter deux fois la même liste. Vos propres listes personnelles ne sont comptées que pour vous.",
+      "Un cercle commun permet de consulter le profil de ses membres, mais pas leurs listes personnelles ni celles réservées à d’autres cercles.",
     ],
     icon: <Users className="h-6 w-6" />,
+  },
+  {
+    key: "community",
+    title: "Retrouvez vos proches dans Communauté",
+    description:
+      "Recherchez une personne par son nom, une partie de son nom ou son identifiant, puis ouvrez sa fiche pour consulter les cadeaux accessibles ou lui écrire.",
+    bullets: [
+      "Une fiche privée reste verrouillée jusqu’à l’autorisation de son propriétaire ou un cercle commun. Envoyez une demande d’accès si nécessaire.",
+      "Le propriétaire peut accepter ou refuser les demandes. Autoriser un profil ne rend pas ses listes personnelles accessibles.",
+      "L’annuaire ne dévoile pas les contacts ni les relations entre les personnes.",
+      "Pour écrire, utilisez la bulle sur la fiche ou le bouton Écrire sur le profil.",
+    ],
+    icon: <Users className="h-6 w-6" />,
+  },
+  {
+    key: "private-messages",
+    title: "Échangez des messages privés",
+    description:
+      "Touchez la bulle d’une fiche dans Communauté ou Écrire sur un profil. La bulle Messages en haut de l’écran rassemble vos conversations et indique les messages non lus.",
+    bullets: [
+      "Avec un membre d’un cercle commun, vous pouvez échanger directement.",
+      "Hors cercle commun, envoyez un premier message de présentation. Le destinataire doit accepter la demande avant toute réponse ou tout nouvel envoi. Il peut aussi la refuser.",
+      "Vous pouvez bloquer une personne pour arrêter les nouveaux messages dans les deux sens. L’historique reste disponible ; débloquer permet de reprendre si aucun autre blocage ne subsiste.",
+      "Signaler transmet uniquement le message reçu concerné et votre motif à l’administration. La conversation entière n’est pas transmise.",
+      "Les échanges ne donnent aucun accès supplémentaire aux profils ou aux listes. Les compteurs de nouveaux messages se consultent dans l’application.",
+    ],
+    icon: <MessageCircle className="h-6 w-6" />,
+  },
+  {
+    key: "group-messages",
+    title: "Préparez une surprise en groupe",
+    description:
+      "Dans un cercle, touchez Écrire au cercle, donnez un nom à la conversation puis choisissez les participants, par exemple en excluant la personne à qui vous préparez un cadeau.",
+    bullets: [
+      "Décochez les personnes à exclure. Vous restez inclus ; le groupe doit réunir entre 2 et 50 participants.",
+      "Touchez Vérifier avant de créer, relisez Participants et Personnes exclues, puis confirmez avec Créer avec ces participants. La création n’envoie pas de premier message.",
+      "Seuls les participants choisis voient le titre et les messages. Les personnes exclues ne voient pas l’échange et ne reçoivent pas de notification pour celui-ci.",
+      "Retrouvez l’échange dans Messages → Groupes et surprises. Vérifiez les participants affichés avant d’envoyer un message.",
+      "Les participants sont fixés à la création. Créez un autre groupe pour changer la sélection ; un nouveau membre du cercle n’est pas ajouté automatiquement.",
+      "Quitter la conversation ou le cercle retire l’accès à l’historique du groupe. Revenir dans le cercle ne rétablit pas cet accès. Blocage et signalement restent disponibles.",
+    ],
+    icon: <MessageCircle className="h-6 w-6" />,
   },
   {
     key: "reservations",
@@ -141,7 +202,7 @@ const STEPS: Step[] = [
     key: "navigation",
     title: "Retrouvez-vous et gérez votre profil",
     description:
-      "Les boutons Retour et Accueil restent en haut des pages. Les onglets du bas donnent accès à Communauté, Mes listes, J’offre, Cercles et Mon profil.",
+      "Les boutons Retour, Mode d’emploi et Accueil restent en haut des pages. Les onglets du bas donnent accès à Communauté, Mes listes, J’offre, Cercles et Mon profil.",
     bullets: [
       "Dans Mon profil, choisissez si votre profil est public ou privé ; cela ne change pas les réglages de vos listes ni ceux de vos contacts.",
       "Dans Mon profil, ajoutez votre anniversaire (jour et mois) pour aider vos proches à préparer leurs cadeaux. Il est affiché aux personnes autorisées à consulter votre profil.",
@@ -150,6 +211,19 @@ const STEPS: Step[] = [
       "Ce guide est proposé à chaque nouvelle connexion, pas à chaque page. Si vous l’avez fermé, vous pouvez toujours le rouvrir depuis Mon compte.",
     ],
     icon: <Sparkles className="h-6 w-6" />,
+  },
+  {
+    key: "interactive-help",
+    title: "Posez vos questions au mode d’emploi interactif",
+    description:
+      "Le bouton Mode d’emploi, entre Retour et Accueil, ouvre un assistant interactif accessible à tout moment, même sans être connecté.",
+    bullets: [
+      "Écrivez une question ou choisissez un sujet parmi les 15 rubriques : installation, compte, profils, listes, cadeaux, cercles, réservations et messageries.",
+      "Avancez avec Étape suivante ou écrivez suivant pour continuer sur le même sujet.",
+      "Utilisez Voir toute l’explication pour lire les étapes et les précisions de confidentialité ensemble.",
+      "Tous les sujets permet de choisir une autre rubrique. Recommencer permet de repartir du début.",
+    ],
+    icon: <BookOpen className="h-6 w-6" />,
   },
   {
     key: "ready",
@@ -183,7 +257,7 @@ export function shouldShowOnboarding(profile: {
   onboarding_completed_at: string | null;
   onboarding_version: number | null;
 }) {
-  // Version-first: a completed guide from v1 must still surface when v2 ships.
+  // A completed older guide must still surface when the version changes.
   // "Passer" and "Terminer" both persist the current version, so once a user
   // has seen the current version they won't see it again automatically.
   return (profile.onboarding_version ?? 0) < ONBOARDING_VERSION;
@@ -281,15 +355,21 @@ export function OnboardingGuide({ user, sessionId }: { user: { id: string }; ses
 
   async function handleSkip() {
     // Manual reopen: don't overwrite the original completion date; just bump
-    // the version so a future v2 auto-open respects the user's prior choice.
+    // the version so a future auto-open respects the user's prior choice.
     const ok = await persist({ markCompleted: !manualRef.current });
     if (ok) setOpen(false);
   }
 
-  async function handleFinish(target?: "circles-create" | "circles-join" | "my-lists") {
+  async function handleFinish(
+    target?: "circles-create" | "circles-join" | "my-lists" | "mode-emploi",
+  ) {
     const ok = await persist({ markCompleted: !manualRef.current });
     if (!ok) return;
     setOpen(false);
+    if (target === "mode-emploi") {
+      navigate({ to: "/mode-emploi" });
+      return;
+    }
     if (target === "my-lists") {
       navigate({ to: "/my-lists" });
       return;
@@ -356,6 +436,15 @@ export function OnboardingGuide({ user, sessionId }: { user: { id: string }; ses
               ))}
             </ul>
           )}
+          <Button
+            variant="outline"
+            className="mt-4 h-auto w-full whitespace-normal"
+            onClick={() => handleFinish("mode-emploi")}
+            disabled={saving}
+          >
+            <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Ouvrir le mode d’emploi interactif
+          </Button>
         </div>
 
         <div className="mt-4 flex flex-col-reverse gap-2 border-t border-border bg-muted/30 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">

@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/health")({
         if (database === "ok") {
           try {
             const release = await getDatabasePool().query(
-              "SELECT 1 FROM app_release_events WHERE release_key = 'directory-update-reconnect-2026-10-18'",
+              "SELECT 1 FROM app_release_events WHERE release_key = 'guide-v3-messaging-2026-10-18'",
             );
             if (release.rowCount) reconnection = "done";
           } catch {
