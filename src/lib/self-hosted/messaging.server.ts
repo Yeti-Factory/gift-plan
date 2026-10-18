@@ -158,7 +158,7 @@ export async function messagingAction(
         if (existing.rows[0]) conversationId = existing.rows[0].id;
         else {
           const quota = await client.query<{ count: number }>(
-            "SELECT count(*)::int AS count FROM direct_conversations WHERE initiated_by=$1 AND created_at>now()-interval '1 day'",
+            "SELECT ((SELECT count(*) FROM direct_conversations WHERE initiated_by=$1 AND created_at>now()-interval '1 day')+(SELECT count(*) FROM group_conversations WHERE created_by=$1 AND created_at>now()-interval '1 day'))::int AS count",
             [userId],
           );
           if (quota.rows[0].count >= 10) throw new ApiError(429, "RATE_LIMITED");
@@ -197,7 +197,7 @@ export async function messagingAction(
               throw new ApiError(403, "FORBIDDEN");
           }
           const quota = await client.query<{ count: number }>(
-            "SELECT count(*)::int AS count FROM direct_messages WHERE sender_id=$1 AND created_at>now()-interval '1 minute'",
+            "SELECT ((SELECT count(*) FROM direct_messages WHERE sender_id=$1 AND created_at>now()-interval '1 minute')+(SELECT count(*) FROM group_messages WHERE sender_id=$1 AND created_at>now()-interval '1 minute'))::int AS count",
             [userId],
           );
           if (quota.rows[0].count >= 20) throw new ApiError(429, "RATE_LIMITED");
@@ -257,10 +257,14 @@ export async function getMessageReports(userId: string, database: Database = get
   const admin = await database.query("SELECT 1 FROM app_admins WHERE user_id=$1", [userId]);
   if (!admin.rowCount) throw new ApiError(403, "NOT_ADMIN");
   const result =
-    await database.query(`SELECT r.id,r.reason,r.created_at,m.body,p.username AS sender,
+    await database.query(`SELECT * FROM (SELECT r.id,r.reason,r.created_at,m.body,p.username AS sender,
     reporter.username AS reporter FROM direct_message_reports r JOIN direct_messages m ON m.id=r.message_id
     JOIN profiles p ON p.id=m.sender_id JOIN profiles reporter ON reporter.id=r.reporter_id
-    WHERE r.resolved_at IS NULL ORDER BY r.created_at DESC LIMIT 100`);
+    WHERE r.resolved_at IS NULL
+    UNION ALL SELECT r.id,r.reason,r.created_at,m.body,p.username AS sender,reporter.username AS reporter
+    FROM group_message_reports r JOIN group_messages m ON m.id=r.message_id
+    JOIN profiles p ON p.id=m.sender_id JOIN profiles reporter ON reporter.id=r.reporter_id
+    WHERE r.resolved_at IS NULL) reports ORDER BY created_at DESC LIMIT 100`);
   return result.rows;
 }
 export async function resolveMessageReport(
@@ -270,8 +274,11 @@ export async function resolveMessageReport(
 ) {
   requiredUuid(reportId);
   const result = await database.query(
-    `UPDATE direct_message_reports SET resolved_at=now() WHERE id=$2
-    AND EXISTS(SELECT 1 FROM app_admins WHERE user_id=$1) RETURNING id`,
+    `WITH direct AS (UPDATE direct_message_reports SET resolved_at=now() WHERE id=$2
+    AND EXISTS(SELECT 1 FROM app_admins WHERE user_id=$1) RETURNING id),
+    groups AS (UPDATE group_message_reports SET resolved_at=now() WHERE id=$2
+    AND EXISTS(SELECT 1 FROM app_admins WHERE user_id=$1) RETURNING id)
+    SELECT id FROM direct UNION ALL SELECT id FROM groups`,
     [userId, reportId],
   );
   if (!result.rowCount) throw new ApiError(403, "FORBIDDEN");

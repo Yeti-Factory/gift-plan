@@ -274,6 +274,8 @@ export async function getAccountData(userId: string, database: Database = getDat
     messages,
     messageBlocks,
     messageReports,
+    groupMessages,
+    groupReports,
   ] = await Promise.all([
     database.query(
       `SELECT id, name, email, "emailVerified" AS email_verified, image, "createdAt" AS created_at
@@ -305,6 +307,15 @@ export async function getAccountData(userId: string, database: Database = getDat
       "SELECT message_id::text,reason,created_at,resolved_at FROM direct_message_reports WHERE reporter_id=$1",
       [userId],
     ),
+    database.query(
+      `SELECT m.id::text,m.conversation_id,m.sender_id,m.body,m.created_at FROM group_messages m
+      JOIN group_participants p ON p.conversation_id=m.conversation_id AND p.user_id=$1 ORDER BY m.id`,
+      [userId],
+    ),
+    database.query(
+      "SELECT message_id::text,reason,created_at,resolved_at FROM group_message_reports WHERE reporter_id=$1",
+      [userId],
+    ),
   ]);
   return {
     user: user.rows[0],
@@ -316,6 +327,8 @@ export async function getAccountData(userId: string, database: Database = getDat
     messages: messages.rows,
     message_blocks: messageBlocks.rows,
     message_reports: messageReports.rows,
+    group_messages: groupMessages.rows,
+    group_message_reports: groupReports.rows,
   };
 }
 

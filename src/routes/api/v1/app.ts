@@ -16,6 +16,12 @@ import {
 } from "@/lib/self-hosted/app.server";
 import { runAppAction } from "@/lib/self-hosted/actions.server";
 import {
+  getGroupUnread,
+  getGroupInbox,
+  getGroupThread,
+  groupMessagingAction,
+} from "@/lib/self-hosted/group-messaging.server";
+import {
   getMessageInbox,
   getMessageThread,
   getMessageReports,
@@ -46,8 +52,21 @@ async function readView(request: Request) {
 
   const userId = await requireUserId(request.headers);
   switch (view) {
-    case "messages":
-      return getMessageInbox(userId, undefined, Number(url.searchParams.get("offset") ?? 0));
+    case "messages": {
+      const [inbox, groupUnread] = await Promise.all([
+        getMessageInbox(userId, undefined, Number(url.searchParams.get("offset") ?? 0)),
+        getGroupUnread(userId),
+      ]);
+      return { ...inbox, unread: inbox.unread + groupUnread };
+    }
+    case "group-messages":
+      return getGroupInbox(userId, Number(url.searchParams.get("offset") ?? 0));
+    case "group-message-thread":
+      return getGroupThread(
+        userId,
+        requiredUuid(url.searchParams.get("conversationId")),
+        url.searchParams.get("before"),
+      );
     case "message-recipient":
       return getMessageRecipient(userId, requiredUuid(url.searchParams.get("recipientId")));
     case "message-thread":
@@ -108,6 +127,8 @@ export const Route = createFileRoute("/api/v1/app")({
           assertSameOrigin(request);
           const userId = await requireUserId(request.headers);
           const body = await readJsonObject(request);
+          if (typeof body.action === "string" && body.action.startsWith("group-message-"))
+            return noStoreJson(await groupMessagingAction(userId, body));
           if (body.action === "message-resolve-report") {
             await resolveMessageReport(userId, requiredUuid(body.reportId));
             return noStoreJson({ ok: true });

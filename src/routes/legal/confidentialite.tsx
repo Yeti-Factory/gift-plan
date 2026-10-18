@@ -50,10 +50,15 @@ function Confidentialite() {
           notes, images téléversées, réservations et messages privés.
         </li>
         <li>
-          <strong>Messagerie</strong> : les messages sont accessibles aux deux participants. Un
-          signalement transmet uniquement le message concerné, son auteur, votre identifiant et le
-          motif à l’administration. Les échanges, blocages et signalements associés sont supprimés
-          lorsqu’un participant supprime son compte.
+          <strong>Messagerie</strong> : les messages directs sont accessibles aux deux participants.
+          Une conversation de groupe est accessible uniquement aux membres sélectionnés à sa
+          création. Quitter le groupe ou son cercle retire cet accès, sans réintégration
+          automatique. Un signalement transmet uniquement le message concerné, son auteur, votre
+          identifiant et le motif à l’administration. Les échanges, blocages et signalements
+          associés sont supprimés lorsqu’un participant supprime son compte pour un échange direct.
+          Dans un groupe, la suppression d’un compte efface ses messages, ses signalements et sa
+          participation ; les autres participants conservent leur échange. Supprimer le cercle
+          supprime ses conversations de groupe.
         </li>
         <li>
           <strong>Journaux techniques</strong> : adresse IP, journaux d'accès et d'erreurs,

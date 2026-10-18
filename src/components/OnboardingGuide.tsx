@@ -105,6 +105,7 @@ const STEPS: Step[] = [
       "Seuls les membres peuvent voir les membres et le contenu partagé avec ce cercle.",
       "Un administrateur peut transmettre le code, gérer les membres et renouveler un code expiré.",
       "Vous pouvez appartenir à plusieurs cercles et choisir précisément lesquels voient chaque liste.",
+      "Pour organiser une surprise à plusieurs, ouvrez le cercle puis Écrire au cercle. Décochez les personnes à exclure et vérifiez le récapitulatif avant de créer l’échange. Seuls les participants sélectionnés le verront, dans Messages → Groupes et surprises. Les nouveaux membres du cercle ne sont pas ajoutés automatiquement.",
       "Pour écrire à une personne, touchez la bulle sur sa fiche dans Communauté. Retrouvez vos échanges via la bulle Messages en haut de l’écran. Hors cercle commun, le premier message doit être accepté avant de poursuivre. Vous pouvez refuser, bloquer ou signaler un message ; échanger ne donne aucun accès supplémentaire aux listes.",
       "Dans Communauté, recherchez un compte par nom ou identifiant. Une fiche privée reste verrouillée jusqu’à l’autorisation du propriétaire ou un cercle commun ; l’annuaire ne montre pas les relations entre les personnes.",
     ],

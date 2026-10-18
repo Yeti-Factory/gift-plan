@@ -12,6 +12,7 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/people">{children}</a>,
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
+vi.mock("../src/components/GroupInboxSection", () => ({ GroupInboxSection: () => null }));
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();

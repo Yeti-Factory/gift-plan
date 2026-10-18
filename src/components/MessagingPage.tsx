@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { GroupInboxSection } from "@/components/GroupInboxSection";
 import { apiAction, apiQuery } from "@/lib/self-hosted/api-client";
 import {
   messageError,
@@ -246,6 +247,7 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
           aria-label="Conversations"
           className={`${selected || recipient ? "hidden md:block" : ""} space-y-2 rounded-2xl border bg-card p-3`}
         >
+          <GroupInboxSection />
           <Button asChild variant="outline" className="w-full">
             <Link to="/people">Nouvelle conversation</Link>
           </Button>
