@@ -52,6 +52,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
       "0003_private_lists.sql",
       "0004_private_lists_default.sql",
       "0005_release_events.sql",
+      "0007_profile_birthdays.sql",
     ]) {
       await database.query(
         await readFile(new URL("../selfhost/migrations/" + name, import.meta.url), "utf8"),
@@ -397,6 +398,61 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
         )
       ).rows[0].total,
     ).toBe(1);
+  });
+
+  it("stores signup birthdays, allows edits and protects private-profile birthday data", async () => {
+    const created = await post("sign-up/email", {
+      name: "Birthday profile",
+      email: "birthday@example.com",
+      password: "Birthday-Test-42!",
+      birthday: "02-29",
+    });
+    expect(created.status).toBe(200);
+    const account = await database.query('SELECT id FROM "user" WHERE email=$1', [
+      "birthday@example.com",
+    ]);
+    const id = account.rows[0].id as string;
+    await database.query('UPDATE "user" SET "emailVerified"=true WHERE id=$1', [id]);
+    expect(
+      (await database.query("SELECT birthday FROM profiles WHERE id=$1", [id])).rows[0].birthday,
+    ).toBe("02-29");
+    const data = {
+      action: "save-profile",
+      displayName: "Birthday profile",
+      username: "birthday-profile",
+      bio: "Hello",
+      visibility: "private",
+      emailSearchable: false,
+      birthday: "04-22",
+    };
+    await runAppAction(id, data);
+    expect(
+      (await database.query('SELECT birthday FROM "user" WHERE id=$1', [id])).rows[0].birthday,
+    ).toBe("04-22");
+    const directory = await listProfileDirectory(
+      outsider,
+      { query: "birthday-profile", limit: 50, offset: 0 },
+      database,
+    );
+    expect(directory.profiles[0]).toMatchObject({ id, can_view: false, birthday: null });
+    // Even a deliberately public list does not expose the private profile's birthday.
+    await database.query(
+      "INSERT INTO lists(owner_id,title,visibility) VALUES($1,'Public ideas','public')",
+      [id],
+    );
+    const limited = await getProfilePage("birthday-profile", null, null, database);
+    if ("error" in limited) throw new Error(limited.error);
+    expect(limited.profile.birthday).toBeNull();
+    await runAppAction(id, { ...data, visibility: "public" });
+    const visible = await getProfilePage("birthday-profile", null, null, database);
+    if ("error" in visible) throw new Error(visible.error);
+    expect(visible.profile.birthday).toBe("04-22");
+    await expect(runAppAction(id, { ...data, birthday: "04-31" })).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(
+      database.query("UPDATE profiles SET birthday='04-31' WHERE id=$1", [id]),
+    ).rejects.toMatchObject({ code: "23514" });
   });
 
   it("does not reveal account existence when reset email delivery fails", async () => {

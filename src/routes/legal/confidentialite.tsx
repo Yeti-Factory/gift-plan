@@ -41,7 +41,9 @@ function Confidentialite() {
       <h2 className="text-lg font-semibold mt-6">Données collectées</h2>
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>Compte</strong> : adresse email, mot de passe (chiffré), nom d'affichage.
+          <strong>Compte</strong> : adresse email, mot de passe (chiffré), nom d'affichage. Le
+          profil peut aussi contenir le jour et le mois d’anniversaire, affichés aux personnes
+          autorisées à consulter ce profil, sans année de naissance.
         </li>
         <li>
           <strong>Contenu que vous créez</strong> : cercles, listes de cadeaux, titres, liens,

@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { isBirthday } from "../birthday";
 import { betterAuth } from "better-auth";
 import { username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
@@ -36,6 +38,16 @@ function createAuth() {
       },
     },
     user: {
+      additionalFields: {
+        birthday: {
+          type: "string",
+          required: false,
+          input: true,
+          validator: {
+            input: z.string().refine(isBirthday, "Date d’anniversaire invalide").optional(),
+          },
+        },
+      },
       changeEmail: { enabled: true },
       deleteUser: {
         enabled: true,

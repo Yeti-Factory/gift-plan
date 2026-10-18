@@ -26,6 +26,7 @@ export async function listProfileDirectory(
        SELECT
          p.id, p.username, p.display_name, p.avatar_url, p.visibility,
          CASE WHEN access.can_view THEN p.bio ELSE NULL END AS bio,
+         CASE WHEN access.can_view THEN p.birthday ELSE NULL END AS birthday,
          access.can_view,
          p.id = $1::uuid AS is_self,
          outgoing.id AS outgoing_request_id,
@@ -228,7 +229,7 @@ export async function getProfilePage(
   database: Queryable = getDatabasePool(),
 ): Promise<ProfilePageResult> {
   const profileResult = await database.query<ProfilePageData["profile"]>(
-    `SELECT id, username, display_name, avatar_url, bio, visibility,
+    `SELECT id, username, display_name, avatar_url, bio, birthday, visibility,
             id = $2::uuid AS is_owner
        FROM profiles WHERE lower(username) = lower($1)`,
     [username, viewerId],
@@ -243,6 +244,7 @@ export async function getProfilePage(
     );
     if (!publicList.rows[0]) return { error: "PROFILE_PRIVATE" };
     profile.bio = null;
+    profile.birthday = null;
   }
 
   const listsResult = await database.query<{

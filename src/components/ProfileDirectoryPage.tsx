@@ -1,3 +1,4 @@
+import { formatBirthday } from "@/lib/birthday";
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -387,6 +388,11 @@ function DirectoryProfileRow({
       </Avatar>
 
       <div className="min-w-0 flex-1">
+        {formatBirthday(profile.birthday) && (
+          <p className="mb-1 text-xs text-muted-foreground">
+            🎂 {formatBirthday(profile.birthday)}
+          </p>
+        )}
         <div className="flex min-w-0 items-center gap-1.5">
           <p className="truncate text-sm font-bold leading-tight">{name}</p>
           {profile.is_self && (

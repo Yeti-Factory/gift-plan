@@ -42,7 +42,7 @@ export async function pingDatabase(timeoutMs = 3_000): Promise<number> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
-      pool.query("SELECT 'private'::list_visibility"),
+      pool.query("SELECT birthday, 'private'::list_visibility FROM profiles LIMIT 0"),
       new Promise<never>((_, reject) => {
         timeout = setTimeout(
           () => reject(new Error("PostgreSQL health check timed out")),

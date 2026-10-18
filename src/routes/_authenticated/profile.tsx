@@ -1,3 +1,5 @@
+import { BirthdayFields } from "@/components/BirthdayFields";
+import { birthdayFromParts } from "@/lib/birthday";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, Copy, Eye, Link2, Lock, Plus, Settings, Trash2 } from "lucide-react";
@@ -26,6 +28,7 @@ type OwnProfile = {
   username: string;
   display_name: string | null;
   bio: string | null;
+  birthday?: string | null;
   visibility: "public" | "private";
   email_searchable: boolean;
 };
@@ -48,6 +51,8 @@ function ManageProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [birthdayDay, setBirthdayDay] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [emailSearchable, setEmailSearchable] = useState(false);
   const [selectedLists, setSelectedLists] = useState<string[]>([]);
@@ -73,6 +78,8 @@ function ManageProfilePage() {
       setDisplayName(p.display_name ?? "");
       setUsername(p.username);
       setBio(p.bio ?? "");
+      setBirthdayMonth(p.birthday?.split("-")[0] ?? "");
+      setBirthdayDay(p.birthday?.split("-")[1] ?? "");
       setIsPublic(p.visibility === "public");
       setEmailSearchable(p.email_searchable);
       setAvatarPath(p.avatar_path);
@@ -97,6 +104,11 @@ function ManageProfilePage() {
       toast.error("Le nom affiché est obligatoire.");
       return;
     }
+    const birthday = birthdayFromParts(birthdayDay, birthdayMonth);
+    if ((birthdayDay || birthdayMonth) && !birthday) {
+      toast.error("Renseignez un jour et un mois d’anniversaire valides.");
+      return;
+    }
     setBusy(true);
     let error: { code?: string } | null = null;
     try {
@@ -104,6 +116,7 @@ function ManageProfilePage() {
         displayName: displayName.trim(),
         username: normalizedUsername,
         bio: bio.trim() || null,
+        birthday,
         visibility: isPublic ? "public" : "private",
         emailSearchable,
       });
@@ -310,6 +323,13 @@ function ManageProfilePage() {
               onChange={(e) => setDisplayName(e.target.value)}
             />
           </div>
+          <BirthdayFields
+            id="profile-birthday"
+            day={birthdayDay}
+            month={birthdayMonth}
+            onDayChange={setBirthdayDay}
+            onMonthChange={setBirthdayMonth}
+          />
           <div className="space-y-2">
             <Label htmlFor="profile-username">Identifiant public</Label>
             <div className="flex items-center gap-1">

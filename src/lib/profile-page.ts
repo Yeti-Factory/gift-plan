@@ -37,6 +37,7 @@ export type ProfilePageData = {
     display_name: string | null;
     avatar_url: string | null;
     bio: string | null;
+    birthday?: string | null;
     visibility: ProfileVisibility;
     is_owner: boolean;
   };

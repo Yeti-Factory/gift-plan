@@ -67,6 +67,8 @@ async function openSignupForm() {
   const user = userEvent.setup();
   render(<AuthPage />);
   await user.click(screen.getByRole("tab", { name: "Créer un compte" }));
+  await user.type(screen.getByLabelText("Jour"), "22");
+  await user.selectOptions(screen.getByLabelText("Mois"), "04");
   return user;
 }
 
@@ -78,6 +80,20 @@ function signupForm(): HTMLFormElement {
 }
 
 describe("account creation form", () => {
+  it("requires a valid annual birthday before submitting account creation", async () => {
+    const user = await openSignupForm();
+    await user.type(screen.getByLabelText("Nom"), "Marie");
+    await user.type(screen.getByLabelText("Email"), "birthday@example.com");
+    await user.type(screen.getByLabelText("Mot de passe"), "Correct-Secret-42");
+    await user.clear(screen.getByLabelText("Jour"));
+    await user.type(screen.getByLabelText("Jour"), "31");
+    fireEvent.submit(signupForm());
+    expect(mocks.signUp).not.toHaveBeenCalled();
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "Renseignez un jour et un mois d’anniversaire valides.",
+    );
+  });
+
   it("opens account creation directly when arriving from the app invitation", () => {
     mocks.search = { mode: "signup" };
     render(<AuthPage />);
@@ -106,6 +122,7 @@ describe("account creation form", () => {
       expect.objectContaining({
         email: "marie@example.com",
         password: "Autofill-Secret-42",
+        birthday: "04-22",
       }),
     );
   });
