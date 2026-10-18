@@ -1,3 +1,4 @@
+import { IOS_INSTALL_STEPS } from "../installation-guide";
 import * as React from "react";
 
 import { Button, Heading, Link, Text } from "@react-email/components";
@@ -22,6 +23,24 @@ export const InviteEmail = ({ siteName, siteUrl, confirmationUrl }: InviteEmailP
     <Button style={button} href={confirmationUrl}>
       Accepter l'invitation
     </Button>
+    <Heading as="h2" style={{ ...h1, fontSize: "18px", marginTop: "24px" }}>
+      Installer Gift-Plan sur iPhone / iPad
+    </Heading>
+    {IOS_INSTALL_STEPS.map((step, index) => (
+      <Text key={step.title} style={text}>
+        <strong>
+          {index + 1}. {step.title}
+        </strong>
+        <br />
+        {step.detail}
+      </Text>
+    ))}
+    <Text style={text}>
+      <Link href={`${siteUrl.replace(/\/$/, "")}/invite`} style={link}>
+        Ouvrir le guide d’installation
+      </Link>
+      . L’installation est facultative.
+    </Text>
     <Text style={{ ...footer, marginTop: "32px" }}>
       Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet email en toute sécurité.
     </Text>
