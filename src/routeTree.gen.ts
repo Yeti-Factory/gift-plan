@@ -23,6 +23,7 @@ import { Route as LegalCguRouteImport } from './routes/legal/cgu'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedMyListsRouteImport } from './routes/_authenticated/my-lists'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedGiftsIOfferRouteImport } from './routes/_authenticated/gifts-i-offer'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -109,6 +110,11 @@ const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
 const AuthenticatedMyListsRoute = AuthenticatedMyListsRouteImport.update({
   id: '/my-lists',
   path: '/my-lists',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedGiftsIOfferRoute =
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/my-lists': typeof AuthenticatedMyListsRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -286,6 +294,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/gifts-i-offer': typeof AuthenticatedGiftsIOfferRoute
+  '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/my-lists': typeof AuthenticatedMyListsRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -321,6 +330,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/gifts-i-offer'
+    | '/messages'
     | '/my-lists'
     | '/people'
     | '/profile'
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/gifts-i-offer'
+    | '/messages'
     | '/my-lists'
     | '/people'
     | '/profile'
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/gifts-i-offer'
+    | '/_authenticated/messages'
     | '/_authenticated/my-lists'
     | '/_authenticated/people'
     | '/_authenticated/profile'
@@ -534,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/my-lists'
       fullPath: '/my-lists'
       preLoaderRoute: typeof AuthenticatedMyListsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages': {
+      id: '/_authenticated/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/gifts-i-offer': {
@@ -687,6 +706,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedGiftsIOfferRoute: typeof AuthenticatedGiftsIOfferRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedMyListsRoute: typeof AuthenticatedMyListsRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -698,6 +718,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedGiftsIOfferRoute: AuthenticatedGiftsIOfferRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedMyListsRoute: AuthenticatedMyListsRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,

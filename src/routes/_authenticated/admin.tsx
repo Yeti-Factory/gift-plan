@@ -4,6 +4,7 @@ import { ExternalLink, Power, ShieldCheck, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandMark } from "@/components/BrandMark";
+import { MessageReports } from "@/components/MessageReports";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -149,6 +150,7 @@ function AdminPage() {
           </div>
         </Card>
 
+        {status?.is_superadmin && <MessageReports />}
         <Card className="rounded-[1.5rem] p-5">
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-accent" />

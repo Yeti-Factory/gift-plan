@@ -47,7 +47,13 @@ function Confidentialite() {
         </li>
         <li>
           <strong>Contenu que vous créez</strong> : cercles, listes de cadeaux, titres, liens,
-          notes, images téléversées, réservations.
+          notes, images téléversées, réservations et messages privés.
+        </li>
+        <li>
+          <strong>Messagerie</strong> : les messages sont accessibles aux deux participants. Un
+          signalement transmet uniquement le message concerné, son auteur, votre identifiant et le
+          motif à l’administration. Les échanges, blocages et signalements associés sont supprimés
+          lorsqu’un participant supprime son compte.
         </li>
         <li>
           <strong>Journaux techniques</strong> : adresse IP, journaux d'accès et d'erreurs,
