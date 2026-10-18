@@ -469,7 +469,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
       const { conversationId } = await create();
       for (let i = 0; i < 56; i++)
         await database.query(
-          "INSERT INTO group_messages(conversation_id,sender_id,client_nonce,body) VALUES($1,$2,$3,$4)",
+          "INSERT INTO group_messages(conversation_id,sender_id,client_nonce,body,created_at) VALUES($1,$2,$3,$4,now()-interval '1 hour')",
           [conversationId, a, randomUUID(), "Message " + i],
         );
       const latest = await getGroupThread(b, conversationId, null, database);

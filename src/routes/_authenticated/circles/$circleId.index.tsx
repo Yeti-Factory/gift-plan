@@ -254,7 +254,14 @@ function CircleDetail() {
         </p>
       </div>
 
-      {me && <CreateCircleConversation circleId={circleId} members={members} userId={me} />}
+      {me && (
+        <CreateCircleConversation
+          key={circleId}
+          circleId={circleId}
+          members={members}
+          userId={me}
+        />
+      )}
 
       {isAdmin ? (
         <Card className="p-4 bg-secondary">

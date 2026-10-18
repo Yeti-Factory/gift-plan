@@ -231,8 +231,9 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
     <div className="mx-auto max-w-5xl space-y-4 p-4">
       <h1 className="font-display text-3xl font-bold">Messages</h1>
       <p className="text-sm text-muted-foreground">
-        Échangez à deux pour préparer une surprise. Hors cercle commun, la personne doit accepter
-        votre premier message. Les messages ne donnent accès ni aux listes privées ni aux contacts.
+        Échangez à deux ou préparez une surprise en groupe depuis un cercle. Pour un échange à deux
+        hors cercle commun, la personne doit accepter votre premier message. Les messages ne donnent
+        accès ni aux listes privées ni aux contacts.
       </p>
       {error && (
         <p role="alert" className="rounded-xl bg-destructive/10 p-3">
