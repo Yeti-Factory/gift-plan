@@ -1,3 +1,4 @@
+import { buildAppInvitation } from "@/lib/installation-guide";
 import { useState } from "react";
 import { Copy, Send, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -22,9 +23,7 @@ export function InviteAppButton() {
   function prepare(open: boolean) {
     if (!open) return;
     const url = `${window.location.origin}/invite`;
-    setMessage(
-      `Rejoins-moi sur Gift-Plan pour partager nos envies de cadeaux ! Ouvre ce lien pour installer l’appli, créer ton compte ou te connecter :\n${url}`,
-    );
+    setMessage(buildAppInvitation(url));
     setCanShare(typeof navigator.share === "function");
   }
 
@@ -65,12 +64,13 @@ export function InviteAppButton() {
           <UserPlus className="h-4 w-4" /> Inviter un proche
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Inviter un proche sur Gift-Plan</DialogTitle>
           <DialogDescription>
             Envoie cette invitation par message ou par email. Ton proche pourra installer l’appli et
-            créer son compte, ou se connecter à son compte existant.
+            créer son compte, ou se connecter à son compte existant. Le mode d’emploi iPhone et
+            Android est inclus dans le message.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
@@ -79,7 +79,7 @@ export function InviteAppButton() {
             id="app-invitation-message"
             value={message}
             readOnly
-            rows={5}
+            rows={10}
             onFocus={(event) => event.currentTarget.select()}
           />
         </div>

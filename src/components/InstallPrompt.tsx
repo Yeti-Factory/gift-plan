@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, Share, Plus, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -9,6 +9,9 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+
+import { IosInstallGuide } from "@/components/IosInstallGuide";
+import { IOS_GUIDE_SEEN_KEY } from "@/lib/installation-guide";
 
 const DISMISS_KEY = "gp-install-dismissed-at";
 const DISMISS_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours
@@ -87,6 +90,16 @@ export function InstallPrompt() {
     }
   }, []);
 
+  const openIosGuide = useCallback(() => {
+    try {
+      window.localStorage.setItem(IOS_GUIDE_SEEN_KEY, "1");
+    } catch {
+      /* optional storage */
+    }
+    setVisible(false);
+    setShowIosSheet(true);
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     setReady(true);
@@ -118,7 +131,7 @@ export function InstallPrompt() {
       if (installed || isStandalone()) {
         toast.info("Gift-Plan est déjà ouvert comme une appli.");
       } else if (iosDetected) {
-        setShowIosSheet(true);
+        openIosGuide();
       } else if (promptEvent.current) {
         void install();
       } else {
@@ -133,6 +146,22 @@ export function InstallPrompt() {
     // Fallback : si beforeinstallprompt ne se déclenche pas (déjà éligible mais
     // événement déjà consommé, ou navigateur qui ne le supporte pas), afficher
     // un bandeau avec les instructions manuelles selon le navigateur.
+    const guideTimer = window.setTimeout(() => {
+      if (
+        !iosDetected ||
+        installed ||
+        isStandalone() ||
+        ["/auth", "/reset-password"].includes(window.location.pathname)
+      )
+        return;
+      try {
+        if (window.localStorage.getItem(IOS_GUIDE_SEEN_KEY)) return;
+      } catch {
+        /* optional storage */
+      }
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+      openIosGuide();
+    }, 800);
     const timer = window.setTimeout(() => {
       if (iosDetected || installed || isStandalone() || recentlyDismissed()) return;
       setDesktopFallback((prev) => prev ?? detectDesktopBrowser());
@@ -144,8 +173,9 @@ export function InstallPrompt() {
       window.removeEventListener("beforeinstallprompt", onBIP);
       window.removeEventListener("appinstalled", onInstalled);
       window.clearTimeout(timer);
+      window.clearTimeout(guideTimer);
     };
-  }, [install]);
+  }, [install, openIosGuide]);
 
   const dismiss = () => {
     try {
@@ -179,8 +209,8 @@ export function InstallPrompt() {
               </p>
             </div>
             {ios ? (
-              <Button size="sm" onClick={() => setShowIosSheet(true)}>
-                Voir
+              <Button size="sm" onClick={openIosGuide}>
+                Guide iPhone
               </Button>
             ) : showDesktopManual ? (
               <Button size="sm" onClick={() => setShowDesktopSheet(true)}>
@@ -205,44 +235,27 @@ export function InstallPrompt() {
       )}
 
       <Sheet open={showIosSheet} onOpenChange={setShowIosSheet}>
-        <SheetContent side="bottom" className="rounded-t-2xl">
+        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-2xl pb-8">
           <SheetHeader className="text-left">
             <SheetTitle>Installer sur iPhone / iPad</SheetTitle>
             <SheetDescription>
-              Depuis <strong>Safari</strong>, suivez ces étapes :
+              Gardez Gift-Plan sur votre écran d’accueil en suivant ces quatre étapes.
+              L’installation est facultative.
             </SheetDescription>
           </SheetHeader>
-          <ol className="mt-4 space-y-3 text-sm">
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                1
-              </span>
-              <span className="flex items-center gap-2">
-                Touchez <Share className="inline h-4 w-4" /> <strong>Partager</strong> dans la barre
-                d'outils.
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                2
-              </span>
-              <span className="flex items-center gap-2">
-                Choisissez <Plus className="inline h-4 w-4" />{" "}
-                <strong>Sur l'écran d'accueil</strong>.
-              </span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                3
-              </span>
-              <span>
-                Validez avec <strong>Ajouter</strong> en haut à droite.
-              </span>
-            </li>
-          </ol>
-          <p className="mt-4 text-xs text-muted-foreground">
-            L'appli s'ouvrira ensuite en plein écran depuis votre écran d'accueil.
-          </p>
+          <div className="mt-5">
+            <IosInstallGuide />
+          </div>
+          <Button
+            className="mt-5 min-h-11 w-full"
+            variant="outline"
+            onClick={() => {
+              setShowIosSheet(false);
+              dismiss();
+            }}
+          >
+            Continuer sans installer
+          </Button>
         </SheetContent>
       </Sheet>
 

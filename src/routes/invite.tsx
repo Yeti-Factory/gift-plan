@@ -1,3 +1,4 @@
+import { IosInstallGuide } from "@/components/IosInstallGuide";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Gift, Users } from "lucide-react";
 
@@ -33,7 +34,28 @@ function AppInvitationPage() {
           </p>
         </div>
         <Card className="space-y-4 rounded-2xl p-6">
-          <h2 className="text-xl font-bold">1. Accédez à votre compte</h2>
+          <h2 className="text-xl font-bold">1. Installez Gift-Plan (facultatif)</h2>
+          <p className="text-sm text-muted-foreground">
+            Ajoutez Gift-Plan à votre écran d’accueil pour le retrouver facilement. L’installation
+            est facultative : vous pouvez aussi utiliser votre navigateur.
+          </p>
+          <div className="rounded-xl border bg-background p-4">
+            <h3 className="mb-4 font-bold">Sur iPhone ou iPad : le guide pas à pas</h3>
+            <IosInstallGuide />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => window.dispatchEvent(new Event("gp-install-requested"))}
+          >
+            <Download className="h-4 w-4" /> Installer Gift-Plan
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Si ce lien s’ouvre dans une messagerie, ouvrez-le dans Safari sur iPhone, ou dans Chrome
+            sur Android pour installer l’appli.
+          </p>
+        </Card>
+        <Card className="space-y-4 rounded-2xl p-6">
+          <h2 className="text-xl font-bold">2. Accédez à votre compte</h2>
           <p className="text-sm text-muted-foreground">
             Première visite ? Créez votre compte, puis confirmez votre adresse avec le mail reçu. Si
             vous avez déjà un compte, connectez-vous simplement.
@@ -50,23 +72,6 @@ function AppInvitationPage() {
               </Link>
             </Button>
           </div>
-        </Card>
-        <Card className="space-y-4 rounded-2xl p-6">
-          <h2 className="text-xl font-bold">2. Gardez l’appli sous la main</h2>
-          <p className="text-sm text-muted-foreground">
-            Ajoutez Gift-Plan à votre écran d’accueil pour le retrouver facilement. L’installation
-            est facultative : vous pouvez aussi utiliser votre navigateur.
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => window.dispatchEvent(new Event("gp-install-requested"))}
-          >
-            <Download className="h-4 w-4" /> Installer Gift-Plan
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Si ce lien s’ouvre dans une messagerie, ouvrez-le dans Safari sur iPhone, ou dans Chrome
-            sur Android pour installer l’appli.
-          </p>
         </Card>
         <Card className="space-y-3 rounded-2xl p-6">
           <h2 className="flex items-center gap-2 text-xl font-bold">
