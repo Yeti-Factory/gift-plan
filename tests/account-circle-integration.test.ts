@@ -40,6 +40,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
   beforeAll(async () => {
     schema = "test_" + randomUUID().replaceAll("-", "");
     const admin = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
+    // Extensions are database-wide, even when suites use independent schemas.
+    await admin.query("BEGIN");
+    await admin.query(
+      "SELECT pg_advisory_xact_lock(hashtextextended('gift-plan-test-extensions',0))",
+    );
+    await admin.query("CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public");
+    await admin.query("COMMIT");
     await admin.query('CREATE SCHEMA "' + schema + '"');
     await admin.end();
     database = new Pool({

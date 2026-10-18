@@ -29,6 +29,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
   beforeAll(async () => {
     schema = "messages_" + randomUUID().replaceAll("-", "");
     const admin = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
+    // Share only the extension; each suite keeps its own disposable schema.
+    await admin.query("BEGIN");
+    await admin.query(
+      "SELECT pg_advisory_xact_lock(hashtextextended('gift-plan-test-extensions',0))",
+    );
+    await admin.query("CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public");
+    await admin.query("COMMIT");
     await admin.query('CREATE SCHEMA "' + schema + '"');
     await admin.end();
     database = new Pool({
