@@ -8,7 +8,9 @@ import {
   listProfileDirectory,
   setGiftReservation,
 } from "../src/lib/self-hosted/profiles.server";
-import { getCircleMember } from "../src/lib/self-hosted/app.server";
+import { getCircleMember, getCircleDetail, getOffers } from "../src/lib/self-hosted/app.server";
+import { runAppAction } from "../src/lib/self-hosted/actions.server";
+import { getGiftImageUrls, readUpload } from "../src/lib/self-hosted/files.server";
 
 const mail = vi.hoisted(() => ({ reset: vi.fn(), verify: vi.fn() }));
 vi.mock("../src/lib/self-hosted/email.server", () => ({
@@ -44,7 +46,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
       connectionString: process.env.TEST_DATABASE_URL,
       options: "-c search_path=" + schema + ",public",
     });
-    for (const name of ["0001_better_auth.sql", "0002_gift_plan.sql"]) {
+    for (const name of [
+      "0001_better_auth.sql",
+      "0002_gift_plan.sql",
+      "0003_private_lists.sql",
+      "0004_private_lists_default.sql",
+    ]) {
       await database.query(
         await readFile(new URL("../selfhost/migrations/" + name, import.meta.url), "utf8"),
       );
@@ -159,6 +166,147 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     if ("error" in page) throw new Error(page.error);
     expect(page.lists.find((row) => row.id === list)?.gifts[0].reservation).toBeNull();
     await setGiftReservation(peer, gift, null, null, database);
+  });
+
+  it("keeps a personal list invisible on a public profile, including to approved contacts", async () => {
+    const personal = randomUUID(),
+      visible = randomUUID();
+    await database.query("UPDATE profiles SET visibility = 'public' WHERE id = $1", [owner]);
+    await database.query(
+      "INSERT INTO lists (id, owner_id, title, visibility) VALUES ($1, $2, 'Secret personal list', 'private'), ($3, $2, 'Public list', 'public')",
+      [personal, owner, visible],
+    );
+    await database.query(
+      "INSERT INTO profile_access_requests (requester_id, owner_id, status) VALUES ($1, $2, 'accepted')",
+      [outsider, owner],
+    );
+    try {
+      for (const viewer of [null, outsider, member, peer]) {
+        const page = await getProfilePage("owner", viewer, null, database);
+        if ("error" in page) throw new Error(page.error);
+        expect(page.lists.map((row) => row.id)).toContain(visible);
+        expect(JSON.stringify(page)).not.toContain("Secret personal list");
+        expect(Object.keys(page)).toEqual(["profile", "lists"]);
+      }
+      const own = await getProfilePage("owner", owner, null, database);
+      if ("error" in own) throw new Error(own.error);
+      expect(own.lists.map((row) => row.id)).toContain(personal);
+    } finally {
+      await database.query("DELETE FROM lists WHERE id = ANY($1::uuid[])", [[personal, visible]]);
+      await database.query(
+        "DELETE FROM profile_access_requests WHERE requester_id=$1 AND owner_id=$2",
+        [outsider, owner],
+      );
+      await database.query("UPDATE profiles SET visibility = 'private' WHERE id = $1", [owner]);
+    }
+  });
+
+  it("does not reveal private contacts through a public person's directory or circle", async () => {
+    await database.query("UPDATE profiles SET visibility='public' WHERE id=$1", [owner]);
+    try {
+      const directory = await listProfileDirectory(
+        outsider,
+        { query: "", limit: 50, offset: 0 },
+        database,
+      );
+      expect(directory.profiles.map((row) => row.id)).toContain(owner);
+      expect(directory.profiles.map((row) => row.id)).not.toContain(member);
+      expect(directory.profiles.map((row) => row.id)).not.toContain(peer);
+      expect(await getProfilePage("member", outsider, null, database)).toEqual({
+        error: "PROFILE_PRIVATE",
+      });
+      await expect(getCircleDetail(outsider, circle, database)).rejects.toMatchObject({
+        status: 403,
+      });
+      const exact = await listProfileDirectory(
+        outsider,
+        { query: "member", limit: 50, offset: 0 },
+        database,
+      );
+      expect(exact.profiles[0]).toMatchObject({ id: member, can_view: false, bio: null });
+    } finally {
+      await database.query("UPDATE profiles SET visibility='private' WHERE id=$1", [owner]);
+    }
+  });
+
+  it("revokes circle, image, reservation and old share access when a list becomes personal", async () => {
+    const privateGift = randomUUID();
+    const saved = (await runAppAction(owner, {
+      action: "save-list",
+      title: "Privacy transition",
+      visibility: "circles",
+      circleIds: [circle],
+    })) as { id: string };
+    const share = (await runAppAction(owner, { action: "create-share", listIds: [saved.id] })) as {
+      id: string;
+      token: string;
+    };
+    const imagePath = owner + "/" + randomUUID() + ".jpg";
+    try {
+      await database.query(
+        "INSERT INTO gifts (id,owner_id,list_id,title,image_path) VALUES ($1,$2,$3,'Secret gift',$4)",
+        [privateGift, owner, saved.id, imagePath],
+      );
+      expect(await getGiftImageUrls([privateGift], outsider, share.token)).toHaveProperty(
+        privateGift,
+      );
+      await setGiftReservation(outsider, privateGift, "reserved", share.token, database);
+      await runAppAction(owner, {
+        action: "save-list",
+        id: saved.id,
+        title: "Privacy transition",
+        visibility: "private",
+        circleIds: [],
+      });
+      expect(
+        (await getCircleMember(member, circle, owner, database)).lists.map((row) => row.id),
+      ).not.toContain(saved.id);
+      for (const viewer of [null, member, outsider]) {
+        expect(await getGiftImageUrls([privateGift], viewer, share.token)).toEqual({});
+        await expect(readUpload("gifts", imagePath, viewer, share.token)).rejects.toMatchObject({
+          status: 404,
+        });
+      }
+      await expect(
+        setGiftReservation(outsider, privateGift, "purchased", share.token, database),
+      ).rejects.toMatchObject({ status: 403 });
+      const offers = await getOffers(outsider, database);
+      expect(offers.map((row) => row.gift_id)).not.toContain(privateGift);
+      const selections = await database.query(
+        "SELECT 1 FROM profile_share_link_lists WHERE list_id=$1",
+        [saved.id],
+      );
+      expect(selections.rows).toEqual([]);
+      const page = await getProfilePage("owner", outsider, share.token, database);
+      expect(page).toEqual({ error: "PROFILE_PRIVATE" });
+      expect(await getGiftImageUrls([privateGift], owner, null)).toHaveProperty(privateGift);
+      await expect(
+        runAppAction(owner, { action: "create-share", listIds: [saved.id] }),
+      ).rejects.toMatchObject({ status: 403 });
+    } finally {
+      await database.query("DELETE FROM lists WHERE id=$1", [saved.id]);
+      await database.query("DELETE FROM profile_share_links WHERE id=$1", [share.id]);
+    }
+  });
+
+  it("does not let profile approval bypass a circle list's own access settings", async () => {
+    await database.query(
+      "INSERT INTO profile_access_requests (requester_id,owner_id,status) VALUES ($1,$2,'accepted')",
+      [outsider, member],
+    );
+    try {
+      const page = await getProfilePage("member", outsider, null, database);
+      if ("error" in page) throw new Error(page.error);
+      expect(page.lists).toEqual([]);
+      await expect(
+        setGiftReservation(outsider, gift, "reserved", null, database),
+      ).rejects.toMatchObject({ status: 403 });
+    } finally {
+      await database.query(
+        "DELETE FROM profile_access_requests WHERE requester_id=$1 AND owner_id=$2",
+        [outsider, member],
+      );
+    }
   });
 
   async function post(endpoint: string, body: Record<string, unknown>) {

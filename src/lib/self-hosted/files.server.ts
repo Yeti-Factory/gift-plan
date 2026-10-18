@@ -1,3 +1,4 @@
+import { LIST_ACCESS_SQL } from "./list-access.server";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -74,23 +75,7 @@ export async function saveUpload(userId: string, kind: unknown, file: unknown) {
 
 async function canReadGift(pathValue: string, viewerId: string | null, shareToken: string | null) {
   const result = await getDatabasePool().query<{ allowed: boolean }>(
-    `SELECT (
-       g.owner_id = $2::uuid OR l.visibility = 'public'
-       OR ($2::uuid IS NOT NULL AND EXISTS (
-         SELECT 1 FROM profile_access_requests ar WHERE ar.owner_id = g.owner_id
-           AND ar.requester_id = $2::uuid AND ar.status = 'accepted'
-       ))
-       OR ($2::uuid IS NOT NULL AND EXISTS (
-         SELECT 1 FROM list_circle_access lca JOIN circle_members cm ON cm.circle_id = lca.circle_id
-          WHERE lca.list_id = l.id AND cm.user_id = $2::uuid
-       ))
-       OR ($3::uuid IS NOT NULL AND EXISTS (
-         SELECT 1 FROM profile_share_links s
-         JOIN profile_share_link_lists sl ON sl.share_link_id = s.id
-          WHERE s.token = $3::uuid AND s.owner_id = g.owner_id AND sl.list_id = l.id
-            AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at > now())
-       ))
-     ) AS allowed FROM gifts g JOIN lists l ON l.id = g.list_id WHERE g.image_path = $1 LIMIT 1`,
+    `SELECT ${LIST_ACCESS_SQL} AS allowed FROM gifts g JOIN lists l ON l.id = g.list_id WHERE g.image_path = $1 LIMIT 1`,
     [pathValue, viewerId, shareToken],
   );
   return result.rows[0]?.allowed ?? false;
@@ -113,7 +98,7 @@ export async function readUpload(
     headers: {
       "content-type": contentTypes[extension] ?? "application/octet-stream",
       "cache-control":
-        bucket === "avatars" ? "public, max-age=31536000, immutable" : "private, max-age=300",
+        bucket === "avatars" ? "public, max-age=31536000, immutable" : "private, no-store",
       "x-content-type-options": "nosniff",
     },
   });
@@ -127,23 +112,7 @@ export async function getGiftImageUrls(
   if (giftIds.length === 0) return {};
   const result = await getDatabasePool().query<{ id: string; image_path: string }>(
     `SELECT g.id, g.image_path FROM gifts g JOIN lists l ON l.id = g.list_id
-      WHERE g.id = ANY($1::uuid[]) AND g.image_path IS NOT NULL AND (
-        g.owner_id = $2::uuid OR l.visibility = 'public'
-        OR ($2::uuid IS NOT NULL AND EXISTS (
-          SELECT 1 FROM profile_access_requests ar WHERE ar.owner_id = g.owner_id
-            AND ar.requester_id = $2::uuid AND ar.status = 'accepted'
-        ))
-        OR ($2::uuid IS NOT NULL AND EXISTS (
-          SELECT 1 FROM list_circle_access lca JOIN circle_members cm ON cm.circle_id = lca.circle_id
-           WHERE lca.list_id = l.id AND cm.user_id = $2::uuid
-        ))
-        OR ($3::uuid IS NOT NULL AND EXISTS (
-          SELECT 1 FROM profile_share_links s
-          JOIN profile_share_link_lists sl ON sl.share_link_id = s.id
-           WHERE s.token = $3::uuid AND s.owner_id = g.owner_id AND sl.list_id = l.id
-             AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at > now())
-        ))
-      )`,
+      WHERE g.id = ANY($1::uuid[]) AND g.image_path IS NOT NULL AND ${LIST_ACCESS_SQL}`,
     [giftIds, viewerId, shareToken],
   );
   return Object.fromEntries(

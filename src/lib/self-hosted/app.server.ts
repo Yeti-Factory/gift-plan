@@ -152,7 +152,7 @@ export async function getCircleDetail(
               count(DISTINCT lca.list_id)::int AS "listCount"
          FROM circle_members cm JOIN profiles p ON p.id = cm.user_id
          LEFT JOIN lists l ON l.owner_id = cm.user_id
-         LEFT JOIN list_circle_access lca ON lca.list_id = l.id AND lca.circle_id = cm.circle_id
+         LEFT JOIN list_circle_access lca ON lca.list_id = l.id AND lca.circle_id = cm.circle_id AND l.visibility = 'circles'
         WHERE cm.circle_id = $1::uuid
         GROUP BY cm.user_id, cm.role, p.display_name, p.avatar_url, p.username, cm.joined_at
         ORDER BY CASE cm.role WHEN 'admin' THEN 0 ELSE 1 END, cm.joined_at`,
@@ -192,7 +192,7 @@ export async function getCircleMember(
     database.query(
       `SELECT l.id, l.title, l.occasion, l.event_date, l.visibility
          FROM lists l JOIN list_circle_access lca ON lca.list_id = l.id
-        WHERE l.owner_id = $1::uuid AND lca.circle_id = $2::uuid
+        WHERE l.owner_id = $1::uuid AND lca.circle_id = $2::uuid AND l.visibility = 'circles'
         ORDER BY l.created_at DESC`,
       [memberId, circleId],
     ),
@@ -233,7 +233,7 @@ export async function getOffers(userId: string, database: Database = getDatabase
             p.display_name AS owner_name, p.username AS owner_username, p.avatar_url AS owner_avatar
        FROM reservations r JOIN gifts g ON g.id = r.gift_id
        JOIN lists l ON l.id = g.list_id JOIN profiles p ON p.id = g.owner_id
-      WHERE r.buyer_id = $1::uuid ORDER BY r.created_at DESC`,
+      WHERE r.buyer_id = $1::uuid AND l.visibility <> 'private' ORDER BY r.created_at DESC`,
     [userId],
   );
   return result.rows;
