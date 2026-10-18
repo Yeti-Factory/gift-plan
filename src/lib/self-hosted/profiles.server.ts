@@ -24,7 +24,8 @@ export async function listProfileDirectory(
   }>(
     `WITH candidates AS (
        SELECT
-         p.id, p.username, p.display_name, p.avatar_url, p.visibility,
+         p.id, p.username, p.display_name,
+         CASE WHEN access.can_view THEN p.avatar_url ELSE NULL END AS avatar_url, p.visibility,
          CASE WHEN access.can_view THEN p.bio ELSE NULL END AS bio,
          CASE WHEN access.can_view THEN p.birthday ELSE NULL END AS birthday,
          access.can_view,
@@ -56,10 +57,8 @@ export async function listProfileDirectory(
          ON outgoing.requester_id = $1::uuid AND outgoing.owner_id = p.id
        LEFT JOIN profile_access_requests incoming
          ON incoming.requester_id = p.id AND incoming.owner_id = $1::uuid
-       WHERE (access.can_view OR outgoing.id IS NOT NULL OR incoming.id IS NOT NULL
-              OR ($2 <> '' AND lower(p.username) = lower($2)))
-         AND ($2 = '' OR lower(p.username) LIKE '%' || lower($2) || '%'
-              OR lower(coalesce(p.display_name, '')) LIKE '%' || lower($2) || '%')
+       WHERE $2 = '' OR strpos(lower(p.username), lower($2)) > 0
+          OR strpos(lower(coalesce(p.display_name, '')), lower($2)) > 0
      ), page AS (
        SELECT * FROM candidates
        ORDER BY sort_name, lower(username), id

@@ -26,7 +26,7 @@ function uuid(value: unknown) {
 }
 
 export function normalizeDirectoryInput(searchParams: URLSearchParams) {
-  const query = (searchParams.get("q") ?? "").trim().slice(0, 100);
+  const query = (searchParams.get("q") ?? "").trim().replace(/^@/, "").slice(0, 100);
   const requestedLimit = Number(searchParams.get("limit") ?? 50);
   const requestedOffset = Number(searchParams.get("offset") ?? 0);
   return {
