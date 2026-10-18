@@ -395,7 +395,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     expect(signin.headers.get("set-cookie")).toContain("gift-plan");
   }, 30000);
 
-  it("revokes existing sessions once, preserves passwords and keeps later logins valid", async () => {
+  it.each([
+    ["0006_reconnect_for_guide_v2.sql", "guide-v2-2026-10-18"],
+    ["0008_reconnect_after_directory_update.sql", "directory-update-reconnect-2026-10-18"],
+  ])("%s revokes sessions once and preserves later logins", async (migration, releaseKey) => {
     const signedIn = await post("sign-in/email", {
       email: "member@example.com",
       password: "Test-password-42!",
@@ -410,13 +413,14 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
       (await auth.api.getSession({ headers, query: { disableCookieCache: true } }))?.user.id,
     ).toBe(member);
     const resetSql = await readFile(
-      new URL("../selfhost/migrations/0006_reconnect_for_guide_v2.sql", import.meta.url),
+      new URL("../selfhost/migrations/" + migration, import.meta.url),
       "utf8",
     );
     await database.query(resetSql);
     expect(await auth.api.getSession({ headers, query: { disableCookieCache: true } })).toBeNull();
     const event = await database.query(
-      "SELECT revoked_sessions FROM app_release_events WHERE release_key='guide-v2-2026-10-18'",
+      "SELECT revoked_sessions FROM app_release_events WHERE release_key=$1",
+      [releaseKey],
     );
     expect(event.rows[0].revoked_sessions).toBeGreaterThanOrEqual(1);
     const later = await post("sign-in/email", {
@@ -442,7 +446,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     expect(
       (
         await database.query(
-          "SELECT count(*)::int AS total FROM app_release_events WHERE release_key='guide-v2-2026-10-18'",
+          "SELECT count(*)::int AS total FROM app_release_events WHERE release_key=$1",
+          [releaseKey],
         )
       ).rows[0].total,
     ).toBe(1);
