@@ -47,7 +47,7 @@ async function readView(request: Request) {
   const userId = await requireUserId(request.headers);
   switch (view) {
     case "messages":
-      return getMessageInbox(userId);
+      return getMessageInbox(userId, undefined, Number(url.searchParams.get("offset") ?? 0));
     case "message-recipient":
       return getMessageRecipient(userId, requiredUuid(url.searchParams.get("recipientId")));
     case "message-thread":

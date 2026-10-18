@@ -16,7 +16,12 @@ export type DirectMessage = {
   body: string;
   created_at: string;
 };
-export type MessageInbox = { conversations: Conversation[]; unread: number; userId: string };
+export type MessageInbox = {
+  conversations: Conversation[];
+  unread: number;
+  userId: string;
+  hasMore: boolean;
+};
 export type MessageThread = {
   conversation: Conversation;
   messages: DirectMessage[];

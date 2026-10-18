@@ -200,6 +200,77 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
     await expect(start(a, a)).rejects.toMatchObject({ status: 400 });
     await expect(start(a, unverified)).rejects.toMatchObject({ status: 404 });
   });
+  it("limits new contacts and rolls back invalid first messages", async () => {
+    const ids = Array.from({ length: 11 }, () => randomUUID());
+    try {
+      await database.query(
+        `INSERT INTO "user"(id,name,email,"emailVerified",username)
+        SELECT id,'Contact',id::text||'@example.com',true,'contact-'||left(replace(id::text,'-',''),30) FROM unnest($1::uuid[]) AS id`,
+        [ids],
+      );
+      await expect(start(a, ids[0], " ")).rejects.toMatchObject({ status: 400 });
+      expect((await getMessageInbox(a, database)).conversations).toHaveLength(0);
+      for (const id of ids.slice(0, 10)) await start(a, id);
+      await expect(start(a, ids[10])).rejects.toMatchObject({ status: 429 });
+      expect((await getMessageInbox(a, database)).conversations).toHaveLength(10);
+    } finally {
+      await database.query('DELETE FROM "user" WHERE id=ANY($1::uuid[])', [ids]);
+    }
+  });
+
+  it("paginates the inbox and removes conversations, reports and blocks with a deleted account", async () => {
+    const ids = Array.from({ length: 101 }, () => randomUUID());
+    try {
+      await database.query(
+        `INSERT INTO "user"(id,name,email,"emailVerified",username)
+        SELECT id,'Contact',id::text||'@example.com',true,'contact-'||left(replace(id::text,'-',''),30) FROM unnest($1::uuid[]) AS id`,
+        [ids],
+      );
+      await database.query(
+        `INSERT INTO direct_conversations(user_low,user_high,initiated_by,status)
+        SELECT least($1::uuid,id),greatest($1::uuid,id),$1,'accepted' FROM unnest($2::uuid[]) AS id`,
+        [a, ids],
+      );
+      const first = await getMessageInbox(a, database),
+        next = await getMessageInbox(a, database, 100);
+      expect(first.conversations).toHaveLength(100);
+      expect(first.hasMore).toBe(true);
+      expect(next.conversations).toHaveLength(1);
+      expect(next.hasMore).toBe(false);
+      expect(
+        new Set([...first.conversations, ...next.conversations].map((row) => row.id)).size,
+      ).toBe(101);
+      const recipient = await getMessageRecipient(a, next.conversations[0].other_id, database);
+      expect(recipient.conversation_id).toBe(next.conversations[0].id);
+      const target = ids[0],
+        person = await getMessageRecipient(a, target, database);
+      await send(a, person.conversation_id, "À supprimer");
+      const message = (await getMessageThread(target, person.conversation_id, null, database))
+        .messages[0];
+      await act(target, "message-report", {
+        conversationId: person.conversation_id,
+        messageId: message.id,
+        reason: "Test",
+      });
+      await act(target, "message-block", { recipientId: a });
+      await database.query('DELETE FROM "user" WHERE id=$1', [target]);
+      expect(
+        (
+          await database.query("SELECT 1 FROM direct_messages WHERE conversation_id=$1", [
+            person.conversation_id,
+          ])
+        ).rowCount,
+      ).toBe(0);
+      expect(await getMessageReports(a, database)).toEqual([]);
+      expect(
+        (await database.query("SELECT 1 FROM direct_message_blocks WHERE blocker_id=$1", [target]))
+          .rowCount,
+      ).toBe(0);
+    } finally {
+      await database.query('DELETE FROM "user" WHERE id=ANY($1::uuid[])', [ids]);
+    }
+  });
+
   it("exposes only explicitly reported incoming messages to admins and protects moderation", async () => {
     const { conversationId } = await start(a, b, "Texte signalé");
     await send(a, conversationId!, "Autre message privé");

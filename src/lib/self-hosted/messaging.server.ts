@@ -36,10 +36,12 @@ const conversationSelect = `SELECT c.id,c.initiated_by,c.status,c.updated_at,
 export async function getMessageInbox(
   userId: string,
   database: Database = getDatabasePool(),
+  offset = 0,
 ): Promise<MessageInbox> {
+  if (!Number.isSafeInteger(offset) || offset < 0) throw new ApiError(400, "INVALID_REQUEST");
   const rows = await database.query<Conversation>(
-    conversationSelect + " ORDER BY c.updated_at DESC,c.id LIMIT 100",
-    [userId],
+    conversationSelect + " ORDER BY c.updated_at DESC,c.id LIMIT 101 OFFSET $2",
+    [userId, offset],
   );
   const count = await database.query<{ unread: number }>(
     `SELECT count(*)::int AS unread FROM direct_messages m
@@ -50,7 +52,12 @@ export async function getMessageInbox(
       (b.blocker_id=c.user_low AND b.blocked_id=c.user_high) OR (b.blocker_id=c.user_high AND b.blocked_id=c.user_low))`,
     [userId],
   );
-  return { conversations: rows.rows, unread: count.rows[0].unread, userId };
+  return {
+    conversations: rows.rows.slice(0, 100),
+    unread: count.rows[0].unread,
+    userId,
+    hasMore: rows.rows.length > 100,
+  };
 }
 
 export function messageCursor(value: unknown): string | null {

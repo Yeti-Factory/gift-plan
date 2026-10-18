@@ -31,8 +31,26 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
   const generation = useRef(0);
   const selection = useRef<string | null>(null);
   const nonce = useRef(crypto.randomUUID());
+  const pages = useRef(1);
+  const messageList = useRef<HTMLOListElement>(null);
+  const latestMessageId = thread?.messages.at(-1)?.id;
+  useEffect(() => {
+    if (messageList.current) messageList.current.scrollTop = messageList.current.scrollHeight;
+  }, [selected, latestMessageId]);
   const loadInbox = useCallback(async () => {
-    const data = await apiQuery<MessageInbox>("messages");
+    // Refresh every page already opened, so older conversations remain reachable.
+    const loaded = await Promise.all(
+      Array.from({ length: pages.current }, (_, index) =>
+        apiQuery<MessageInbox>("messages", { offset: String(index * 100) }),
+      ),
+    );
+    const data = {
+      ...loaded[0],
+      hasMore: loaded.at(-1)!.hasMore,
+      conversations: loaded
+        .flatMap((page) => page.conversations)
+        .filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i),
+    };
     setInbox(data);
     return data;
   }, []);
@@ -272,6 +290,26 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
               </span>
             </button>
           ))}
+          {inbox?.hasMore && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                pages.current++;
+                try {
+                  await loadInbox();
+                } catch (e) {
+                  pages.current--;
+                  setError(messageError(e));
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Conversations précédentes
+            </Button>
+          )}
         </aside>
         <section
           aria-label="Échange privé"
@@ -311,6 +349,7 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
             </Button>
           )}
           <ol
+            ref={messageList}
             aria-label="Messages de la conversation"
             className="max-h-[50vh] space-y-3 overflow-y-auto"
           >
