@@ -69,6 +69,7 @@ function parseDirectoryProfile(value: unknown): DirectoryProfile | null {
     display_name: optionalString(value.display_name),
     avatar_url: optionalString(value.avatar_url),
     bio: optionalString(value.bio),
+    birthday: value.can_view ? optionalString(value.birthday) : null,
     visibility: value.visibility,
     can_view: value.can_view,
     is_self: value.is_self,

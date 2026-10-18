@@ -186,9 +186,10 @@ export function ProfileDirectoryPage() {
             Profils Gift-Plan
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Les profils publics et vos contacts sont affichés ici. Un profil privé sans lien avec
-            vous n’apparaît pas dans cet annuaire ; son identifiant exact permet de lui demander un
-            accès.
+            Retrouvez les comptes inscrits par nom ou identifiant. Une fiche privée reste
+            verrouillée : seule une autorisation de son propriétaire ou un cercle commun permet
+            d’ouvrir son profil. L’annuaire ne révèle pas les cercles ni les contacts d’une
+            personne.
           </p>
         </header>
 
@@ -225,8 +226,8 @@ export function ProfileDirectoryPage() {
                 Accès accordés
               </h2>
               <p className="text-xs text-muted-foreground">
-                Ces personnes peuvent consulter toutes vos listes. Vous pouvez révoquer leur accès à
-                tout moment.
+                Ces personnes peuvent consulter votre profil. Chaque liste conserve ses propres
+                réglages de confidentialité. Vous pouvez révoquer cet accès à tout moment.
               </p>
             </div>
             <Card className="divide-y overflow-hidden rounded-[1.5rem] border-white/80 bg-white/80 p-0 shadow-sm">

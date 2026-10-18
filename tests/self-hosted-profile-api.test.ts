@@ -9,6 +9,11 @@ import {
 const profileId = "19d4fe76-84f9-4a51-93be-b1edac74dc5a";
 
 describe("self-hosted profile API inputs", () => {
+  it("accepts the displayed @username notation", () => {
+    expect(normalizeDirectoryInput(new URLSearchParams({ q: "  @chauvin  " })).query).toBe(
+      "chauvin",
+    );
+  });
   it("normalizes directory pagination and limits the search term", () => {
     const params = new URLSearchParams({ q: `  ${"a".repeat(120)}  `, limit: "999", offset: "-5" });
     expect(normalizeDirectoryInput(params)).toEqual({

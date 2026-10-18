@@ -12,6 +12,7 @@ const profile = {
   display_name: "Alice",
   avatar_url: null,
   bio: null,
+  birthday: null,
   visibility: "private",
   can_view: false,
   is_self: false,
@@ -22,6 +23,15 @@ const profile = {
 };
 
 describe("profile directory parsing", () => {
+  it("preserves birthdays only for accessible profiles", () => {
+    for (const can_view of [true, false]) {
+      const result = parseProfileDirectory({
+        profiles: [{ ...profile, birthday: "04-22", can_view }],
+        total: 1,
+      });
+      expect(result?.profiles[0].birthday).toBe(can_view ? "04-22" : null);
+    }
+  });
   it("accepts a valid paginated directory response", () => {
     expect(parseProfileDirectory({ profiles: [profile], total: 1 })).toEqual({
       profiles: [profile],

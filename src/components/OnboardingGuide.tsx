@@ -105,7 +105,7 @@ const STEPS: Step[] = [
       "Seuls les membres peuvent voir les membres et le contenu partagé avec ce cercle.",
       "Un administrateur peut transmettre le code, gérer les membres et renouveler un code expiré.",
       "Vous pouvez appartenir à plusieurs cercles et choisir précisément lesquels voient chaque liste.",
-      "Dans Communauté, les profils publics et vos contacts sont visibles. Pour demander accès à un profil privé sans lien avec vous, cherchez son identifiant exact.",
+      "Dans Communauté, recherchez un compte par nom ou identifiant. Une fiche privée reste verrouillée jusqu’à l’autorisation du propriétaire ou un cercle commun ; l’annuaire ne montre pas les relations entre les personnes.",
     ],
     icon: <Users className="h-6 w-6" />,
   },

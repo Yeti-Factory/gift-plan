@@ -203,7 +203,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     }
   });
 
-  it("does not reveal private contacts through a public person's directory or circle", async () => {
+  it("keeps private profiles locked and never exposes the circles of a public person", async () => {
     await database.query("UPDATE profiles SET visibility='public' WHERE id=$1", [owner]);
     try {
       const directory = await listProfileDirectory(
@@ -212,8 +212,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
         database,
       );
       expect(directory.profiles.map((row) => row.id)).toContain(owner);
-      expect(directory.profiles.map((row) => row.id)).not.toContain(member);
-      expect(directory.profiles.map((row) => row.id)).not.toContain(peer);
+      for (const id of [member, peer]) {
+        const card = directory.profiles.find((row) => row.id === id);
+        expect(card).toMatchObject({
+          can_view: false,
+          bio: null,
+          birthday: null,
+          avatar_url: null,
+        });
+        expect(card).not.toHaveProperty("circles");
+        expect(card).not.toHaveProperty("contacts");
+      }
       expect(await getProfilePage("member", outsider, null, database)).toEqual({
         error: "PROFILE_PRIVATE",
       });
@@ -288,6 +297,45 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     } finally {
       await database.query("DELETE FROM lists WHERE id=$1", [saved.id]);
       await database.query("DELETE FROM profile_share_links WHERE id=$1", [share.id]);
+    }
+  });
+
+  it("finds private accounts by display-name fragments while keeping their content locked", async () => {
+    await database.query(
+      "UPDATE profiles SET display_name=$2, bio='Private bio', birthday='04-22', avatar_url='https://example.com/private.jpg' WHERE id=$1",
+      [member, "Céline Chauvin"],
+    );
+    await database.query("UPDATE profiles SET display_name=$2 WHERE id=$1", [peer, "Alex Bayon"]);
+    try {
+      for (const [term, id] of [
+        ["chauvin", member],
+        ["CHAU", member],
+        ["bayon", peer],
+      ]) {
+        const found = await listProfileDirectory(
+          outsider,
+          { query: term, limit: 50, offset: 0 },
+          database,
+        );
+        expect(found.profiles.find((row) => row.id === id)).toMatchObject({
+          can_view: false,
+          bio: null,
+          birthday: null,
+          avatar_url: null,
+        });
+      }
+      expect(
+        (await listProfileDirectory(outsider, { query: "%%", limit: 50, offset: 0 }, database))
+          .profiles,
+      ).toEqual([]);
+      expect(await getProfilePage("member", outsider, null, database)).toEqual({
+        error: "PROFILE_PRIVATE",
+      });
+    } finally {
+      await database.query(
+        "UPDATE profiles SET display_name=NULL, bio=NULL, birthday=NULL, avatar_url=NULL WHERE id=ANY($1::uuid[])",
+        [[member, peer]],
+      );
     }
   });
 
