@@ -7,6 +7,7 @@ import {
   Globe2,
   Inbox,
   Loader2,
+  MessageCircle,
   Lock,
   Search,
   ShieldCheck,
@@ -412,6 +413,13 @@ function DirectoryProfileRow({
       </div>
 
       <div className="pointer-events-none relative z-10 flex shrink-0 items-center gap-1.5">
+        {!profile.is_self && (
+          <Button asChild size="icon" variant="ghost" className="pointer-events-auto h-8 w-8">
+            <Link to="/messages" search={{ recipient: profile.id }} aria-label={`Écrire à ${name}`}>
+              <MessageCircle className="h-4 w-4" />
+            </Link>
+          </Button>
+        )}
         <Badge
           variant="outline"
           aria-label={profile.visibility === "public" ? "Profil public" : "Profil privé"}

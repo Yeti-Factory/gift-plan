@@ -16,6 +16,14 @@ import {
 } from "@/lib/self-hosted/app.server";
 import { runAppAction } from "@/lib/self-hosted/actions.server";
 import {
+  getMessageInbox,
+  getMessageThread,
+  getMessageReports,
+  getMessageRecipient,
+  resolveMessageReport,
+  messagingAction,
+} from "@/lib/self-hosted/messaging.server";
+import {
   ApiError,
   apiErrorResponse,
   assertSameOrigin,
@@ -38,6 +46,18 @@ async function readView(request: Request) {
 
   const userId = await requireUserId(request.headers);
   switch (view) {
+    case "messages":
+      return getMessageInbox(userId, undefined, Number(url.searchParams.get("offset") ?? 0));
+    case "message-recipient":
+      return getMessageRecipient(userId, requiredUuid(url.searchParams.get("recipientId")));
+    case "message-thread":
+      return getMessageThread(
+        userId,
+        requiredUuid(url.searchParams.get("conversationId")),
+        url.searchParams.get("before"),
+      );
+    case "message-reports":
+      return getMessageReports(userId);
     case "session":
       return getSessionView(userId);
     case "community": {
@@ -88,6 +108,13 @@ export const Route = createFileRoute("/api/v1/app")({
           assertSameOrigin(request);
           const userId = await requireUserId(request.headers);
           const body = await readJsonObject(request);
+          if (body.action === "message-resolve-report") {
+            await resolveMessageReport(userId, requiredUuid(body.reportId));
+            return noStoreJson({ ok: true });
+          }
+          if (typeof body.action === "string" && body.action.startsWith("message-")) {
+            return noStoreJson(await messagingAction(userId, body));
+          }
           const profileCommand = parseProfileAccessCommand(body);
           const result = profileCommand
             ? await applyProfileAccessCommand(userId, profileCommand)
