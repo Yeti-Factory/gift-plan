@@ -346,6 +346,59 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     expect(signin.headers.get("set-cookie")).toContain("gift-plan");
   }, 30000);
 
+  it("revokes existing sessions once, preserves passwords and keeps later logins valid", async () => {
+    const signedIn = await post("sign-in/email", {
+      email: "member@example.com",
+      password: "Test-password-42!",
+    });
+    expect(signedIn.status).toBe(200);
+    const cookie = signedIn.headers
+      .getSetCookie()
+      .map((line) => line.split(";")[0])
+      .join("; ");
+    const headers = new Headers({ cookie });
+    expect(
+      (await auth.api.getSession({ headers, query: { disableCookieCache: true } }))?.user.id,
+    ).toBe(member);
+    const resetSql = await readFile(
+      new URL("../selfhost/migrations/0006_reconnect_for_guide_v2.sql", import.meta.url),
+      "utf8",
+    );
+    await database.query(resetSql);
+    expect(await auth.api.getSession({ headers, query: { disableCookieCache: true } })).toBeNull();
+    const event = await database.query(
+      "SELECT revoked_sessions FROM app_release_events WHERE release_key='guide-v2-2026-10-18'",
+    );
+    expect(event.rows[0].revoked_sessions).toBeGreaterThanOrEqual(1);
+    const later = await post("sign-in/email", {
+      email: "member@example.com",
+      password: "Test-password-42!",
+    });
+    expect(later.status).toBe(200);
+    const freshHeaders = new Headers({
+      cookie: later.headers
+        .getSetCookie()
+        .map((line) => line.split(";")[0])
+        .join("; "),
+    });
+    expect(
+      (await auth.api.getSession({ headers: freshHeaders, query: { disableCookieCache: true } }))
+        ?.user.id,
+    ).toBe(member);
+    await database.query(resetSql);
+    expect(
+      (await auth.api.getSession({ headers: freshHeaders, query: { disableCookieCache: true } }))
+        ?.user.id,
+    ).toBe(member);
+    expect(
+      (
+        await database.query(
+          "SELECT count(*)::int AS total FROM app_release_events WHERE release_key='guide-v2-2026-10-18'",
+        )
+      ).rows[0].total,
+    ).toBe(1);
+  });
+
   it("does not reveal account existence when reset email delivery fails", async () => {
     mail.reset.mockClear();
     expect(
