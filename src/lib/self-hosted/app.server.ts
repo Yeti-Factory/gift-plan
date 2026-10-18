@@ -2,6 +2,7 @@ import type { Pool, PoolClient } from "pg";
 
 import { ApiError } from "./http.server";
 import { getDatabasePool } from "./database.server";
+import { LIST_ACCESS_SQL } from "./list-access.server";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -149,14 +150,13 @@ export async function getCircleDetail(
       `SELECT cm.user_id, cm.role,
               jsonb_build_object('display_name', p.display_name, 'avatar_url', p.avatar_url,
                 'username', p.username) AS profile,
-              count(DISTINCT lca.list_id)::int AS "listCount"
+              count(l.id)::int AS "listCount"
          FROM circle_members cm JOIN profiles p ON p.id = cm.user_id
-         LEFT JOIN lists l ON l.owner_id = cm.user_id
-         LEFT JOIN list_circle_access lca ON lca.list_id = l.id AND lca.circle_id = cm.circle_id AND l.visibility = 'circles'
+         LEFT JOIN lists l ON l.owner_id = cm.user_id AND ${LIST_ACCESS_SQL}
         WHERE cm.circle_id = $1::uuid
         GROUP BY cm.user_id, cm.role, p.display_name, p.avatar_url, p.username, cm.joined_at
         ORDER BY CASE cm.role WHEN 'admin' THEN 0 ELSE 1 END, cm.joined_at`,
-      [circleId],
+      [circleId, userId, null],
     ),
     membership.role === "admin"
       ? database.query(

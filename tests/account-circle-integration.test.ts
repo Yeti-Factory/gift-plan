@@ -145,6 +145,51 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     expect(inCircle.lists.map((row) => row.id)).toEqual([list]);
   });
 
+  it("counts the lists visible from each member's gift button without duplicates or private leaks", async () => {
+    const publicList = randomUUID(),
+      privateList = randomUUID();
+    await database.query(
+      "INSERT INTO lists (id, owner_id, title, visibility) VALUES ($1, $3, 'Public', 'public'), ($2, $3, 'Personal', 'private')",
+      [publicList, privateList, member],
+    );
+    try {
+      const checkCount = async (viewer: string, expected: number) => {
+        const detail = await getCircleDetail(viewer, circle, database);
+        const page = await getProfilePage("member", viewer, null, database);
+        if ("error" in page) throw new Error(page.error);
+        expect(detail.members.find((row) => row.user_id === member)?.listCount).toBe(expected);
+        expect(page.lists).toHaveLength(expected);
+        expect(detail.members.find((row) => row.user_id === owner)?.listCount).toBe(0);
+      };
+      await checkCount(peer, 2);
+      await checkCount(member, 4);
+      await database.query("INSERT INTO circle_members (circle_id, user_id) VALUES ($1, $2)", [
+        otherCircle,
+        peer,
+      ]);
+      await database.query("INSERT INTO list_circle_access (list_id, circle_id) VALUES ($1, $2)", [
+        list,
+        otherCircle,
+      ]);
+      await checkCount(peer, 3);
+      await expect(getCircleDetail(outsider, circle, database)).rejects.toMatchObject({
+        status: 403,
+      });
+    } finally {
+      await database.query("DELETE FROM list_circle_access WHERE list_id = $1 AND circle_id = $2", [
+        list,
+        otherCircle,
+      ]);
+      await database.query("DELETE FROM circle_members WHERE circle_id = $1 AND user_id = $2", [
+        otherCircle,
+        peer,
+      ]);
+      await database.query("DELETE FROM lists WHERE id = ANY($1::uuid[])", [
+        [publicList, privateList],
+      ]);
+    }
+  });
+
   it("denies strangers and removes profile access after leaving the only shared circle", async () => {
     expect(await getProfilePage("member", outsider, null, database)).toEqual({
       error: "PROFILE_PRIVATE",
