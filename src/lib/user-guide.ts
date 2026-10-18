@@ -176,6 +176,7 @@ export const USER_GUIDE: GuideChapter[] = [
     notes: [
       "Une invitation à installer Gift-Plan ne fait pas entrer automatiquement dans un cercle.",
       "Seuls les membres ont accès à la composition du cercle. Le statut public d’un membre ne rend pas le cercle public.",
+      "Le compteur de listes d’un membre correspond aux listes accessibles avec Voir les cadeaux : listes publiques et listes partagées avec vos cercles, sans doublons. Vos propres listes personnelles ne sont comptées que pour vous.",
     ],
   },
   {

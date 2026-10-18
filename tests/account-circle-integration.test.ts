@@ -452,6 +452,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
   it.each([
     ["0006_reconnect_for_guide_v2.sql", "guide-v2-2026-10-18"],
     ["0008_reconnect_after_directory_update.sql", "directory-update-reconnect-2026-10-18"],
+    ["0011_reconnect_for_guide_v3.sql", "guide-v3-messaging-2026-10-18"],
   ])("%s revokes sessions once and preserves later logins", async (migration, releaseKey) => {
     const signedIn = await post("sign-in/email", {
       email: "member@example.com",
@@ -470,13 +471,20 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
       new URL("../selfhost/migrations/" + migration, import.meta.url),
       "utf8",
     );
+    await database.query(
+      'INSERT INTO "session" ("token", "userId", "expiresAt") VALUES ($1, $2, now() + interval \'1 day\')',
+      [randomUUID(), owner],
+    );
     await database.query(resetSql);
+    expect(
+      (await database.query('SELECT count(*)::int AS total FROM "session"')).rows[0].total,
+    ).toBe(0);
     expect(await auth.api.getSession({ headers, query: { disableCookieCache: true } })).toBeNull();
     const event = await database.query(
       "SELECT revoked_sessions FROM app_release_events WHERE release_key=$1",
       [releaseKey],
     );
-    expect(event.rows[0].revoked_sessions).toBeGreaterThanOrEqual(1);
+    expect(event.rows[0].revoked_sessions).toBeGreaterThanOrEqual(2);
     const later = await post("sign-in/email", {
       email: "member@example.com",
       password: "Test-password-42!",

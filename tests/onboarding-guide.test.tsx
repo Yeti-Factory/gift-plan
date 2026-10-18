@@ -76,13 +76,50 @@ afterEach(() => cleanup());
 async function renderAutoOpen() {
   maybeSingleMock.mockResolvedValueOnce({ onboarding_completed_at: null, onboarding_version: 0 });
   render(<OnboardingGuide user={user} />);
-  await screen.findByText(/Bienvenue dans Gift-Plan/i);
+  await screen.findByText(/Une mise à jour importante de Gift-Plan/i);
 }
 
 describe("<OnboardingGuide />", () => {
+  it("shows the update announcement first and opens the interactive manual", async () => {
+    localStorage.setItem("gp-guide-v2:user-1:existing-login", "1");
+    render(<OnboardingGuide user={user} sessionId="existing-login" />);
+    await screen.findByText(/Une mise à jour importante de Gift-Plan/i);
+    expect(screen.getByText(/Merci de bien étudier le nouveau mode d’emploi/)).toBeTruthy();
+    expect(screen.queryByText(/Bienvenue dans Gift-Plan/i)).toBeNull();
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Ouvrir le mode d’emploi interactif" }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: "/mode-emploi" }));
+    expect(updateMock).toHaveBeenCalledWith("onboarding", {
+      version: ONBOARDING_VERSION,
+      markCompleted: true,
+    });
+    expect(localStorage.getItem(`gp-guide-v${ONBOARDING_VERSION}:user-1:existing-login`)).toBe("1");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+  it("explains list counts, both messaging features and interactive help", async () => {
+    await renderAutoOpen();
+    const u = userEvent.setup();
+    const visit = async (title: string) => {
+      while (!screen.queryByText(title))
+        await u.click(screen.getByRole("button", { name: /^Suivant$/i }));
+    };
+    await visit("Réunissez vos proches dans des cercles");
+    expect(screen.getByText(/Le compteur inclut ses listes publiques/)).toBeTruthy();
+    await visit("Échangez des messages privés");
+    expect(screen.getByText(/Le destinataire doit accepter la demande/)).toBeTruthy();
+    expect(screen.getByText(/Signaler transmet uniquement le message reçu/)).toBeTruthy();
+    await visit("Préparez une surprise en groupe");
+    expect(screen.getByText(/relisez Participants et Personnes exclues/)).toBeTruthy();
+    expect(
+      screen.getByText(/un nouveau membre du cercle n’est pas ajouté automatiquement/),
+    ).toBeTruthy();
+    await visit("Posez vos questions au mode d’emploi interactif");
+    expect(screen.getByText(/Avancez avec Étape suivante ou écrivez suivant/)).toBeTruthy();
+  });
   it("offers the guide for every new session, but does not repeat it on the same login", async () => {
     const first = render(<OnboardingGuide user={user} sessionId="first-login" />);
-    await screen.findByText(/Bienvenue dans Gift-Plan/i);
+    await screen.findByText(/Une mise à jour importante de Gift-Plan/i);
     await userEvent.setup().click(screen.getByRole("button", { name: /Passer le guide/i }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     first.unmount();
@@ -90,13 +127,13 @@ describe("<OnboardingGuide />", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     same.unmount();
     render(<OnboardingGuide user={user} sessionId="second-login" />);
-    await screen.findByText(/Bienvenue dans Gift-Plan/i);
+    await screen.findByText(/Une mise à jour importante de Gift-Plan/i);
   });
   it("explains public-profile benefits without suggesting that personal lists become public", async () => {
     render(<OnboardingGuide user={user} sessionId="public-profile-guide" />);
-    await screen.findByText(/Bienvenue dans Gift-Plan/i);
+    await screen.findByText(/Une mise à jour importante de Gift-Plan/i);
     const u = userEvent.setup();
-    for (let i = 0; i < 3; i++) await u.click(screen.getByRole("button", { name: /Suivant/i }));
+    for (let i = 0; i < 4; i++) await u.click(screen.getByRole("button", { name: /Suivant/i }));
     expect(screen.getByText("Pourquoi choisir un profil public ?")).toBeTruthy();
     expect(screen.getByText(/sans rejoindre vos cercles ni demander l’accès/)).toBeTruthy();
     expect(screen.getByText(/Si toutes vos listes sont privées/)).toBeTruthy();
@@ -111,7 +148,7 @@ describe("<OnboardingGuide />", () => {
     render(<OnboardingGuide user={user} />);
     // Give the effect a tick — it should bail out on technical routes.
     await new Promise((r) => setTimeout(r, 20));
-    expect(screen.queryByText(/Bienvenue dans Gift-Plan/i)).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("does not auto-open for a user who already completed the current version", async () => {
@@ -121,28 +158,28 @@ describe("<OnboardingGuide />", () => {
     });
     render(<OnboardingGuide user={user} />);
     await new Promise((r) => setTimeout(r, 20));
-    expect(screen.queryByText(/Bienvenue dans Gift-Plan/i)).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("navigates Précédent / Suivant through all 10 steps", async () => {
+  it("navigates Précédent / Suivant through all 15 steps", async () => {
     await renderAutoOpen();
     const u = userEvent.setup();
 
-    expect(screen.getByText(/Étape 1 sur 10/)).toBeTruthy();
+    expect(screen.getByText(/Étape 1 sur 15/)).toBeTruthy();
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
-    expect(screen.getByText(/Étape 2 sur 10/)).toBeTruthy();
+    expect(screen.getByText(/Étape 2 sur 15/)).toBeTruthy();
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
     await u.click(screen.getByRole("button", { name: /Suivant/i }));
-    for (let i = 0; i < 5; i++) await u.click(screen.getByRole("button", { name: /Suivant/i }));
-    expect(screen.getByText(/Étape 10 sur 10/)).toBeTruthy();
+    for (let i = 0; i < 10; i++) await u.click(screen.getByRole("button", { name: /Suivant/i }));
+    expect(screen.getByText(/Étape 15 sur 15/)).toBeTruthy();
 
     // Final step swaps Suivant for two CTAs.
     expect(screen.queryByRole("button", { name: /^Suivant$/i })).toBeNull();
     expect(screen.getByRole("button", { name: /Créer un cercle/i })).toBeTruthy();
 
     await u.click(screen.getByRole("button", { name: /Précédent/i }));
-    expect(screen.getByText(/Étape 9 sur 10/)).toBeTruthy();
+    expect(screen.getByText(/Étape 14 sur 15/)).toBeTruthy();
   });
 
   it("persists version + completed_at when the user clicks Passer", async () => {
@@ -157,7 +194,7 @@ describe("<OnboardingGuide />", () => {
   it("Terminer + CTA navigates to /circles with a validated search param", async () => {
     await renderAutoOpen();
     const u = userEvent.setup();
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 14; i++) {
       await u.click(screen.getByRole("button", { name: /Suivant/i }));
     }
     await u.click(screen.getByRole("button", { name: /Créer un cercle/i }));
@@ -190,7 +227,7 @@ describe("<OnboardingGuide />", () => {
 
     // Now reopen from the account page.
     openOnboardingGuide();
-    await screen.findByText(/Bienvenue dans Gift-Plan/i);
+    await screen.findByText(/Une mise à jour importante de Gift-Plan/i);
 
     await userEvent.setup().click(screen.getByRole("button", { name: /Passer le guide/i }));
     await waitFor(() => expect(updateMock).toHaveBeenCalled());
