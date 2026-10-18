@@ -27,7 +27,15 @@ async function mount(entries: string[]) {
       </>
     ),
   });
-  const routes = ["/", "/people", "/profile", "/circles", "/reset-password", "/auth"].map((path) =>
+  const routes = [
+    "/",
+    "/people",
+    "/profile",
+    "/circles",
+    "/reset-password",
+    "/auth",
+    "/mode-emploi",
+  ].map((path) =>
     createRoute({ getParentRoute: () => root, path, component: () => <div>Contenu</div> }),
   );
   const history = createMemoryHistory({ initialEntries: entries });
@@ -39,6 +47,16 @@ async function mount(entries: string[]) {
   return { history, user: userEvent.setup() };
 }
 describe("page navigation", () => {
+  it("opens the manual from the button between Back and Home", async () => {
+    const { history, user } = await mount(["/people"]);
+    const back = screen.getByRole("button", { name: "Retour" }),
+      manual = screen.getByRole("link", { name: "Mode d’emploi" }),
+      home = screen.getByRole("link", { name: "Accueil" });
+    expect(back.compareDocumentPosition(manual) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(manual.compareDocumentPosition(home) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    await user.click(manual);
+    await waitFor(() => expect(history.location.pathname).toBe("/mode-emploi"));
+  });
   it("returns to the previous app page", async () => {
     const { history, user } = await mount(["/circles", "/profile"]);
     await user.click(screen.getByRole("button", { name: "Retour" }));
