@@ -244,7 +244,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
     const imagePath = owner + "/" + randomUUID() + ".jpg";
     try {
       await database.query(
-        "INSERT INTO gifts (id,owner_id,list_id,title,image_path) VALUES ($1,$2,$3,'Secret gift',$4)",
+        "INSERT INTO gifts (id,owner_id,list_id,title,image_path,category) VALUES ($1,$2,$3,'Secret gift',$4,'culture')",
         [privateGift, owner, saved.id, imagePath],
       );
       expect(await getGiftImageUrls([privateGift], outsider, share.token)).toHaveProperty(
