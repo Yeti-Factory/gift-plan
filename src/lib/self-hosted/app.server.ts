@@ -264,7 +264,17 @@ export async function getMyProfile(userId: string, database: Database = getDatab
 }
 
 export async function getAccountData(userId: string, database: Database = getDatabasePool()) {
-  const [user, profile, memberships, lists, gifts, reservations] = await Promise.all([
+  const [
+    user,
+    profile,
+    memberships,
+    lists,
+    gifts,
+    reservations,
+    messages,
+    messageBlocks,
+    messageReports,
+  ] = await Promise.all([
     database.query(
       `SELECT id, name, email, "emailVerified" AS email_verified, image, "createdAt" AS created_at
          FROM "user" WHERE id = $1::uuid`,
@@ -282,6 +292,19 @@ export async function getAccountData(userId: string, database: Database = getDat
     database.query("SELECT * FROM reservations WHERE buyer_id = $1::uuid ORDER BY created_at", [
       userId,
     ]),
+    database.query(
+      `SELECT m.id::text,m.conversation_id,m.sender_id,m.body,m.created_at
+      FROM direct_messages m JOIN direct_conversations c ON c.id=m.conversation_id
+      WHERE $1::uuid IN(c.user_low,c.user_high) ORDER BY m.id`,
+      [userId],
+    ),
+    database.query("SELECT blocked_id,created_at FROM direct_message_blocks WHERE blocker_id=$1", [
+      userId,
+    ]),
+    database.query(
+      "SELECT message_id::text,reason,created_at,resolved_at FROM direct_message_reports WHERE reporter_id=$1",
+      [userId],
+    ),
   ]);
   return {
     user: user.rows[0],
@@ -290,6 +313,9 @@ export async function getAccountData(userId: string, database: Database = getDat
     lists: lists.rows,
     gifts: gifts.rows,
     reservations: reservations.rows,
+    messages: messages.rows,
+    message_blocks: messageBlocks.rows,
+    message_reports: messageReports.rows,
   };
 }
 

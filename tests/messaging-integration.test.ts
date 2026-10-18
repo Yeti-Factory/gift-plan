@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
+import { getAccountData } from "../src/lib/self-hosted/app.server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   getMessageInbox,
@@ -284,6 +285,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
     expect(reports).toHaveLength(1);
     expect(reports[0].body).toBe("Texte signalé");
     expect(JSON.stringify(reports)).not.toContain("Autre message privé");
+    const exported = await getAccountData(b, database);
+    expect(exported.messages.map((row) => row.body)).toEqual([
+      "Texte signalé",
+      "Autre message privé",
+    ]);
+    expect(exported.message_reports).toHaveLength(1);
+    const stranger = await getAccountData(d, database);
+    expect(stranger.messages).toEqual([]);
+    expect(stranger.message_reports).toEqual([]);
     await expect(resolveMessageReport(b, reports[0].id, database)).rejects.toMatchObject({
       status: 403,
     });
