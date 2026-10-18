@@ -65,12 +65,12 @@ function AuthLayout() {
 
   useEffect(() => {
     const expired = () => {
-      void navigate({ to: "/auth", replace: true });
-      void router.invalidate();
+      // Fetch fresh HTML and assets after a server-side session revocation.
+      window.location.replace("/auth");
     };
     window.addEventListener("gp-session-expired", expired);
     return () => window.removeEventListener("gp-session-expired", expired);
-  }, [navigate, router]);
+  }, []);
 
   async function signOut() {
     setSigningOut(true);
