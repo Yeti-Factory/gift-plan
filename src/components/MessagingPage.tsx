@@ -110,6 +110,14 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
           });
           if (!active || version !== generation.current) return;
           setThread((current) => {
+            if (
+              !current ||
+              current.conversation.id !== selected ||
+              !current.messages.some((message) =>
+                value.messages.some((fresh) => fresh.id === message.id),
+              )
+            )
+              return value;
             // Retain any older messages that the reader explicitly loaded.
             const oldest = value.messages[0]?.id;
             const older =

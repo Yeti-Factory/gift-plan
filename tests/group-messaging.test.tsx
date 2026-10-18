@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CreateCircleConversation } from "../src/components/CreateCircleConversation";
@@ -16,6 +16,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.resetAllMocks();
 });
 const members = [
@@ -24,6 +25,41 @@ const members = [
   { user_id: "c", profile: { display_name: "Émilie", username: "emilie" } },
 ];
 describe("circle surprise conversations", () => {
+  it("keeps skipped history reachable after returning to a busy group", async () => {
+    vi.useFakeTimers();
+    const first = {
+      conversation: { id: "group", title: "Surprise" },
+      participants: [],
+      messages: [
+        {
+          id: "1",
+          sender_id: "b",
+          sender_name: "Bruno",
+          body: "Ancien message",
+          created_at: "2026-10-18T12:00:00Z",
+        },
+      ],
+      hasMore: false,
+      canSend: true,
+    };
+    const latest = {
+      ...first,
+      messages: [{ ...first.messages[0], id: "100", body: "Dernier message" }],
+      hasMore: true,
+    };
+    api.query.mockResolvedValueOnce(first).mockResolvedValue(latest);
+    api.action.mockResolvedValue({});
+    await act(async () => {
+      render(<GroupMessagingPage userId="a" conversationId="group" />);
+    });
+    expect(screen.getByText("Ancien message")).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(8000);
+    });
+    expect(screen.queryByText("Ancien message")).toBeNull();
+    expect(screen.getByText("Dernier message")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Messages précédents" })).toBeTruthy();
+  });
   it("excludes a chosen person and requires an explicit recap confirmation before creation", async () => {
     api.action.mockResolvedValue({ conversationId: "group" });
     const user = userEvent.setup();

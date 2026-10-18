@@ -53,6 +53,14 @@ export function GroupMessagingPage({
         const value = await load();
         if (!active) return;
         setThread((old) => {
+          // After a long absence, restart at the latest page if there is a gap.
+          // Keeping disconnected windows would make the missing middle unreachable.
+          if (
+            !old ||
+            old.conversation.id !== conversationId ||
+            !old.messages.some((message) => value.messages.some((fresh) => fresh.id === message.id))
+          )
+            return value;
           const first = value.messages[0]?.id;
           const older =
             old?.conversation.id === conversationId && first
