@@ -29,13 +29,13 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await authClient.getSession();
     if (error || !data?.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+    return { user: data.user, sessionId: data.session.id };
   },
   component: AuthLayout,
 });
 
 function AuthLayout() {
-  const { user } = Route.useRouteContext();
+  const { user, sessionId } = Route.useRouteContext();
   const navigate = useNavigate();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
@@ -62,6 +62,15 @@ function AuthLayout() {
       window.removeEventListener(PROFILE_ACCESS_CHANGED_EVENT, loadPendingProfileAccess);
     };
   }, [user.id]);
+
+  useEffect(() => {
+    const expired = () => {
+      void navigate({ to: "/auth", replace: true });
+      void router.invalidate();
+    };
+    window.addEventListener("gp-session-expired", expired);
+    return () => window.removeEventListener("gp-session-expired", expired);
+  }, [navigate, router]);
 
   async function signOut() {
     setSigningOut(true);
@@ -105,7 +114,7 @@ function AuthLayout() {
         </div>
       </main>
 
-      <OnboardingGuide user={user} />
+      <OnboardingGuide user={user} sessionId={sessionId} />
 
       <nav className="fixed bottom-2 inset-x-2 z-40 mx-auto max-w-md rounded-2xl border border-white/80 bg-background/90 shadow-lg backdrop-blur-xl">
         <div className="grid grid-cols-5 px-1">

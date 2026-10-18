@@ -12,6 +12,8 @@ async function decode<T>(response: Response): Promise<T> {
   if (response.status === 204) return undefined as T;
   const value = (await response.json().catch(() => null)) as { error?: unknown } | null;
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined")
+      window.dispatchEvent(new Event("gp-session-expired"));
     throw new AppApiError(
       typeof value?.error === "string" ? value.error : "INTERNAL_ERROR",
       response.status,

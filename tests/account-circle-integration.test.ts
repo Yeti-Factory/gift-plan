@@ -51,6 +51,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL account and circle j
       "0002_gift_plan.sql",
       "0003_private_lists.sql",
       "0004_private_lists_default.sql",
+      "0005_release_events.sql",
     ]) {
       await database.query(
         await readFile(new URL("../selfhost/migrations/" + name, import.meta.url), "utf8"),

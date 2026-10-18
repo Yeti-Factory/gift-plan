@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { createLogger, newRequestId } from "@/lib/logger";
 import { getSelfHostedReadiness } from "@/lib/self-hosted/config";
-import { pingDatabase } from "@/lib/self-hosted/database.server";
+import { getDatabasePool, pingDatabase } from "@/lib/self-hosted/database.server";
 
 const bootAt = Date.now();
 
@@ -28,6 +28,17 @@ export const Route = createFileRoute("/api/public/health")({
             });
           }
         }
+        let reconnection: "pending" | "done" = "pending";
+        if (database === "ok") {
+          try {
+            const release = await getDatabasePool().query(
+              "SELECT 1 FROM app_release_events WHERE release_key = 'guide-v2-2026-10-18'",
+            );
+            if (release.rowCount) reconnection = "done";
+          } catch {
+            /* the release is not applied yet */
+          }
+        }
         // Mail outages should be visible without removing a working app from the proxy.
         const healthy =
           database === "ok" &&
@@ -41,6 +52,7 @@ export const Route = createFileRoute("/api/public/health")({
             uptimeMs: Date.now() - bootAt,
             checks: {
               worker: "ok",
+              reconnection,
               database,
               email: configuration.checks.email ? "ok" : "fail",
             },
