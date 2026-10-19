@@ -189,6 +189,8 @@ export const USER_GUIDE: GuideChapter[] = [
       "Si vous avez un cercle commun, l’échange peut commencer directement.",
       "Sans cercle commun, votre premier message est une demande de conversation. Attendez l’acceptation avant de poursuivre. La personne reçoit les choix Accepter ou Refuser.",
       "Retrouvez vos échanges avec la bulle Messages en haut de votre espace. Les nouveaux messages s’actualisent automatiquement quand la page est ouverte.",
+      "La pastille rouge sur Messages compte les messages non lus, privés et de groupe. Les conversations non lues apparaissent en gras avec un point rouge. La pastille diminue après lecture.",
+      "Quand un nouveau message arrive pendant l’utilisation, un bandeau Nouveau message reçu propose Ouvrir pour accéder à la conversation concernée.",
     ],
     notes: [
       "Demande envoyée signifie que le premier message est transmis et que vous attendez une réponse à la demande.",

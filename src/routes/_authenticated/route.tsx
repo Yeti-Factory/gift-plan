@@ -14,7 +14,6 @@ import {
   UserRoundSearch,
   Users,
   UserCircle,
-  MessageCircle,
   ShieldCheck,
 } from "lucide-react";
 import { authClient } from "@/lib/self-hosted/auth-client";
@@ -22,6 +21,7 @@ import { apiQuery } from "@/lib/self-hosted/api-client";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/BrandMark";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { MessageNotifications } from "@/components/MessageNotifications";
 import { PoweredByYetiLab } from "@/components/PoweredByYetiLab";
 import { PROFILE_ACCESS_CHANGED_EVENT } from "@/lib/profile-directory";
 
@@ -42,7 +42,6 @@ function AuthLayout() {
   const [signingOut, setSigningOut] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [pendingProfileAccess, setPendingProfileAccess] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     apiQuery<{ is_superadmin: boolean }>("session")
@@ -54,8 +53,6 @@ function AuthLayout() {
     async function loadPendingProfileAccess() {
       const data = await apiQuery<{ pending_profile_access: number }>("session").catch(() => null);
       if (data) setPendingProfileAccess(data.pending_profile_access);
-      const inbox = await apiQuery<{ unread: number }>("messages").catch(() => null);
-      if (inbox) setUnreadMessages(inbox.unread);
     }
 
     loadPendingProfileAccess();
@@ -91,20 +88,7 @@ function AuthLayout() {
             <BrandMark />
           </Link>
           <div className="flex items-center gap-1">
-            <Button asChild variant="ghost" size="icon" className="relative">
-              <Link
-                to="/messages"
-                search={{ recipient: undefined }}
-                aria-label={`Messages${unreadMessages ? `, ${unreadMessages} non lus` : ""}`}
-              >
-                <MessageCircle className="h-5 w-5" />
-                {unreadMessages > 0 && (
-                  <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1 text-xs text-primary-foreground">
-                    {unreadMessages > 99 ? "99+" : unreadMessages}
-                  </span>
-                )}
-              </Link>
-            </Button>
+            <MessageNotifications userId={user.id} />
             {isSuperadmin && (
               <Button asChild variant="ghost" size="icon" aria-label="Administration">
                 <Link to="/admin">

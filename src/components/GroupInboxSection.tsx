@@ -68,11 +68,17 @@ export function GroupInboxSection() {
           params={{ groupId: group.id }}
           className="block rounded-xl border p-3 hover:bg-secondary"
         >
-          <span className="block break-words font-semibold">
+          <span className={`block break-words ${group.unread > 0 ? "font-bold" : "font-normal"}`}>
+            {group.unread > 0 && (
+              <span
+                aria-hidden="true"
+                className="mr-2 inline-block h-2 w-2 rounded-full bg-red-600"
+              />
+            )}
             {group.title}
             {group.unread > 0 && (
               <span
-                className="ml-2 rounded-full bg-primary px-2 text-xs text-primary-foreground"
+                className="ml-2 rounded-full bg-red-600 px-2 text-xs font-bold text-white"
                 aria-label={`${group.unread} messages non lus`}
               >
                 {group.unread}

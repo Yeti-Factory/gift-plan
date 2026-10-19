@@ -1,3 +1,5 @@
+import { MESSAGES_CHANGED_EVENT } from "../message-notifications";
+
 export class AppApiError extends Error {
   constructor(
     public readonly code: string,
@@ -42,7 +44,7 @@ export async function apiQuery<T>(view: string, params: Record<string, string | 
 }
 
 export async function apiAction<T = void>(action: string, input: Record<string, unknown> = {}) {
-  return decode<T>(
+  const result = await decode<T>(
     await fetch("/api/v1/app", {
       method: "POST",
       credentials: "same-origin",
@@ -50,6 +52,12 @@ export async function apiAction<T = void>(action: string, input: Record<string, 
       body: JSON.stringify({ action, ...input }),
     }),
   );
+  if (
+    typeof window !== "undefined" &&
+    (action.startsWith("message-") || action.startsWith("group-message-"))
+  )
+    window.dispatchEvent(new Event(MESSAGES_CHANGED_EVENT));
+  return result;
 }
 
 export async function uploadFile(

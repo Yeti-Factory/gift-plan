@@ -154,6 +154,7 @@ const STEPS: Step[] = [
       "Vous pouvez bloquer une personne pour arrêter les nouveaux messages dans les deux sens. L’historique reste disponible ; débloquer permet de reprendre si aucun autre blocage ne subsiste.",
       "Signaler transmet uniquement le message reçu concerné et votre motif à l’administration. La conversation entière n’est pas transmise.",
       "Les échanges ne donnent aucun accès supplémentaire aux profils ou aux listes. Les compteurs de nouveaux messages se consultent dans l’application.",
+      "La pastille rouge sur Messages compte les messages non lus, privés et de groupe. Les échanges non lus sont en gras avec un point rouge ; le compteur diminue après lecture. Un bandeau Nouveau message reçu permet d’ouvrir la conversation à l’arrivée d’un message pendant l’utilisation.",
     ],
     icon: <MessageCircle className="h-6 w-6" />,
   },

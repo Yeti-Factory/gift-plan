@@ -15,6 +15,7 @@ import {
   searchPublicProfiles,
 } from "@/lib/self-hosted/app.server";
 import { runAppAction } from "@/lib/self-hosted/actions.server";
+import { getMessageNotifications } from "@/lib/self-hosted/message-notifications.server";
 import {
   getGroupUnread,
   getGroupInbox,
@@ -52,6 +53,8 @@ async function readView(request: Request) {
 
   const userId = await requireUserId(request.headers);
   switch (view) {
+    case "message-notifications":
+      return getMessageNotifications(userId);
     case "messages": {
       const [inbox, groupUnread] = await Promise.all([
         getMessageInbox(userId, undefined, Number(url.searchParams.get("offset") ?? 0)),
