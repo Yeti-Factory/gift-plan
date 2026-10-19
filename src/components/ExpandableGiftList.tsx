@@ -91,15 +91,17 @@ export function ExpandableGiftRow({
             )}
 
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold leading-tight">{title}</span>
+              <span className="block whitespace-normal text-sm font-semibold leading-snug [overflow-wrap:anywhere]">
+                {title}
+              </span>
               {meta && (
-                <span className="mt-0.5 block truncate text-[11px] leading-4 text-muted-foreground">
+                <span className="mt-0.5 block whitespace-normal text-[11px] leading-4 text-muted-foreground [overflow-wrap:anywhere]">
                   {meta}
                 </span>
               )}
             </span>
 
-            <span className="flex shrink-0 items-center gap-1.5">
+            <span className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center">
               {status}
               {price != null && (
                 <span className="text-xs font-semibold text-primary">
@@ -137,7 +139,9 @@ export function ExpandableGiftRow({
             </div>
 
             {description && (
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{description}</p>
+              <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+                {description}
+              </p>
             )}
 
             {(url || actions) && (
