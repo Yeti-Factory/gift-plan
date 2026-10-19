@@ -364,7 +364,7 @@ function DirectoryProfileRow({
   return (
     <div
       role="listitem"
-      className={`relative flex min-h-16 items-center gap-2.5 px-3 py-2.5 transition-colors sm:px-4 ${
+      className={`relative grid min-h-16 grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-2.5 gap-y-2 px-3 py-2.5 transition-colors sm:flex sm:gap-2.5 sm:px-4 ${
         canOpen ? "cursor-pointer hover:bg-secondary/35 focus-within:bg-secondary/35" : ""
       }`}
     >
@@ -396,7 +396,9 @@ function DirectoryProfileRow({
           </p>
         )}
         <div className="flex min-w-0 items-center gap-1.5">
-          <p className="truncate text-sm font-bold leading-tight">{name}</p>
+          <p className="min-w-0 whitespace-normal text-sm font-bold leading-snug [overflow-wrap:anywhere]">
+            {name}
+          </p>
           {profile.is_self && (
             <Badge variant="secondary" className="h-4 shrink-0 rounded-full px-1.5 text-[9px]">
               Vous
@@ -409,10 +411,12 @@ function DirectoryProfileRow({
             />
           )}
         </div>
-        <p className="truncate text-[11px] leading-4 text-muted-foreground">@{profile.username}</p>
+        <p className="whitespace-normal text-[11px] leading-4 text-muted-foreground [overflow-wrap:anywhere]">
+          @{profile.username}
+        </p>
       </div>
 
-      <div className="pointer-events-none relative z-10 flex shrink-0 items-center gap-1.5">
+      <div className="pointer-events-none relative z-10 col-start-2 flex shrink-0 flex-wrap items-center gap-1.5 sm:flex-nowrap">
         {!profile.is_self && (
           <Button asChild size="icon" variant="ghost" className="pointer-events-auto h-8 w-8">
             <Link to="/messages" search={{ recipient: profile.id }} aria-label={`Écrire à ${name}`}>
@@ -522,8 +526,10 @@ function IncomingRequestCard({
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{name}</p>
-          <p className="truncate text-xs text-muted-foreground">@{request.username}</p>
+          <p className="whitespace-normal font-semibold [overflow-wrap:anywhere]">{name}</p>
+          <p className="whitespace-normal text-xs text-muted-foreground [overflow-wrap:anywhere]">
+            @{request.username}
+          </p>
         </div>
       </div>
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
@@ -561,8 +567,10 @@ function GrantedAccessRow({
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{name}</p>
-        <p className="truncate text-xs text-muted-foreground">@{request.username}</p>
+        <p className="whitespace-normal text-sm font-semibold [overflow-wrap:anywhere]">{name}</p>
+        <p className="whitespace-normal text-xs text-muted-foreground [overflow-wrap:anywhere]">
+          @{request.username}
+        </p>
       </div>
       <Button size="sm" variant="ghost" disabled={busy} onClick={onRevoke}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
