@@ -277,12 +277,20 @@ export function MessagingPage({ userId, recipientId }: { userId: string; recipie
               }}
               className={`w-full rounded-xl p-3 text-left ${selected === c.id ? "bg-primary/10" : "hover:bg-secondary"}`}
             >
-              <span className="block break-words font-semibold">
+              <span
+                className={`block break-words ${c.unread > 0 && !c.blocked && c.status !== "declined" ? "font-bold" : "font-normal"}`}
+              >
+                {c.unread > 0 && !c.blocked && c.status !== "declined" && (
+                  <span
+                    aria-hidden="true"
+                    className="mr-2 inline-block h-2 w-2 rounded-full bg-red-600"
+                  />
+                )}
                 {c.display_name || c.username}{" "}
                 {c.unread > 0 && !c.blocked && c.status !== "declined" && (
                   <span
                     aria-label={`${c.unread} messages non lus`}
-                    className="rounded-full bg-primary px-2 text-xs text-primary-foreground"
+                    className="rounded-full bg-red-600 px-2 text-xs font-bold text-white"
                   >
                     {c.unread}
                   </span>

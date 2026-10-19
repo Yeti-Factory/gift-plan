@@ -1,9 +1,29 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiQuery } from "../src/lib/self-hosted/api-client";
+import { apiAction, apiQuery } from "../src/lib/self-hosted/api-client";
+import { MESSAGES_CHANGED_EVENT } from "../src/lib/message-notifications";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("expired sessions", () => {
+  it("refreshes message indicators only after a successful mutation", async () => {
+    const changed = vi.fn();
+    window.addEventListener(MESSAGES_CHANGED_EVENT, changed);
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+        .mockResolvedValueOnce(Response.json({ error: "FORBIDDEN" }, { status: 403 })),
+    );
+    try {
+      await apiAction("message-read", { conversationId: "conversation", lastId: "1" });
+      expect(changed).toHaveBeenCalledOnce();
+      await expect(apiAction("group-message-read")).rejects.toMatchObject({ status: 403 });
+      expect(changed).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener(MESSAGES_CHANGED_EVENT, changed);
+    }
+  });
   it("notifies the private app when a protected request requires reconnection", async () => {
     const expired = vi.fn();
     window.addEventListener("gp-session-expired", expired);

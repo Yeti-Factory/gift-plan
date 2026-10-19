@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { getAccountData } from "../src/lib/self-hosted/app.server";
+import { getMessageNotifications } from "../src/lib/self-hosted/message-notifications.server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   getGroupInbox,
@@ -93,6 +94,88 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
       await database.query('DROP SCHEMA "' + schema + '" CASCADE');
       await database.end();
     }
+  });
+
+  it("counts only received accessible messages and removes read or excluded group alerts", async () => {
+    const direct = await start(a, b);
+    expect(await getMessageNotifications(a, database)).toEqual({
+      unread: 0,
+      direct: null,
+      group: null,
+    });
+    const received = await getMessageNotifications(b, database);
+    expect(received).toMatchObject({
+      unread: 1,
+      direct: { recipientId: a, unread: true },
+      group: null,
+    });
+    expect(received.direct).not.toHaveProperty("body");
+    await act(b, "message-read", {
+      conversationId: direct.conversationId,
+      lastId: received.direct!.id,
+    });
+    expect(await getMessageNotifications(b, database)).toMatchObject({
+      unread: 0,
+      direct: { unread: false },
+    });
+    const created = await groupMessagingAction(
+      a,
+      {
+        action: "group-message-create",
+        circleId: circle,
+        participantIds: [a, b],
+        title: "Surprise",
+        nonce: randomUUID(),
+      },
+      database,
+    );
+    const groupId = created!.conversationId;
+    await groupMessagingAction(
+      a,
+      {
+        action: "group-message-send",
+        conversationId: groupId,
+        text: "Secret",
+        nonce: randomUUID(),
+      },
+      database,
+    );
+    const group = await getMessageNotifications(b, database);
+    expect(group).toMatchObject({ unread: 1, group: { groupId, unread: true } });
+    expect(await getMessageNotifications(d, database)).toEqual({
+      unread: 0,
+      direct: null,
+      group: null,
+    });
+    await groupMessagingAction(
+      b,
+      { action: "group-message-read", conversationId: groupId, lastId: group.group!.id },
+      database,
+    );
+    expect(await getMessageNotifications(b, database)).toMatchObject({
+      unread: 0,
+      group: { unread: false },
+    });
+    await groupMessagingAction(
+      b,
+      { action: "group-message-leave", conversationId: groupId },
+      database,
+    );
+    expect((await getMessageNotifications(b, database)).group).toBeNull();
+    await act(b, "message-block", { recipientId: a });
+    expect(await getMessageNotifications(b, database)).toEqual({
+      unread: 0,
+      direct: null,
+      group: null,
+    });
+    const pending = await start(a, c);
+    expect((await getMessageNotifications(c, database)).unread).toBe(1);
+    await act(c, "message-decline", { conversationId: pending.conversationId });
+    expect(await getMessageNotifications(c, database)).toEqual({
+      unread: 0,
+      direct: null,
+      group: null,
+    });
   });
 
   it("opens one direct conversation between circle peers and rejects outsiders on every read/write path", async () => {
@@ -351,6 +434,11 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL private messaging", 
         unread: 1,
       });
       expect(await getGroupUnread(c, database)).toBe(0);
+      expect(await getMessageNotifications(c, database)).toEqual({
+        unread: 0,
+        direct: null,
+        group: null,
+      });
       expect((await getGroupInbox(c, 0, database)).groups).toEqual([]);
       await expect(getGroupThread(c, conversationId, null, database)).rejects.toMatchObject({
         status: 404,
