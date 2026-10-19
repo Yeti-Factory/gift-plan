@@ -103,8 +103,10 @@ export function PeopleSearchPage({ publicMode = false }: { publicMode?: boolean 
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-bold">{name}</p>
-                <p className="text-xs text-muted-foreground">@{profile.username}</p>
+                <p className="whitespace-normal font-bold [overflow-wrap:anywhere]">{name}</p>
+                <p className="whitespace-normal text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                  @{profile.username}
+                </p>
                 {profile.bio && (
                   <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{profile.bio}</p>
                 )}
